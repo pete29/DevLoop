@@ -358,7 +358,11 @@ failure, and runs one task only when one was asked for. A dead worker is
 found by its process; a queued run is left alone. Two runs of one plan are
 refused. And a **real worker process** runs against a throwaway database
 (`DEVLOOP_DATABASE`) on a plan with nothing left to do, so no model is
-called: it records its pid, finishes `DONE` and writes its log.
+called: it records its pid, finishes `DONE` and writes its log. The end of
+a run is announced with the plan, the ending and the tasks waiting; the
+notification's title reaches PowerShell as a variable, never as script
+text; `DEVLOOP_NOTIFY=0` switches it off for every worker these checks
+start.
 
 `tests.orchestrator_test` — every agent, the compiler and the test runner
 are faked. The free checks run before the Architect; a fix after failing

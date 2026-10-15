@@ -213,7 +213,9 @@ Each task goes through the pipeline above:
 Tasks run **in the background**, in a worker process: **Run task** and
 **⏩ Run the whole plan** start one, and the plan shows what it is on, how
 far it got and the last lines of its console, refreshed every few seconds.
-The tab can be closed and the page reloaded; the run carries on.
+The tab can be closed and the page reloaded; the run carries on. When it
+ends, Windows shows a notification: the plan, how it ended, and how many
+tasks wait for approval (`NOTIFY_ON_RUN_END`).
 A task described on its own (**Generate code** at the bottom of the page) becomes a plan of one task: it gets its branch before anything is generated, runs in the background worker, and has a pull request and a cost like any planned task. **⏹ Stop
 after this task** stops it between tasks, and a worker that died is marked
 `INTERRUPTED` on the next page load.

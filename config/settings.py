@@ -162,6 +162,12 @@ class Settings:
     # never cut off midway -- the check is before each one.
     PLAN_COST_LIMIT = 5.0
 
+    # A Windows notification when a background run ends:
+    # which plan, how it ended, how many tasks wait for
+    # approval. No package needed; off here if unwanted,
+    # or with DEVLOOP_NOTIFY=0 (the tests set it).
+    NOTIFY_ON_RUN_END = os.getenv("DEVLOOP_NOTIFY", "1") != "0"
+
     # How many files one call writes.
     #
     # Batching looks like it should cut the time and does

@@ -263,6 +263,9 @@ only progress there is inside a task, and it is now on screen. When the run
 ends, the whole page is redrawn once; a single task the human started opens
 in its window, as before.
 
+When a run ends the worker shows a Windows notification: the plan, how
+it ended, and how many of its tasks wait for approval.
+
 Before each task the worker adds up what the plan has cost — planning,
 every attempt and revision, failed attempts — and stops (`STOPPED`, "Cost
 limit reached") once that reaches `PLAN_COST_LIMIT`. The plan shows the

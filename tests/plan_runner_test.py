@@ -22,6 +22,9 @@ database = os.path.join(folder, "runs.db")
 # database is bound at import time.
 os.environ["DEVLOOP_DATABASE"] = database
 
+# No real notification from the workers these checks start.
+os.environ["DEVLOOP_NOTIFY"] = "0"
+
 from database.plan_repository import PlanRepository  # noqa: E402
 from database.run_repository import RunRepository  # noqa: E402
 from database.task_repository import TaskRepository  # noqa: E402
@@ -29,6 +32,7 @@ from models.plan import Plan  # noqa: E402
 from models.plan_run import PlanRun, RunStatus  # noqa: E402
 from models.task import Task  # noqa: E402
 from models.task_breakdown import TaskBreakdown  # noqa: E402
+from models.task_status import TaskStatus  # noqa: E402
 from models.task_execution import ExecutionStatus, TaskExecution  # noqa: E402
 from services import plan_runner  # noqa: E402
 
@@ -64,7 +68,11 @@ class Pipeline:
         if title == self.stop_after:
             # The human presses Stop while this task runs.
             self.runs.request_stop(self.run_id)
-        return Task(repository_path=repository_path, description=description)
+        return Task(
+            repository_path=repository_path,
+            description=description,
+            status=TaskStatus.WAITING_FOR_APPROVAL,
+        )
 
 
 def make_plan(plans: PlanRepository) -> Plan:
@@ -282,6 +290,37 @@ try:
         round(plans.get_by_id(plan.id).failed_cost, 2),
         1.0,
     )
+
+    print()
+    print("=" * 80)
+    print("THE END OF A RUN IS ANNOUNCED")
+    print("=" * 80)
+
+    from services import notify as notify_module
+
+    TOLD: list[tuple[str, str]] = []
+
+    plan_runner.notify = lambda title, message: TOLD.append((title, message)) or True
+
+    plan = make_plan(plans)
+
+    run_with(Pipeline(), plan)
+
+    check(
+        "which plan, how it ended, and how many tasks wait",
+        (TOLD[-1][0], TOLD[-1][1].startswith("Done. 3 task(s) wait for approval.")),
+        ("DevLoop: Epic", True),
+    )
+
+    arguments, environment = notify_module.command('Plan "x"; Remove-Item C:\\', "msg")
+
+    check(
+        "the title reaches PowerShell as a variable, never as script text",
+        ('Remove-Item' in " ".join(arguments), environment["DEVLOOP_TITLE"]),
+        (False, 'Plan "x"; Remove-Item C:\\'),
+    )
+
+    check("and the switch turns it off", notify_module.notify("t", "m"), False)
 
     print()
     print("=" * 80)

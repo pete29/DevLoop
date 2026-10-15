@@ -25,6 +25,7 @@ from models.plan_run import PlanRun, RunStatus
 from models.task_execution import ExecutionStatus, TaskExecution
 from models.requirement import now
 from services import costs, plan_branch, usage_ledger
+from services.notify import notify
 from services.git_service import GitService
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -437,7 +438,36 @@ def work(
 
     print(f"RUN {run.id} ended: {run.status.value} {run.message}", flush=True)
 
+    announce(run, plans, tasks)
+
     return run
+
+
+def announce(run: PlanRun, plans: PlanRepository, tasks: TaskRepository) -> bool:
+    """Tells the desktop the run ended: which plan, how, what waits."""
+
+    plan = plans.get_by_id(run.plan_id)
+
+    title = (plan.epic.strip().splitlines() or ["DevLoop"])[0] if plan else "DevLoop"
+
+    waiting = sum(
+        1
+        for task_id in run.produced
+        if (task := tasks.get_by_id(task_id)) is not None
+        and task.status.value == "WAITING_FOR_APPROVAL"
+    )
+
+    ending = {
+        RunStatus.DONE: "Done",
+        RunStatus.STOPPED: "Stopped",
+        RunStatus.FAILED: "Failed",
+    }.get(run.status, run.status.value)
+
+    message = f"{ending}. {waiting} task(s) wait for approval." + (
+        f" {run.message}" if run.message else ""
+    )
+
+    return notify(f"DevLoop: {title}", message)
 
 
 if __name__ == "__main__":

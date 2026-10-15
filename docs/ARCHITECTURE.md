@@ -377,6 +377,7 @@ and was removed: only its own test used it.
 | `usage_ledger` | tokens and dollars per agent, per run |
 | `plan_runner` | the background worker: runs a plan's ready tasks, stops on request or failure |
 | `review_feedback` | a pull request's review comments, read only; which task a comment is about; comments as revision notes |
+| `notify` | a Windows toast when a background run ends, through PowerShell, its text passed as environment variables |
 | `ci_checks` | a pull request's check runs and a failed job's log, read only; a failure as revision notes |
 | `packages` | which npm packages the code imports and the repository lacks; valid package names |
 | `costs` | a task's dollars (stored, or read from an older usage line), a plan's total, a month's, the limit |

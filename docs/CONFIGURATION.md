@@ -286,6 +286,13 @@ and `tsc`) may ask for before each review. A separate budget on purpose:
 when the two shared one, compile errors used up the rounds the Architect's
 blockers needed, and those blockers were never fixed.
 
+**`NOTIFY_ON_RUN_END`** — a Windows notification when a background run
+ends: which plan, how it ended, how many tasks wait for approval. Shown
+through PowerShell and the system's own notification API, so nothing is
+installed; the plan's name reaches the script as an environment variable,
+never as script text. `DEVLOOP_NOTIFY=0` in the environment also turns it
+off (the tests do).
+
 **`PLAN_COST_LIMIT`** — dollars one plan may spend before a background run
 stops starting tasks (default 5.0; 0 for no limit). Planning, every attempt,
 every revision and failed attempts all count. The check is before each task,
