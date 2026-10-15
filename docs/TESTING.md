@@ -358,6 +358,11 @@ nothing; a migration that fails is rolled back and leaves the version
 where it was; and three processes migrating one file at once all end at
 the latest version.
 
+`tests.version_test` — the version is MAJOR.MINOR.PATCH with a known
+stage and an entry in `CHANGELOG.md`; the commit shown beside it is read
+from `.git` whether the branch is a loose ref, packed by `git gc` or a
+detached HEAD, and left out without a repository.
+
 `tests.settings_test` — `.env` is written one line at a time with every
 other line kept, a duplicate definition removed, a key never shown back,
 and values that would break the file or are of the wrong kind refused;

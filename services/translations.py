@@ -601,6 +601,10 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "Hasło usunięte: strona jest otwarta.",
         "en": "Password removed: the page is open.",
     },
+    "app.version": {
+        "pl": "DevLoop {label}",
+        "en": "DevLoop {label}",
+    },
     "plan.close": {
         "pl": "🗑 Zamknij plan",
         "en": "🗑 Close plan",

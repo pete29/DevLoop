@@ -444,7 +444,7 @@ CI. Run it before and after changing a prompt, a model or an effort. The
 baseline: 6/6 passed, $0.2454; the package case asked for `@types/node`, and
 the plan case planned 3 tasks with no plan problems.
 
-There are 45 test files. 42 run offline, against fake transports and
+There are 46 test files. 43 run offline, against fake transports and
 throwaway repositories; `compile_test`, `install_test` and
 `test_execution_test` need Node on `PATH`. Three call a real model and are
 skipped in routine runs: `architect_test`, `workflow_test`,
@@ -482,6 +482,7 @@ ui/            the parts: shared (stores, session, language), actions (runs,
 | Document | What it covers |
 |---|---|
 | [HANDOFF.md](HANDOFF.md) | current state, decisions, backlog and known traps |
+| [CHANGELOG.md](CHANGELOG.md) | every release; the version is in `config/version.py` and under the page title |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | the agents, the services, who owns what |
 | [docs/WORKFLOW.md](docs/WORKFLOW.md) | the pipeline, the review loop, the severity model |
 | [docs/REPOSITORY_WORKFLOW.md](docs/REPOSITORY_WORKFLOW.md) | from folder to pull request |

@@ -8,14 +8,14 @@ import streamlit as st
 from dotenv import load_dotenv
 
 from config.settings import Settings
-from services import plan_runner
+from services import build_info, plan_runner
 from ui import shared
 from ui.costs import cost_view
 from ui.login import logout_button, require_login
 from ui.page import quick_task_panel, status_line, task_window
 from ui.plans import plan_view
 from ui.requirements import requirement_view
-from ui.shared import init_session, run_store, show_message
+from ui.shared import init_session, run_store, show_message, t
 from ui.settings_view import settings_view
 from ui.sidebar import sidebar
 
@@ -33,6 +33,8 @@ shared.refresh()
 plan_runner.detect_interrupted(run_store)
 
 st.title(Settings.PAGE_TITLE)
+
+st.caption(t("app.version", label=build_info.label()))
 
 # With the task window open, the message is shown in it.
 if st.session_state.task is None:
