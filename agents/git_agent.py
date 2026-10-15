@@ -180,7 +180,9 @@ class GitAgent:
         a later one first would commit code that imports
         files no commit holds yet. So they go in the order
         they ran: an earlier task has to be committed or
-        rejected first.
+        rejected first. A version a revision replaced is
+        neither, and holds nothing up: its files are the
+        revision's now.
         """
 
         if not task.branch:
@@ -193,7 +195,8 @@ class GitAgent:
                 if other.id != task.id
                 and other.branch == task.branch
                 and other.created_at < task.created_at
-                and other.status != TaskStatus.REJECTED
+                and other.status
+                not in (TaskStatus.REJECTED, TaskStatus.REVISED)
                 and not other.git_operation.commit_hash
             ),
             key=lambda other: other.created_at,

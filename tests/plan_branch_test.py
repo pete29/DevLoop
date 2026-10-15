@@ -245,6 +245,18 @@ try:
         [],
     )
 
+    # Found live: the version a revision replaced held up
+    # the revision itself.
+    revised = task(root, branch, [], "src/w.ts")
+
+    revised.status = TaskStatus.REVISED
+
+    check(
+        "nor does the version a revision replaced",
+        GitAgent.unresolved_before(later, [revised, later]),
+        [],
+    )
+
     check(
         "a task outside a plan is never held up",
         GitAgent.unresolved_before(
