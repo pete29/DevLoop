@@ -504,6 +504,9 @@ connection.execute(
     "ALTER TABLE tasks DROP COLUMN environment"
 )
 
+# As a database from before migrations were numbered.
+connection.execute("PRAGMA user_version = 0")
+
 connection.commit()
 
 connection.close()
@@ -618,6 +621,8 @@ TaskRepository(older_steps).save(Task(description="old"))
 connection = sqlite3.connect(older_steps)
 
 connection.execute("ALTER TABLE tasks DROP COLUMN steps")
+
+connection.execute("PRAGMA user_version = 0")
 
 connection.commit()
 

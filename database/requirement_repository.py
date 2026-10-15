@@ -2,6 +2,7 @@ import json
 import sqlite3
 
 from config.settings import Settings
+from database import schema
 from models.github_issue import IssueLink
 from models.requirement import Requirement, RequirementSource
 
@@ -31,25 +32,8 @@ class RequirementRepository:
             check_same_thread=False,
         )
 
-        self.create_table()
+        schema.migrate(db_name)
 
-    def create_table(self) -> None:
-        cursor = self.connection.cursor()
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS requirements (
-                id TEXT PRIMARY KEY,
-                repository_id TEXT NOT NULL DEFAULT '',
-                title TEXT NOT NULL DEFAULT '',
-                content TEXT NOT NULL DEFAULT '',
-                source TEXT NOT NULL DEFAULT 'MANUAL',
-                issue TEXT NOT NULL DEFAULT '{}',
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
-            )
-            """)
-
-        self.connection.commit()
 
     def _issue_json(self, requirement: Requirement) -> str:
 

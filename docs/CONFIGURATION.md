@@ -466,10 +466,19 @@ streamlit run app.py
 
 SQLite, `human_in_the_loop.db` in the project root, in `.gitignore`.
 
-Five tables: `repositories`, `requirements`, `plans`, `tasks` and
-`plan_runs`. Columns added by later sprints are applied
-by a migration that runs when the app starts, so an older database keeps
-working — it simply reports empty values for anything it predates.
+Six tables: `repositories`, `requirements`, `plans`, `tasks`,
+`plan_runs` and `preferences` (the selected repository and language).
+
+**Migrations.** The schema is a numbered list of migrations in
+`database/schema.py`; the database records how far it has got in SQLite's
+`user_version`. Opening it runs each later migration once, in order, each
+in its own transaction, under a write lock so the page and a background
+worker never run one twice. Before the first change the file is copied to
+`human_in_the_loop.db.v<N>.bak` (gitignored). Migration 1 is the schema as
+it stood when numbering began, written to complete any older database:
+missing tables are created and missing columns added with their defaults,
+so a database from any earlier version opens with its rows intact. To
+change the schema, append a migration; never edit one that has shipped.
 
 To start clean, delete the file. It is recreated on the next run.
 

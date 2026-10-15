@@ -2,6 +2,7 @@ import json
 import sqlite3
 
 from config.settings import Settings
+from database import schema
 from models.compile_result import (
     CompileError,
     CompileResult,
@@ -71,35 +72,6 @@ COLUMN_LIST = ",\n                ".join(COLUMNS)
 
 PLACEHOLDERS = ", ".join("?" for _ in COLUMNS)
 
-# Columns added after the first release, with the
-# definition used to retrofit older databases.
-ADDED_COLUMNS = {
-    "repository_id": "TEXT NOT NULL DEFAULT ''",
-    "repository_path": "TEXT NOT NULL DEFAULT ''",
-    "issue": "TEXT NOT NULL DEFAULT '{}'",
-    "recommendation": "TEXT NOT NULL DEFAULT 'UNKNOWN'",
-    "blockers": "TEXT NOT NULL DEFAULT '[]'",
-    "warnings": "TEXT NOT NULL DEFAULT '[]'",
-    "suggestions": "TEXT NOT NULL DEFAULT '[]'",
-    "structural": "TEXT NOT NULL DEFAULT '[]'",
-    "environment": "TEXT NOT NULL DEFAULT '[]'",
-    "steps": "TEXT NOT NULL DEFAULT '[]'",
-    "compile_result": "TEXT NOT NULL DEFAULT '{}'",
-    "branch": "TEXT NOT NULL DEFAULT ''",
-    "created_files": "TEXT NOT NULL DEFAULT '[]'",
-    "cost": "REAL NOT NULL DEFAULT 0",
-    "plan_id": "TEXT NOT NULL DEFAULT ''",
-    "packages": "TEXT NOT NULL DEFAULT '[]'",
-    "review_history": "TEXT NOT NULL DEFAULT '[]'",
-    "review_iterations": "INTEGER NOT NULL DEFAULT 0",
-    "generated_files": "TEXT NOT NULL DEFAULT '[]'",
-    "git_operation": "TEXT NOT NULL DEFAULT '{}'",
-    "git_push": "TEXT NOT NULL DEFAULT '{}'",
-    "pull_request": "TEXT NOT NULL DEFAULT '{}'",
-    "test_result": "TEXT NOT NULL DEFAULT '{}'",
-    "diffs": "TEXT NOT NULL DEFAULT '[]'",
-}
-
 
 class TaskRepository:
     def __init__(
@@ -114,59 +86,8 @@ class TaskRepository:
             timeout=30,
         )
 
-        self.create_table()
+        schema.migrate(db_name)
 
-    def create_table(self) -> None:
-        cursor = self.connection.cursor()
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS tasks (
-                id TEXT PRIMARY KEY,
-                repository_id TEXT NOT NULL DEFAULT '',
-                repository_path TEXT NOT NULL DEFAULT '',
-                issue TEXT NOT NULL DEFAULT '{}',
-                description TEXT NOT NULL,
-                generated_code TEXT NOT NULL,
-                architecture_review TEXT NOT NULL,
-                architecture_score INTEGER NOT NULL,
-                generated_tests TEXT NOT NULL,
-                recommendation TEXT NOT NULL DEFAULT 'UNKNOWN',
-                blockers TEXT NOT NULL DEFAULT '[]',
-                warnings TEXT NOT NULL DEFAULT '[]',
-                suggestions TEXT NOT NULL DEFAULT '[]',
-                structural TEXT NOT NULL DEFAULT '[]',
-                review_history TEXT NOT NULL DEFAULT '[]',
-                review_iterations INTEGER NOT NULL DEFAULT 0,
-                generated_files TEXT NOT NULL DEFAULT '[]',
-                git_operation TEXT NOT NULL DEFAULT '{}',
-                git_push TEXT NOT NULL DEFAULT '{}',
-                pull_request TEXT NOT NULL DEFAULT '{}',
-                test_result TEXT NOT NULL DEFAULT '{}',
-                diffs TEXT NOT NULL DEFAULT '[]',
-                status TEXT NOT NULL,
-                created_at TEXT NOT NULL
-            )
-            """)
-
-        self.connection.commit()
-
-        self.migrate()
-
-    def migrate(self) -> None:
-        cursor = self.connection.cursor()
-
-        columns = {row[1] for row in cursor.execute("PRAGMA table_info(tasks)")}
-
-        for name, definition in ADDED_COLUMNS.items():
-
-            if name in columns:
-                continue
-
-            cursor.execute(
-                f"ALTER TABLE tasks ADD COLUMN {name} {definition}"
-            )
-
-        self.connection.commit()
 
     def save(
         self,

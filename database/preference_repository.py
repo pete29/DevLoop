@@ -1,6 +1,7 @@
 import sqlite3
 
 from config.settings import Settings
+from database import schema
 
 
 class PreferenceRepository:
@@ -22,16 +23,7 @@ class PreferenceRepository:
             timeout=30,
         )
 
-        self.connection.execute(
-            """
-            CREATE TABLE IF NOT EXISTS preferences (
-                key TEXT PRIMARY KEY,
-                value TEXT NOT NULL DEFAULT ''
-            )
-            """
-        )
-
-        self.connection.commit()
+        schema.migrate(db_name)
 
     def get(self, key: str, default: str = "") -> str:
 

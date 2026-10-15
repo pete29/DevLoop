@@ -351,6 +351,13 @@ from a project with TypeScript and Vitest installed
 (`DEVLOOP_TYPESCRIPT_HOME`, or a sibling folder that has both) through a
 junction; without one, as in CI, it says SKIPPED and passes.
 
+`tests.schema_test` — a new database migrates to the latest version with
+every table and column; one from before numbering gains every missing
+column with its rows intact and a backup made first; a second open does
+nothing; a migration that fails is rolled back and leaves the version
+where it was; and three processes migrating one file at once all end at
+the latest version.
+
 `tests.settings_test` — `.env` is written one line at a time with every
 other line kept, a duplicate definition removed, a key never shown back,
 and values that would break the file or are of the wrong kind refused;

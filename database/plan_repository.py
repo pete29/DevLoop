@@ -2,6 +2,7 @@ import json
 import sqlite3
 
 from config.settings import Settings
+from database import schema
 from models.github_issue import IssueLink
 from models.plan import Plan
 from models.task_breakdown import Priority, TaskBreakdown
@@ -30,18 +31,6 @@ COLUMN_LIST = ",\n                ".join(COLUMNS)
 
 PLACEHOLDERS = ", ".join("?" for _ in COLUMNS)
 
-# Columns added after the table first shipped, with the
-# definition used to retrofit an existing database.
-ADDED_COLUMNS = {
-    "executions": "TEXT NOT NULL DEFAULT '[]'",
-    "issues": "TEXT NOT NULL DEFAULT '[]'",
-    "requirement_id": "TEXT NOT NULL DEFAULT ''",
-    "issue": "TEXT NOT NULL DEFAULT '{}'",
-    "planning_cost": "REAL NOT NULL DEFAULT 0",
-    "failed_cost": "REAL NOT NULL DEFAULT 0",
-    "acted_comments": "TEXT NOT NULL DEFAULT '[]'",
-}
-
 
 class PlanRepository:
     def __init__(
@@ -55,52 +44,8 @@ class PlanRepository:
             timeout=30,
         )
 
-        self.create_table()
+        schema.migrate(db_name)
 
-    def create_table(self) -> None:
-        cursor = self.connection.cursor()
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS plans (
-                id TEXT PRIMARY KEY,
-                repository_id TEXT NOT NULL DEFAULT '',
-                requirement_id TEXT NOT NULL DEFAULT '',
-                issue TEXT NOT NULL DEFAULT '{}',
-                epic TEXT NOT NULL,
-                tasks TEXT NOT NULL DEFAULT '[]',
-                completed TEXT NOT NULL DEFAULT '[]',
-                executions TEXT NOT NULL DEFAULT '[]',
-                issues TEXT NOT NULL DEFAULT '[]',
-                created_at TEXT NOT NULL
-            )
-            """)
-
-        self.connection.commit()
-
-        self.migrate()
-
-    def migrate(self) -> None:
-
-        cursor = self.connection.cursor()
-
-        columns = {
-            row[1]
-            for row in cursor.execute(
-                "PRAGMA table_info(plans)"
-            )
-        }
-
-        for name, definition in ADDED_COLUMNS.items():
-
-            if name in columns:
-                continue
-
-            cursor.execute(
-                f"ALTER TABLE plans ADD COLUMN "
-                f"{name} {definition}"
-            )
-
-        self.connection.commit()
 
     def _tasks_json(self, plan: Plan) -> str:
 

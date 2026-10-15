@@ -2,6 +2,7 @@ import json
 import sqlite3
 
 from config.settings import Settings
+from database import schema
 from models.plan_run import PlanRun, RunStatus, now
 
 COLUMNS = (
@@ -38,27 +39,8 @@ class RunRepository:
             timeout=30,
         )
 
-        self.create_table()
+        schema.migrate(db_name)
 
-    def create_table(self) -> None:
-
-        self.connection.execute("""
-            CREATE TABLE IF NOT EXISTS plan_runs (
-                id TEXT PRIMARY KEY,
-                plan_id TEXT NOT NULL,
-                task_id INTEGER NOT NULL DEFAULT 0,
-                repository_path TEXT NOT NULL DEFAULT '',
-                status TEXT NOT NULL,
-                pid INTEGER NOT NULL DEFAULT 0,
-                current_task INTEGER NOT NULL DEFAULT 0,
-                produced TEXT NOT NULL DEFAULT '[]',
-                message TEXT NOT NULL DEFAULT '',
-                started_at TEXT NOT NULL,
-                finished_at TEXT NOT NULL DEFAULT ''
-            )
-            """)
-
-        self.connection.commit()
 
     def save(self, run: PlanRun) -> None:
 

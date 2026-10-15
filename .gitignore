@@ -12,6 +12,7 @@ venv/
 
 # SQLite
 *.db
+*.bak
 *.sqlite
 *.sqlite3
 

@@ -2,6 +2,7 @@ import os
 import sqlite3
 
 from config.settings import Settings
+from database import schema
 from models.repository import Repository
 
 
@@ -37,21 +38,8 @@ class RepositoryRepository:
             check_same_thread=False,
         )
 
-        self.create_table()
+        schema.migrate(db_name)
 
-    def create_table(self) -> None:
-        cursor = self.connection.cursor()
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS repositories (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                path TEXT NOT NULL,
-                created_at TEXT NOT NULL
-            )
-            """)
-
-        self.connection.commit()
 
     def save(
         self,
