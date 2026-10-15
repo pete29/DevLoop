@@ -11,6 +11,7 @@ from config.settings import Settings
 from services import plan_runner
 from ui import shared
 from ui.costs import cost_view
+from ui.login import logout_button, require_login
 from ui.page import quick_task_panel, status_line, task_window
 from ui.plans import plan_view
 from ui.requirements import requirement_view
@@ -20,6 +21,9 @@ from ui.sidebar import sidebar
 load_dotenv()
 
 init_session()
+
+# Before anything is read or shown.
+require_login()
 
 shared.refresh()
 
@@ -34,6 +38,8 @@ if st.session_state.task is None:
     show_message()
 
 sidebar()
+
+logout_button()
 
 if st.session_state.get("show_costs"):
     cost_view()

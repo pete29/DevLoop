@@ -449,6 +449,30 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "Odrzucono {count} zadań: usunięto {removed} plików, przywrócono {restored}.",
         "en": "Rejected {count} tasks: {removed} files removed, {restored} restored.",
     },
+    "login.heading": {
+        "pl": "🔒 DevLoop",
+        "en": "🔒 DevLoop",
+    },
+    "login.password": {
+        "pl": "Hasło",
+        "en": "Password",
+    },
+    "login.submit": {
+        "pl": "Zaloguj",
+        "en": "Sign in",
+    },
+    "login.wrong": {
+        "pl": "Złe hasło.",
+        "en": "Wrong password.",
+    },
+    "login.locked": {
+        "pl": "Za dużo nieudanych prób. Spróbuj za {seconds} s.",
+        "en": "Too many failed attempts. Try again in {seconds} s.",
+    },
+    "login.logout": {
+        "pl": "🚪 Wyloguj",
+        "en": "🚪 Sign out",
+    },
     "plan.close": {
         "pl": "🗑 Zamknij plan",
         "en": "🗑 Close plan",

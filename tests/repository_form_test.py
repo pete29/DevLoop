@@ -14,6 +14,10 @@ folder = tempfile.mkdtemp()
 
 os.environ["DEVLOOP_DATABASE"] = os.path.join(folder, "form.db")
 
+# A password in the developer's .env would stop the page at
+# the sign-in screen; set, even empty, .env does not override it.
+os.environ["DEVLOOP_PASSWORD_HASH"] = ""
+
 from streamlit.testing.v1 import AppTest  # noqa: E402
 
 from database.repository_repository import RepositoryRepository  # noqa: E402

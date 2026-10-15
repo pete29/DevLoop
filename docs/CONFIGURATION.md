@@ -379,6 +379,9 @@ GITHUB_PAT=your_token
 
 # Only for "New repository" on GitHub
 GITHUB_ADMIN_PAT=
+
+# Optional: a password for the page (python -m services.auth)
+DEVLOOP_PASSWORD_HASH=
 ```
 
 Only `ANTHROPIC_API_KEY` is needed to generate, review and commit code.

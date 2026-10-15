@@ -68,7 +68,7 @@ CI (`.github/workflows/tests.yml`, Windows) runs the offline suites on every PR 
 report; `evals/compare.py` compares two. Baseline `2026-10-15-baseline-v2`: 6/6, $0.2454. Run it
 around any prompt, model or effort change.
 
-There are 41 test files. **38 run offline** and all pass. Three call a real model and are skipped
+There are 42 test files. **39 run offline** and all pass. Three call a real model and are skipped
 in routine runs: `architect_test`, `workflow_test`, `ollama_test` (needs a
 local Ollama). Node must be on PATH for `compile_test`, `install_test` and
 `test_execution_test`.

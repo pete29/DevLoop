@@ -211,6 +211,24 @@ inside git's own error output.
 
 `.env` and the SQLite database are both in `.gitignore`.
 
+## Signing in
+
+Streamlit binds to every interface, so the page -- and with it the API
+key's budget, the GitHub token and the registered repositories -- is
+reachable from the local network. `DEVLOOP_PASSWORD_HASH` puts a password
+in front of it:
+
+- only a PBKDF2-SHA256 hash is kept (600,000 iterations, random salt),
+  compared in constant time; `python -m services.auth` makes it;
+- the check runs before anything else on the page: no database read, no
+  GitHub call, nothing drawn in the sidebar;
+- five failures in a row lock signing in for a minute, the right password
+  included, counted per server process so a reload does not reset them.
+
+It is a single shared password, not accounts, and the page is served over
+plain HTTP: on a network you do not trust, keep the app on `localhost`
+(`streamlit run app.py --server.address localhost`).
+
 ---
 
 ## The human gate

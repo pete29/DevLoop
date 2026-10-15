@@ -334,6 +334,12 @@ folder inside a repository offers the repository instead.
 requirement selects its repository, choosing another moves it, and a save
 from a page holding an older copy keeps the move.
 
+`tests.auth_test` — only a hash is stored and it matches only its
+password; with `DEVLOOP_PASSWORD_HASH` set the real page shows nothing but
+the sign-in form until the right password, signing out closes it again,
+and five failures lock it. The other page tests set the variable empty, so
+a password in your own `.env` does not stop them at the form.
+
 `tests.reject_plan_test` — the real page, headless, on a real repository:
 **🗑 Reject the whole plan** rejects every waiting task after a
 confirmation, deletes the files they created, restores the file git knows,

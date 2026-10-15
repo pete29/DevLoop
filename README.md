@@ -98,6 +98,19 @@ or, with the virtual environment active, `streamlit run app.py`. In VS Code,
 `streamlit` module from `.venv` with Node on `PATH`. The app opens at
 `http://localhost:8501`.
 
+**A password.** Streamlit listens on every network interface, so anyone on
+the same network can open the page. To ask for a password first:
+
+```powershell
+python -m services.auth
+```
+
+prints a `DEVLOOP_PASSWORD_HASH=...` line for `.env` (a PBKDF2 hash; the
+password itself is stored nowhere). Restart, and the page shows only the
+sign-in form until it is given; **🚪 Sign out** is in the sidebar. Five wrong
+passwords in a row lock signing in for a minute. Without the line the page
+is open, as before. A reload starts a new session, so it asks again.
+
 ---
 
 ## Using it
@@ -418,7 +431,7 @@ CI. Run it before and after changing a prompt, a model or an effort. The
 baseline: 6/6 passed, $0.2454; the package case asked for `@types/node`, and
 the plan case planned 3 tasks with no plan problems.
 
-There are 41 test files. 38 run offline, against fake transports and
+There are 42 test files. 39 run offline, against fake transports and
 throwaway repositories; `compile_test`, `install_test` and
 `test_execution_test` need Node on `PATH`. Three call a real model and are
 skipped in routine runs: `architect_test`, `workflow_test`,
