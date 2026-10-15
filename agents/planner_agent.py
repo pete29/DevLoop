@@ -2,7 +2,9 @@ from models.plan import Plan
 from models.task_breakdown import Priority, TaskBreakdown
 from services.file_parser import FileParseError, FileParser
 from services.llm_factory import LLMFactory
+from services.plan_validator import PlanValidator, clean_path
 from services.repository_context import describe
+from services.repository_survey import survey
 
 MAX_TASKS = 12
 
@@ -15,6 +17,7 @@ developer can build one at a time.
 Epic:
 {epic}
 {repository}
+{code}
 Rules:
 
 - between 2 and {maximum} tasks
@@ -40,6 +43,15 @@ Rules:
   folder structure is handled before you, and a
   task for it would run the whole pipeline to
   write a file that already exists
+- read the files already in the repository: do
+  not plan work they already do, and build on
+  what they export instead of redefining it
+- for every task list the source files it
+  creates and the existing files it modifies,
+  as paths relative to the repository root;
+  never list test files
+- a task that modifies a file another task
+  creates depends on that task
 
 Return only JSON in exactly this shape:
 
@@ -50,14 +62,18 @@ Return only JSON in exactly this shape:
       "content": "Create the notification interface",
       "description": "Define the Notification contract every provider implements.",
       "priority": "HIGH",
-      "dependencies": []
+      "dependencies": [],
+      "creates": ["src/example-contract.ts"],
+      "modifies": []
     }},
     {{
       "path": "2",
       "content": "Create the email provider",
       "description": "Implement the Notification contract for email.",
       "priority": "HIGH",
-      "dependencies": [1]
+      "dependencies": [1],
+      "creates": ["src/example-provider.ts"],
+      "modifies": ["src/example-index.ts"]
     }}
   ]
 }}
@@ -188,6 +204,13 @@ class PlannerAgent:
         # instantly.
         context = describe(repository_path)
 
+        # The files themselves, not only how many there
+        # are. A second plan for an issue planned again
+        # what the first had built, because the planner
+        # knew the folder held seven source files and not
+        # which ones.
+        found = survey(repository_path)
+
         print("=" * 80)
         print("REPOSITORY CONTEXT")
         print("=" * 80)
@@ -201,6 +224,15 @@ class PlannerAgent:
                 repository=(
                     chr(10) + context.render() + chr(10)
                     if repository_path
+                    else ""
+                ),
+                code=(
+                    "Files already in the repository:"
+                    + chr(10)
+                    + found.render()
+                    + chr(10)
+                    + found.render_referenced(epic)
+                    if repository_path and not found.empty
                     else ""
                 ),
             )
@@ -222,6 +254,10 @@ class PlannerAgent:
             )
 
         tasks = order_tasks(tasks)
+
+        issues.extend(
+            PlanValidator.check(tasks, set(found.files))
+        )
 
         cycles = find_cycles(tasks)
 
@@ -339,6 +375,8 @@ class PlannerAgent:
                         title,
                         issues,
                     ),
+                    creates=PlannerAgent._paths(entry, "creates"),
+                    modifies=PlannerAgent._paths(entry, "modifies"),
                 )
             )
 
@@ -346,6 +384,26 @@ class PlannerAgent:
             PlannerAgent._drop_unknown(tasks, issues),
             issues,
         )
+
+    @staticmethod
+    def _paths(entry: dict, key: str) -> list[str]:
+        """A task's file list, spelled one way, no repeats."""
+
+        raw = entry.get(key) or []
+
+        if not isinstance(raw, list):
+            return []
+
+        paths: list[str] = []
+
+        for item in raw:
+
+            path = clean_path(item)
+
+            if path and path not in paths:
+                paths.append(path)
+
+        return paths
 
     @staticmethod
     def _identifier(

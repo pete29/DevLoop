@@ -870,6 +870,162 @@ check(
 
 print()
 print("=" * 80)
+print("THE PLANNER SEES THE CODE, AND ITS FILE CLAIMS ARE CHECKED")
+print("=" * 80)
+
+from services.plan_validator import PlanValidator  # noqa: E402
+
+
+def planned(task_id, creates=(), modifies=(), after=()):
+
+    return TaskBreakdown(
+        id=task_id,
+        title=f"t{task_id}",
+        dependencies=list(after),
+        creates=list(creates),
+        modifies=list(modifies),
+    )
+
+
+EXISTING = {"src/password-rule.ts", "src/password-validator.ts"}
+
+problems = PlanValidator.check(
+    [
+        # The second plan for an issue, rebuilding what the
+        # first already committed.
+        planned(1, creates=["src/password-rule.ts"]),
+        planned(2, creates=["src/policy.ts"]),
+        # Extends a file another task creates, without
+        # waiting for it.
+        planned(3, modifies=["src/policy.ts"]),
+        # Extends a file nobody creates.
+        planned(4, modifies=["src/ghost.ts"]),
+        # Fine: an existing file, and one created upstream.
+        planned(5, modifies=["src/password-validator.ts", "src/policy.ts"], after=[2]),
+        planned(6, creates=["src/policy.ts", "tests/policy.test.ts", "../escape.ts"]),
+    ],
+    EXISTING,
+)
+
+check(
+    "creating a file that exists is reported",
+    any("t1' creates src/password-rule.ts, which already exists" in p for p in problems),
+    True,
+)
+
+check(
+    "modifying another task's file without waiting is reported",
+    any("t3' modifies src/policy.ts, which task 2 creates" in p for p in problems),
+    True,
+)
+
+check(
+    "modifying a file nobody creates is reported",
+    any("t4' modifies src/ghost.ts" in p for p in problems),
+    True,
+)
+
+check(
+    "a task that waits for the creator is fine",
+    any("t5'" in p for p in problems),
+    False,
+)
+
+check(
+    "two creators, a test file and an escape are reported",
+    (
+        any("Tasks 2 and 6 both create src/policy.ts" in p for p in problems),
+        any("test file tests/policy.test.ts" in p for p in problems),
+        any("'../escape.ts'" in p for p in problems),
+    ),
+    (True, True, True),
+)
+
+repository_root = tempfile.mkdtemp()
+
+os.makedirs(os.path.join(repository_root, "src"))
+
+with open(
+    os.path.join(repository_root, "src", "password-rule.ts"),
+    "w",
+    encoding="utf-8",
+) as handle:
+    handle.write("export interface PasswordRule { check(p: string): string | null; }\n")
+
+SEEN: list[str] = []
+
+
+class Watching(FakeLLM):
+    def generate_text(self, prompt: str) -> str:
+        SEEN.append(prompt)
+        return self.answer
+
+
+factory.LLMFactory.create = classmethod(
+    lambda cls, role="": Watching(
+        json.dumps(
+            {
+                "files": [
+                    {
+                        "path": "1",
+                        "content": "Create the rule contract",
+                        "creates": ["./src/password-rule.ts", "src\\password-rule.ts"],
+                        "modifies": [],
+                    }
+                ]
+            }
+        )
+    )
+)
+
+aware = PlannerAgent().execute(
+    "Add a BlocklistRule implementing PasswordRule.",
+    "repo-1",
+    repository_root,
+)
+
+check(
+    "the planner is shown the files and what they export",
+    "- src/password-rule.ts (exports PasswordRule)" in SEEN[-1],
+    True,
+)
+
+check(
+    "and in full the ones the epic names",
+    "check(p: string): string | null" in SEEN[-1],
+    True,
+)
+
+check(
+    "paths are spelled one way, without repeats",
+    aware.tasks[0].creates,
+    ["src/password-rule.ts"],
+)
+
+check(
+    "a task rebuilding an existing file is reported on the plan",
+    any("already exists" in issue for issue in aware.issues),
+    True,
+)
+
+check(
+    "the developer is told which files",
+    aware.tasks[0].prompt,
+    "Create the rule contract\n\nCreate: src/password-rule.ts",
+)
+
+kept = PlanRepository(database)
+
+kept.save(aware)
+
+check(
+    "file claims survive storage",
+    kept.get_by_id(aware.id).tasks[0].creates,
+    ["src/password-rule.ts"],
+)
+
+print()
+print("=" * 80)
 
 if failures:
     print(f"FAILED: {len(failures)}")

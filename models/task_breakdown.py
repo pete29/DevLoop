@@ -47,11 +47,37 @@ class TaskBreakdown:
     # The ids of the tasks this one needs first.
     dependencies: list[int] = field(default_factory=list)
 
+    # Source files the planner says this task writes from
+    # scratch, and existing ones it changes. Checked by
+    # PlanValidator against the folder and the graph.
+    creates: list[str] = field(default_factory=list)
+
+    modifies: list[str] = field(default_factory=list)
+
     @property
     def prompt(self) -> str:
-        """What the developer is asked to build."""
+        """What the developer is asked to build.
 
-        if not self.description.strip():
-            return self.title.strip()
+        The file lists go with it: the developer plans its
+        own files, and without them it could not tell a
+        task that extends a module from one that starts a
+        new one.
+        """
 
-        return f"{self.title.strip()}\n\n{self.description.strip()}"
+        parts = [self.title.strip()]
+
+        if self.description.strip():
+            parts.append(self.description.strip())
+
+        files = []
+
+        if self.creates:
+            files.append("Create: " + ", ".join(self.creates))
+
+        if self.modifies:
+            files.append("Modify: " + ", ".join(self.modifies))
+
+        if files:
+            parts.append("\n".join(files))
+
+        return "\n\n".join(parts)

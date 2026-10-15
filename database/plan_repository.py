@@ -104,6 +104,8 @@ class PlanRepository:
                     "description": item.description,
                     "priority": item.priority.value,
                     "dependencies": item.dependencies,
+                    "creates": item.creates,
+                    "modifies": item.modifies,
                 }
                 for item in plan.tasks
             ]
@@ -215,6 +217,10 @@ class PlanRepository:
                         "dependencies", []
                     )
                 ],
+                # Absent from plans saved before tasks named
+                # their files.
+                creates=list(item.get("creates") or []),
+                modifies=list(item.get("modifies") or []),
             )
             for item in json.loads(tasks_json or "[]")
         ]

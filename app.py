@@ -2119,6 +2119,21 @@ if st.session_state.plan:
             if item.description:
                 st.write(item.description)
 
+            if item.creates or item.modifies:
+                st.caption(
+                    t(
+                        "plan.files",
+                        creates=", ".join(
+                            f"`{path}`" for path in item.creates
+                        )
+                        or "—",
+                        modifies=", ".join(
+                            f"`{path}`" for path in item.modifies
+                        )
+                        or "—",
+                    )
+                )
+
             if item.dependencies:
                 st.caption(
                     t(

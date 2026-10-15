@@ -888,6 +888,10 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "Nowy plan trafi na istniejącą gałąź `{branch}` i do jej PR.",
         "en": "A new plan goes onto the existing branch `{branch}` and its pull request.",
     },
+    "plan.files": {
+        "pl": "📄 tworzy: {creates} · ✏️ zmienia: {modifies}",
+        "en": "📄 creates: {creates} · ✏️ modifies: {modifies}",
+    },
     "plan.split_hint": {
         "pl": (
             "Ten plan ma {count} zadań, czyli jeden duży PR. Jeśli "
