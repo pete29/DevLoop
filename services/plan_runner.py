@@ -20,6 +20,7 @@ import sys
 from database.plan_repository import PlanRepository
 from database.run_repository import RunRepository
 from database.task_repository import TaskRepository
+from models.compile_result import CompileStatus
 from models.pipeline_step import PipelineStep
 from models.plan_run import PlanRun, RunStatus
 from models.task_execution import ExecutionStatus, TaskExecution
@@ -435,6 +436,18 @@ def work(
         run.produced.append(generated.id)
 
         runs.progress(run.id, 0, run.produced)
+
+        # The next task compiles the whole project, this
+        # task's files included: one broken file fails every
+        # task after it, each paying to try to fix it.
+        if generated.compile_result.status == CompileStatus.FAILED:
+            runs.finish(
+                run,
+                RunStatus.STOPPED,
+                f"Task {item.id} does not compile; the tasks after "
+                "it would build on it. Review it first.",
+            )
+            break
 
     print(f"RUN {run.id} ended: {run.status.value} {run.message}", flush=True)
 

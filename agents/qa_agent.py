@@ -3,7 +3,7 @@ import posixpath
 from config.settings import Settings
 from models.file_type import FileType
 from models.generated_file import GeneratedFile
-from services.code_cleaner import strip_code_fences
+from services.code_cleaner import strip_code_fences, strip_leading_prose
 from services.file_bundle import FileBundle
 from services.file_parser import FileParseError, FileParser
 from services.llm_factory import LLMFactory
@@ -203,9 +203,10 @@ That file:
 Rules:
 
 - the suite goes in {path}
-- import exactly like this, and do not change
-  the path:
+- begin with exactly these two imports, and
+  do not change the path in the second:
 
+    import {{ describe, it, expect }} from 'vitest';
     import {{ ... }} from '{specifier}';
 
 - at most 3 tests
@@ -233,7 +234,7 @@ fence, no explanation.
 
             return ""
 
-        return strip_code_fences(answer).strip()
+        return strip_leading_prose(strip_code_fences(answer))
 
     # ------------------------------------------------
     # one call for everything

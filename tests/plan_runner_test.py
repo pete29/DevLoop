@@ -28,6 +28,7 @@ os.environ["DEVLOOP_NOTIFY"] = "0"
 from database.plan_repository import PlanRepository  # noqa: E402
 from database.run_repository import RunRepository  # noqa: E402
 from database.task_repository import TaskRepository  # noqa: E402
+from models.compile_result import CompileResult, CompileStatus  # noqa: E402
 from models.plan import Plan  # noqa: E402
 from models.plan_run import PlanRun, RunStatus  # noqa: E402
 from models.task import Task  # noqa: E402
@@ -53,8 +54,9 @@ def check(label: str, actual: object, expected: object) -> None:
 class Pipeline:
     """Stands in for the orchestrator; can fail or ask to stop."""
 
-    def __init__(self, fail_on: str = "", stop_after: str = "", runs=None):
+    def __init__(self, fail_on: str = "", stop_after: str = "", runs=None, broken: str = ""):
         self.fail_on = fail_on
+        self.broken = broken
         self.stop_after = stop_after
         self.runs = runs
         self.ran: list[str] = []
@@ -68,11 +70,14 @@ class Pipeline:
         if title == self.stop_after:
             # The human presses Stop while this task runs.
             self.runs.request_stop(self.run_id)
-        return Task(
+        task = Task(
             repository_path=repository_path,
             description=description,
             status=TaskStatus.WAITING_FOR_APPROVAL,
         )
+        if title == self.broken:
+            task.compile_result = CompileResult(status=CompileStatus.FAILED)
+        return task
 
 
 def make_plan(plans: PlanRepository) -> Plan:
@@ -211,6 +216,25 @@ try:
         "and the plan records the failure",
         plans.get_by_id(plan.id).execution(2).status,
         ExecutionStatus.FAILED,
+    )
+
+    print()
+    print("=" * 80)
+    print("CODE THAT DOES NOT COMPILE STOPS THE RUN")
+    print("=" * 80)
+
+    plan = make_plan(plans)
+
+    pipeline = Pipeline(broken="one")
+
+    halted = run_with(pipeline, plan)
+
+    check("nothing was built on it", pipeline.ran, ["one"])
+
+    check(
+        "the run stopped, keeping the record for review",
+        (halted.status, len(halted.produced), "Task 1" in halted.message),
+        (RunStatus.STOPPED, 1, True),
     )
 
     print()

@@ -11,6 +11,7 @@ import json
 from config.settings import Settings
 from models.file_type import FileType
 from models.generated_file import GeneratedFile
+from services.code_cleaner import strip_leading_prose
 
 failures: list[str] = []
 
@@ -327,6 +328,35 @@ check(
     "and the example path is marked as format only",
     "never use it" in llm.prompts[0],
     True,
+)
+
+print()
+print("=" * 80)
+print("A SENTENCE ABOVE THE CODE IS DROPPED")
+print("=" * 80)
+
+# Written by a real run: one such line failed the type
+# check of every later task in the plan.
+check(
+    "prose that starts like an import is dropped",
+    strip_leading_prose(
+        "import { describe } from '../src/errors' is not allowed, so:\n"
+        "\n"
+        "import { describe, it, expect } from 'vitest';"
+    ),
+    "import { describe, it, expect } from 'vitest';",
+)
+
+check(
+    "an import split over lines is code",
+    strip_leading_prose("import {\n  a,\n} from './a';"),
+    "import {\n  a,\n} from './a';",
+)
+
+check(
+    "a comment first is code",
+    strip_leading_prose("// suite\ndescribe('x', () => {});"),
+    "// suite\ndescribe('x', () => {});",
 )
 
 Settings.GENERATE_FILE_BY_FILE = True

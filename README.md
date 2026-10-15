@@ -218,7 +218,9 @@ ends, Windows shows a notification: the plan, how it ended, and how many
 tasks wait for approval (`NOTIFY_ON_RUN_END`).
 A task described on its own (**Generate code** at the bottom of the page) becomes a plan of one task: it gets its branch before anything is generated, runs in the background worker, and has a pull request and a cost like any planned task. **⏹ Stop
 after this task** stops it between tasks, and a worker that died is marked
-`INTERRUPTED` on the next page load.
+`INTERRUPTED` on the next page load. A task whose code does not compile stops the run too:
+the tasks after it would build on it, each paying to fix it. Its record
+waits for review.
 
 **Packages a task needs.** The Developer is told which packages the project
 has. When the code imports one it lacks (or a Node built-in such as
