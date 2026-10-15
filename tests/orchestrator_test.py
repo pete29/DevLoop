@@ -515,6 +515,96 @@ try:
         0.0,
     )
 
+    print()
+    print("=" * 80)
+    print("A HUMAN CAN SEND A TASK BACK WITH NOTES")
+    print("=" * 80)
+
+    compiles()
+    tests_report()
+
+    first = run(Developer([A, B], []), Architect(), QA(), root)
+
+    CALLS.clear()
+
+    reviser = Developer([], [[A, B_FIXED]])
+
+    orchestrator = WorkflowOrchestrator()
+    orchestrator.developer = reviser
+    orchestrator.architect = Architect()
+    orchestrator.qa = QA()
+
+    revised = orchestrator.revise(
+        first,
+        "Use a Unicode class.\nWARNING: rule is ASCII only",
+    )
+
+    check(
+        "the developer edits, it does not start over",
+        CALLS[0],
+        "improve",
+    )
+
+    check(
+        "from the files on disk",
+        sorted(item.path for item in first.generated_files)[:2],
+        ["src/a.ts", "src/b.ts"],
+    )
+
+    brief = reviser.briefs[0] if reviser.briefs else ""
+
+    check(
+        "the notes arrive as blockers, every line",
+        "- Use a Unicode class." in brief
+        and "- WARNING: rule is ASCII only" in brief,
+        True,
+    )
+
+    check(
+        "and name the files when the notes name none",
+        "Files under review: src/a.ts, src/b.ts" in brief,
+        True,
+    )
+
+    check(
+        "the notes become part of the task",
+        revised.description.endswith(
+            "Human review notes:\nUse a Unicode class.\n"
+            "WARNING: rule is ASCII only"
+        ),
+        True,
+    )
+
+    check(
+        "then the same checks and review run again",
+        ("tsc" in CALLS, "architect" in CALLS, "qa" in CALLS),
+        (True, True, True),
+    )
+
+    check(
+        "the review history carries on",
+        [entry.iteration for entry in revised.review_history],
+        [1, 2],
+    )
+
+    check(
+        "and the revision is reviewed, so it can be approved",
+        revised.recommendation,
+        ReviewDecision.APPROVE,
+    )
+
+    check(
+        "the revised file is what is on disk",
+        open(os.path.join(root, "src", "b.ts"), encoding="utf-8").read(),
+        "export const b = 3;",
+    )
+
+    check(
+        "files the first attempt created still count as created",
+        set(first.created_files) <= set(revised.created_files),
+        True,
+    )
+
 finally:
     shutil.rmtree(root, ignore_errors=True)
 

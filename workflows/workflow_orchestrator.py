@@ -8,6 +8,7 @@ from agents.test_execution_agent import TestExecutionAgent
 from config.settings import Settings
 from models.architecture_review import ArchitectureReview
 from models.compile_result import CompileResult
+from models.file_type import FileType
 from models.file_generation_result import (
     FileGenerationResult,
 )
@@ -43,6 +44,55 @@ def describe_files(files: list[GeneratedFile]) -> str:
         f"{len(files)} file(s), "
         f"{sum(len(item.content) for item in files)} chars"
     )
+
+
+HUMAN_NOTES = "Human review notes:"
+
+
+def with_feedback(description: str, feedback: str) -> str:
+    """The task as it stands after a human sent it back.
+
+    Kept in the description, not beside it: the developer,
+    the architect and every later round read the task, and
+    a note they could not see would be overruled by the
+    first review that disagreed with it.
+    """
+
+    return (
+        f"{description.rstrip()}\n\n{HUMAN_NOTES}\n"
+        f"{feedback.strip()}"
+    )
+
+
+def revision_brief(
+    feedback: str,
+    files: list[GeneratedFile],
+) -> str:
+    """What the developer acts on when a human sends work back.
+
+    Phrased as blockers, because a human's request is not
+    optional. The files are named when the notes name none:
+    the developer rewrites only the files a brief mentions,
+    and "use a Unicode class" names no file.
+    """
+
+    lines = [
+        "BLOCKERS (from the human reviewer):",
+        *[
+            line if line.lstrip().startswith("-") else f"- {line}"
+            for line in feedback.strip().splitlines()
+            if line.strip()
+        ],
+    ]
+
+    if not any(item.path in feedback for item in files):
+        lines += [
+            "",
+            "Files under review: "
+            + ", ".join(item.path for item in files),
+        ]
+
+    return "\n".join(lines)
 
 
 def changed_paths(
@@ -168,10 +218,6 @@ class WorkflowOrchestrator:
 
         spent = usage_ledger.mark()
 
-        review_iterations = 0
-
-        review_history: list[ReviewHistory] = []
-
         steps = StepRecorder()
 
         on_disk = RunFiles()
@@ -197,6 +243,115 @@ class WorkflowOrchestrator:
         if not source_files:
 
             raise RuntimeError("DeveloperAgent returned no files.")
+
+        return self.finish(
+            task_description,
+            repository_id,
+            repository_path,
+            source_files,
+            steps,
+            on_disk,
+            spent,
+            created,
+        )
+
+    def revise(self, task: Task, feedback: str) -> Task:
+        """The task again, from its own files, with a human's notes.
+
+        Accept and reject were the only answers a human had:
+        a warning worth fixing meant rejecting good code and
+        paying for all of it again. Here the developer edits
+        the files that are on disk, and the result goes
+        through the same checks, review, tests and approval
+        as the first attempt. The review history carries on,
+        so the architect sees what it said before.
+        """
+
+        spent = usage_ledger.mark()
+
+        steps = StepRecorder()
+
+        root = task.repository_path
+
+        sources: list[GeneratedFile] = []
+
+        for item in task.generated_files:
+
+            if item.file_type != FileType.SOURCE:
+                continue
+
+            with open(
+                FileWriter.resolve(root, item.path),
+                encoding="utf-8",
+            ) as handle:
+                sources.append(
+                    GeneratedFile(
+                        path=item.path,
+                        file_type=item.file_type,
+                        content=handle.read(),
+                    )
+                )
+
+        if not sources:
+            raise RuntimeError(
+                "The task's source files are no longer on disk."
+            )
+
+        # The previous attempt's files are this run's: the
+        # ones it created can still be dropped and removed,
+        # and a reject of the revision deletes them.
+        on_disk = RunFiles(
+            written={item.path for item in task.generated_files},
+            created=set(task.created_files),
+        )
+
+        description = with_feedback(task.description, feedback)
+
+        source_files = self.developer.improve(
+            description,
+            sources,
+            revision_brief(feedback, sources),
+            root,
+        )
+
+        steps.record(
+            "step.revision",
+            describe_files(source_files),
+        )
+
+        return self.finish(
+            description,
+            task.repository_id,
+            root,
+            source_files,
+            steps,
+            on_disk,
+            spent,
+            task.environment,
+            list(task.review_history),
+        )
+
+    def finish(
+        self,
+        task_description: str,
+        repository_id: str,
+        repository_path: str,
+        source_files: list[GeneratedFile],
+        steps: StepRecorder,
+        on_disk: RunFiles,
+        spent,
+        created: list[str],
+        review_history: list[ReviewHistory] | None = None,
+    ) -> Task:
+        """Checks, review, tests: everything after the first draft."""
+
+        review_history = review_history or []
+
+        # Rounds are numbered on from an earlier attempt's,
+        # but the budget is this run's.
+        earlier_reviews = len(review_history)
+
+        review_iterations = earlier_reviews
 
         architecture_review: ArchitectureReview | None = None
 
@@ -290,7 +445,10 @@ class WorkflowOrchestrator:
             if architecture_review.recommendation == ReviewDecision.REJECT:
                 break
 
-            if review_iterations >= Settings.MAX_REVIEW_LOOPS:
+            if (
+                review_iterations - earlier_reviews
+                >= Settings.MAX_REVIEW_LOOPS
+            ):
                 break
 
             # A fresh fix budget for the revised files.
@@ -482,7 +640,7 @@ class WorkflowOrchestrator:
         if recommendation == ReviewDecision.APPROVE and (
             compile_result.blocks_delivery
             or test_result.blocks_delivery
-            or not review_iterations
+            or review_iterations == earlier_reviews
         ):
             recommendation = ReviewDecision.REQUEST_CHANGES
 

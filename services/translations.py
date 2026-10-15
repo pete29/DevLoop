@@ -784,6 +784,58 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "Recenzja architekta",
         "en": "Architect review",
     },
+    "step.revision": {
+        "pl": "Developer poprawił kod według uwag człowieka",
+        "en": "Developer revised the code from a human's notes",
+    },
+    "revise.heading": {
+        "pl": "🔁 Odeślij do poprawki",
+        "en": "🔁 Send back for revision",
+    },
+    "revise.caption": {
+        "pl": (
+            "Developer poprawi istniejące pliki według "
+            "wybranych uwag i Twoich notatek. Potem znów "
+            "kompilacja, Architekt, QA i testy."
+        ),
+        "en": (
+            "The Developer edits the existing files from the "
+            "chosen findings and your notes, then compile, "
+            "Architect, QA and tests run again."
+        ),
+    },
+    "revise.findings": {
+        "pl": "Uwagi Architekta do poprawienia",
+        "en": "Architect findings to fix",
+    },
+    "revise.notes": {
+        "pl": "Twoje uwagi dla Developera",
+        "en": "Your notes for the Developer",
+    },
+    "revise.placeholder": {
+        "pl": "Np. użyj /\\p{Ll}/u zamiast /[a-z]/, żeby działały polskie litery.",
+        "en": "E.g. use /\\p{Ll}/u instead of /[a-z]/ so accented letters count.",
+    },
+    "revise.send": {
+        "pl": "🔁 Odeślij do poprawki",
+        "en": "🔁 Send back for revision",
+    },
+    "revise.running": {
+        "pl": "🤖 Developer poprawia kod ...",
+        "en": "🤖 The Developer is revising the code ...",
+    },
+    "revise.done": {
+        "pl": "Poprawione. To nowa wersja zadania; poprzednia ma status REVISED.",
+        "en": "Revised. This is the task's new version; the previous one is REVISED.",
+    },
+    "revise.failed": {
+        "pl": "Nie udało się poprawić: {reason}",
+        "en": "The revision failed: {reason}",
+    },
+    "revise.wrong_branch": {
+        "pl": "Zadanie powstało na {branch}, a wybrana jest {current}. Przełącz się z powrotem.",
+        "en": "The task was generated on {branch}, but {current} is checked out. Switch back first.",
+    },
     "step.improve": {
         "pl": "Developer poprawił kod",
         "en": "Developer revised the code",

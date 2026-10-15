@@ -366,6 +366,144 @@ def pull_request_panel(plan) -> None:
             st.rerun()
 
 
+def revise_task(task, feedback: str):
+    """Sends a task back with a human's notes, saved.
+
+    The revision is a new record on the same files; the
+    old one becomes REVISED, and the plan's execution
+    points at the new one, so the plan, the review state
+    and the pull request all follow the latest version.
+    """
+
+    if task.branch and GitService(task.repository_path).is_repository():
+
+        current = GitService(task.repository_path).current_branch()
+
+        if current != task.branch:
+            raise ValueError(
+                t(
+                    "revise.wrong_branch",
+                    branch=task.branch,
+                    current=current,
+                )
+            )
+
+    revised = orchestrator.revise(task, feedback)
+
+    revised.branch = task.branch
+
+    revised.issue = task.issue
+
+    repository.save(revised)
+
+    task.status = TaskStatus.REVISED
+
+    repository.update_status(task.id, TaskStatus.REVISED)
+
+    plan, _ = plan_context(task)
+
+    if plan is not None:
+
+        for execution in plan.executions:
+
+            if execution.task_record_id != task.id:
+                continue
+
+            plan.record(
+                TaskExecution(
+                    task_id=execution.task_id,
+                    status=ExecutionStatus.COMPLETED,
+                    started_at=execution.started_at,
+                    completed_at=now(),
+                    task_record_id=revised.id,
+                )
+            )
+
+            plan_store.update_progress(plan)
+
+            if (
+                st.session_state.get("plan") is not None
+                and st.session_state.plan.id == plan.id
+            ):
+                st.session_state.plan = plan
+
+            break
+
+    return revised
+
+
+def revision_panel(task) -> None:
+    """The third answer, between accepting and rejecting.
+
+    A finding worth fixing used to mean rejecting good code
+    and paying for all of it again, and a human had no way
+    to say anything of their own.
+    """
+
+    if (
+        task.status != TaskStatus.WAITING_FOR_APPROVAL
+        or task.git_operation.committed
+        or not task.generated_files
+    ):
+        return
+
+    st.markdown(f"**{t('revise.heading')}**")
+
+    st.caption(t("revise.caption"))
+
+    findings = [
+        *[f"BLOCKER: {item}" for item in task.blockers],
+        *[f"WARNING: {item}" for item in task.warnings],
+        *[f"SUGGESTION: {item}" for item in task.suggestions],
+    ]
+
+    chosen = st.multiselect(
+        t("revise.findings"),
+        findings,
+        key=f"revise-findings-{task.id}",
+    )
+
+    notes = st.text_area(
+        t("revise.notes"),
+        key=f"revise-notes-{task.id}",
+        placeholder=t("revise.placeholder"),
+    )
+
+    if not st.button(
+        t("revise.send"),
+        key=f"revise-{task.id}",
+        disabled=not chosen and not notes.strip(),
+    ):
+        return
+
+    feedback = "\n".join(
+        [
+            *[line for line in notes.strip().splitlines() if line.strip()],
+            *chosen,
+        ]
+    )
+
+    try:
+
+        with st.spinner(t("revise.running")):
+            revised = revise_task(task, feedback)
+
+    except Exception as error:
+
+        st.session_state.git_message = (
+            "warning",
+            t("revise.failed", reason=error),
+        )
+
+        st.rerun()
+
+    st.session_state.task = revised
+
+    st.session_state.git_message = ("success", t("revise.done"))
+
+    st.rerun()
+
+
 def reopen_in_plan(task) -> None:
     """A rejected task counts as failed in its plan.
 
@@ -2842,6 +2980,8 @@ def task_view() -> None:
             st.code(preview["message"], language="text")
 
     st.divider()
+
+    revision_panel(task)
 
     col1, col2 = st.columns(2)
 
