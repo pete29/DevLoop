@@ -21,7 +21,11 @@ There are no release branches; one is cut from a tag
 
 ## Unreleased
 
-Nothing yet.
+### Faster
+- A task's model calls run side by side: the Developer's files and QA's
+  suites, up to `PARALLEL_CALLS` (4) at once. The first call runs alone
+  so the others read the prompt cache it writes. Same cost, a task about
+  a third faster. (#39)
 
 ## 0.9.0 (alpha) — 2026-10-15
 

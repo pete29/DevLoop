@@ -308,6 +308,13 @@ before its next task and the page disables everything that would spend:
 planning, running a task, revising one, the check after an install. The
 sidebar shows the month against the limit.
 
+**`PARALLEL_CALLS`** — how many model calls of one task run at once (default
+4): the Developer's files and QA's suites. The first call always runs
+alone, because the others share its cached prompt prefix and calls sent
+together would each miss the cache and pay to write it. 1 runs them one
+after another. Tasks of a plan still run one at a time: they share one
+working folder (#40).
+
 **`SPLIT_HINT_TASKS`** — above this many tasks, a plan suggests splitting
 its requirement into issues, so each part gets its own pull request. Only a
 hint: nothing is split without a human confirming the stories, and a small

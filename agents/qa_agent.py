@@ -4,6 +4,7 @@ from config.settings import Settings
 from models.file_type import FileType
 from models.generated_file import GeneratedFile
 from services.code_cleaner import strip_code_fences, strip_leading_prose
+from services.parallel import run_all
 from services.file_bundle import FileBundle
 from services.file_parser import FileParseError, FileParser
 from services.llm_factory import LLMFactory
@@ -141,12 +142,9 @@ class QAAgent:
 
         listing = FileBundle.structure(files)
 
-        tests: list[GeneratedFile] = []
+        def suite(numbered: tuple[int, GeneratedFile]) -> GeneratedFile | None:
 
-        for position, source in enumerate(
-            targets,
-            start=1,
-        ):
+            position, source = numbered
 
             path = self.test_path(source.path)
 
@@ -161,14 +159,20 @@ class QAAgent:
                 path,
             )
 
-            if content:
-                tests.append(
-                    GeneratedFile(
-                        path=path,
-                        file_type=FileType.TEST,
-                        content=content,
-                    )
-                )
+            if not content:
+                return None
+
+            return GeneratedFile(
+                path=path,
+                file_type=FileType.TEST,
+                content=content,
+            )
+
+        tests = [
+            item
+            for item in run_all(list(enumerate(targets, start=1)), suite)
+            if item is not None
+        ]
 
         self._announce(tests)
 

@@ -10,6 +10,7 @@ from services.file_parser import FileParseError, FileParser
 from services.import_repair import drop_self_imports
 from services.llm_factory import LLMFactory
 from services.packages import describe_installed
+from services.parallel import run_all
 from services.prompt_cache import ask
 from services.repository_survey import (
     RepositorySurvey,
@@ -389,9 +390,9 @@ One file is a perfectly good answer. At most
 
         batches = self._batches(planned)
 
-        files: list[GeneratedFile] = []
+        def write(numbered: tuple[int, list[tuple[str, str]]]) -> list[GeneratedFile]:
 
-        for position, batch in enumerate(batches, start=1):
+            position, batch = numbered
 
             print(
                 "DEVELOPER: writing "
@@ -399,14 +400,13 @@ One file is a perfectly good answer. At most
                 + f" ({position}/{len(batches)})"
             )
 
-            files.extend(
-                self._write_batch(
-                    task,
-                    listing,
-                    batch,
-                    found,
-                )
-            )
+            return self._write_batch(task, listing, batch, found)
+
+        files: list[GeneratedFile] = [
+            item
+            for written in run_all(list(enumerate(batches, start=1)), write)
+            for item in written
+        ]
 
         if not files:
             raise RuntimeError(
@@ -683,7 +683,9 @@ Its job: {purpose}
             f"- {item.path}" for item in files
         )
 
-        for position, path in enumerate(targets, start=1):
+        def revise(numbered: tuple[int, str]) -> str:
+
+            position, path = numbered
 
             print(
                 f"DEVELOPER: revising {path} "
@@ -692,7 +694,7 @@ Its job: {purpose}
 
             existing = by_path.get(path)
 
-            content = self._write_one(
+            return self._write_one(
                 task,
                 listing,
                 path,
@@ -701,6 +703,10 @@ Its job: {purpose}
                 review,
                 found,
             )
+
+        revised = run_all(list(enumerate(targets, start=1)), revise)
+
+        for path, content in zip(targets, revised):
 
             if not content:
                 continue

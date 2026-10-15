@@ -358,6 +358,11 @@ nothing; a migration that fails is rolled back and leaves the version
 where it was; and three processes migrating one file at once all end at
 the latest version.
 
+`tests.parallel_test` — a task's calls answer in the order asked even when
+they finish out of order; the first runs alone before any other starts;
+then several run at once, never more than `PARALLEL_CALLS`; 1 runs them in
+turn; and a failing call is raised, not swallowed.
+
 `tests.version_test` — the version is MAJOR.MINOR.PATCH with a known
 stage and an entry in `CHANGELOG.md`; the commit shown beside it is read
 from `.git` whether the branch is a loose ref, packed by `git gc` or a

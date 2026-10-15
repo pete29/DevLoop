@@ -180,6 +180,12 @@ class Settings:
     # or with DEVLOOP_NOTIFY=0 (the tests set it).
     NOTIFY_ON_RUN_END = os.getenv("DEVLOOP_NOTIFY", "1") != "0"
 
+    # How many model calls of one task may run at once: the
+    # developer's files, QA's suites. The first always runs
+    # alone to write the prompt cache the rest read. 1 runs
+    # them one after another, as before.
+    PARALLEL_CALLS = 4
+
     # How many files one call writes.
     #
     # Batching looks like it should cut the time and does
