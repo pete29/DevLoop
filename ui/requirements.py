@@ -227,6 +227,7 @@ def requirement_plans(requirement) -> None:
                     help=t("plan.continue_help"),
                     use_container_width=True,
                     disabled=not st.session_state.repository_id
+                    or shared.month_blocked
                     or (
                         run_store.latest(linked.id) is not None
                         and run_store.latest(linked.id).status.active
@@ -288,7 +289,8 @@ def generate_plan(requirement, new_title, new_content) -> None:
         t("requirement.generate_plan"),
         use_container_width=True,
         disabled=not st.session_state.repository_id
-        or not new_content.strip(),
+        or not new_content.strip()
+        or shared.month_blocked,
     ):
 
         store_text(requirement, new_title, new_content)

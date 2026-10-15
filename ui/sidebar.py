@@ -54,9 +54,17 @@ def sidebar_settings() -> None:
     st.caption(
         t(
             "cost.month",
-            spent=f"{costs.month_spent(repository.get_all(), plan_store.get_all(), now()[:7]):.2f}",
+            spent=f"{costs.month_spent(repository.get_all(), plan_store.get_all(), costs.this_month()):.2f}",
+        )
+        + (
+            t("cost.of_limit", limit=f"{costs.month_limit():.2f}")
+            if costs.month_limit() > 0
+            else ""
         )
     )
+
+    if shared.month_blocked:
+        st.error(t("cost.month_over", limit=f"{costs.month_limit():.2f}"))
 
     if st.button(t("cost.history"), key="cost-history", use_container_width=True):
         st.session_state.show_costs = True

@@ -489,6 +489,14 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "Plan osiągnął limit kosztów (${limit}, PLAN_COST_LIMIT). Nowe zadania nie startują; podnieś limit w config/settings.py, jeśli chcesz kontynuować.",
         "en": "The plan has reached its cost limit (${limit}, PLAN_COST_LIMIT). No new task starts; raise the limit in config/settings.py to carry on.",
     },
+    "cost.month_over": {
+        "pl": "Miesięczny limit kosztów (${limit}) osiągnięty. Nic, co kosztuje, nie wystartuje do końca miesiąca; podnieś DEVLOOP_MONTH_LIMIT w .env, jeśli chcesz kontynuować.",
+        "en": "The monthly cost limit (${limit}) is reached. Nothing that costs money starts until the month ends; raise DEVLOOP_MONTH_LIMIT in .env to carry on.",
+    },
+    "cost.estimate": {
+        "pl": "≈ ${total} za {tasks} zadań (zwykle ${low}–${high}; mediana ${each} na zadanie z ostatnich {sample})",
+        "en": "≈ ${total} for {tasks} tasks (usually ${low}–${high}; median ${each} per task over the last {sample})",
+    },
     "cost.history": {
         "pl": "📊 Historia kosztów",
         "en": "📊 Cost history",

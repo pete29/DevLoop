@@ -158,6 +158,53 @@ try:
 
     print()
     print("=" * 80)
+    print("THE MONTH'S LIMIT")
+    print("=" * 80)
+
+    month = costs.this_month()
+
+    spending = [Task(cost=0.40, created_at=f"{month}-02T10:00:00+00:00")]
+
+    Settings.MONTH_COST_LIMIT = 0.5
+
+    check("under it, nothing is stopped", costs.month_over(spending, [], month), False)
+
+    spending.append(Task(cost=0.10, created_at=f"{month}-03T10:00:00+00:00"))
+
+    check("at it, everything is", costs.month_over(spending, [], month), True)
+
+    check("last month's spending does not count", costs.month_over(spending, [], "1999-01"), False)
+
+    Settings.MONTH_COST_LIMIT = 0
+
+    check("0 means no limit", costs.month_over(spending, [], month), False)
+
+    print()
+    print("=" * 80)
+    print("AN ESTIMATE FROM RECENT TASKS")
+    print("=" * 80)
+
+    history = [
+        Task(cost=cost, created_at=f"2026-10-{day:02d}T10:00:00+00:00")
+        for day, cost in enumerate([0.04, 0.05, 0.06, 0.06, 0.08, 0.73], start=1)
+    ]
+
+    guess = costs.estimate(8, history)
+
+    check("the median, not the mean", round(guess.typical, 3), 0.06)
+
+    check("for every task left", round(guess.total, 2), 0.48)
+
+    check("with the middle half as a range", round(guess.total_low, 2) < 0.48 < round(guess.total_high, 2), True)
+
+    check("one task that went wrong does not set the figure", guess.total_high < 8 * 0.73, True)
+
+    check("no history, no estimate", costs.estimate(8, [Task(cost=0.05)]), None)
+
+    check("nothing left, no estimate", costs.estimate(0, history), None)
+
+    print()
+    print("=" * 80)
     print("COSTS SURVIVE STORAGE")
     print("=" * 80)
 

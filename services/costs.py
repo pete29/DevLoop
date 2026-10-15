@@ -6,7 +6,9 @@ nothing stopped a run that kept going.
 """
 
 import re
-from datetime import date, timedelta
+import statistics
+from dataclasses import dataclass
+from datetime import date, datetime, timedelta, timezone
 
 from config.settings import Settings
 
@@ -120,6 +122,81 @@ def per_plan(tasks, plans) -> list[tuple[str, str, float]]:
     ]
 
     return sorted(rows, key=lambda row: row[2], reverse=True)
+
+
+# How many recent tasks an estimate is drawn from.
+RECENT_TASKS = 30
+
+
+@dataclass
+class Estimate:
+    """What the remaining tasks of a plan will likely cost."""
+
+    tasks: int
+
+    # Per task: the middle half of recent tasks, and their median.
+    low: float
+
+    typical: float
+
+    high: float
+
+    # How many recent tasks the figures come from.
+    sample: int
+
+    @property
+    def total(self) -> float:
+        return self.tasks * self.typical
+
+    @property
+    def total_low(self) -> float:
+        return self.tasks * self.low
+
+    @property
+    def total_high(self) -> float:
+        return self.tasks * self.high
+
+
+def estimate(remaining: int, tasks) -> Estimate | None:
+    """What `remaining` tasks will likely cost, from recent ones.
+
+    The median and quartiles, not the mean: one task that
+    went wrong cost $0.73 where its neighbours cost $0.05,
+    and a mean would have tripled every estimate after it.
+    None without history, or with nothing left to run.
+    """
+
+    recent = sorted(
+        (task for task in tasks if task_cost(task) > 0),
+        key=lambda task: task.created_at,
+        reverse=True,
+    )[:RECENT_TASKS]
+
+    if not remaining or len(recent) < 2:
+        return None
+
+    spent = sorted(task_cost(task) for task in recent)
+
+    low, typical, high = statistics.quantiles(spent, n=4, method="inclusive")
+
+    return Estimate(remaining, low, typical, high, len(spent))
+
+
+def this_month() -> str:
+    """"YYYY-MM" in UTC, the zone every record is stamped in."""
+
+    return datetime.now(timezone.utc).strftime("%Y-%m")
+
+
+def month_limit() -> float:
+
+    return float(Settings.MONTH_COST_LIMIT or 0)
+
+
+def month_over(tasks, plans, month: str | None = None) -> bool:
+    """Whether this month's spending has reached its limit."""
+
+    return month_limit() > 0 and month_spent(tasks, plans, month or this_month()) >= month_limit()
 
 
 def limit() -> float:

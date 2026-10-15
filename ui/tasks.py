@@ -16,6 +16,7 @@ from services.git_diff_service import GitDiffService
 from services.git_service import GitError, GitService
 from services.task_rollback import roll_back
 from ui.actions import install_and_recheck, plan_context, reopen_in_plan, revise_task
+from ui import shared
 from ui.shared import file_content, repository, repository_label, resolve_repository, show_files, show_message, t
 
 
@@ -1038,6 +1039,7 @@ def packages_panel(task) -> None:
         key=f"packages-{task.id}",
         type="primary",
         use_container_width=True,
+        disabled=shared.month_blocked,
     ):
         return
 
@@ -1099,7 +1101,7 @@ def revision_panel(task) -> None:
     if not st.button(
         t("revise.send"),
         key=f"revise-{task.id}",
-        disabled=not chosen and not notes.strip(),
+        disabled=(not chosen and not notes.strip()) or shared.month_blocked,
     ):
         return
 

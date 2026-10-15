@@ -46,7 +46,7 @@ def quick_task_panel() -> None:
 
     if not st.button(
         t("app.generate"),
-        disabled=not st.session_state.repository_id,
+        disabled=not st.session_state.repository_id or shared.month_blocked,
     ) or not description:
         return
 

@@ -11,6 +11,7 @@ from database.repository_repository import RepositoryRepository, same_path
 from database.requirement_repository import RequirementRepository
 from database.run_repository import RunRepository
 from database.task_repository import TaskRepository
+from services import costs
 from services.file_writer import FileWriter
 from services.translations import DEFAULT_LANGUAGE, translate
 from workflows.workflow_orchestrator import WorkflowOrchestrator
@@ -31,6 +32,8 @@ run_store = RunRepository()
 # one run is listed on the next.
 repositories = []
 repositories_by_id = {}
+
+month_blocked = False
 
 
 # What the page remembers between its runs, and what it
@@ -67,11 +70,15 @@ def init_session() -> None:
 
 def refresh() -> None:
 
-    global repositories, repositories_by_id
+    global repositories, repositories_by_id, month_blocked
 
     repositories = repository_store.get_all()
 
     repositories_by_id = {item.id: item for item in repositories}
+
+    # Read once per run of the page; every button that
+    # spends money is disabled while it is true.
+    month_blocked = costs.month_over(repository.get_all(), plan_store.get_all())
 
 
 def repository_path_now() -> str:

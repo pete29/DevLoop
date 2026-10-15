@@ -263,7 +263,12 @@ record was saved — and the sidebar shows the month; **📊 Cost history**
 there charts the last 30 days and lists plans by cost. `PLAN_COST_LIMIT`
 (default $5, 0 for none) stops a background run **before** a task once the
 plan has spent that much, never inside one; the run buttons are disabled
-and the plan says why.
+and the plan says why. `DEVLOOP_MONTH_LIMIT` in `.env` (0 or unset for
+none) does the same for the calendar month across all plans, and while it
+is reached every button that spends money is disabled: planning, a task,
+a revision, the check after an install. Under **⏩ Run the whole plan** an
+estimate says what the remaining tasks will likely cost: the median of the
+last 30 tasks times the tasks left, with the middle half as a range.
 
 ### 6. Accept, send back, or reject
 
@@ -392,7 +397,8 @@ reads and writes at their own prices.
 `ENABLE_PACKAGE_INSTALLATION` control Step 0; the second removes the
 `npm install` button entirely. `SPLIT_HINT_TASKS` (6) is the plan size above
 which a split into issues is suggested. `PLAN_COST_LIMIT` (5.0 dollars) is
-what one plan may spend before no new task starts.
+what one plan may spend before no new task starts; `MONTH_COST_LIMIT`
+(`DEVLOOP_MONTH_LIMIT` in `.env`) what all of them may in a month.
 
 ---
 

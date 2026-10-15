@@ -296,6 +296,26 @@ try:
 
     Settings.PLAN_COST_LIMIT = 0
 
+    from services import costs
+
+    # Whatever this database has spent, plus one task's worth
+    # minus a cent: the first task may start, the second not.
+    Settings.MONTH_COST_LIMIT = costs.month_spent(tasks.get_all(), plans.get_all(), costs.this_month()) + 1.99
+
+    plan = make_plan(plans)
+
+    pipeline = Priced()
+
+    monthly = run_with(pipeline, plan)
+
+    check(
+        "the month's limit stops a run before the next task",
+        (pipeline.ran, monthly.status, "Monthly cost limit reached" in monthly.message),
+        (["one"], RunStatus.STOPPED, True),
+    )
+
+    Settings.MONTH_COST_LIMIT = 0
+
     class Wasteful(Pipeline):
         """Spends, then fails before a record exists."""
 

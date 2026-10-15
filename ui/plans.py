@@ -15,6 +15,7 @@ from services.github_service import GitHubError, parse_remote
 from services.package_installer import blocked, install
 from services.task_rollback import Rollback
 from ui.actions import log_tail, plan_pull_request, plan_records, reject_plan, revise_task, start_run, waiting_records
+from ui import shared
 from ui.shared import plan_store, repository, repository_path_now, run_store, t
 
 
@@ -770,7 +771,7 @@ def plan_cost_line(plan) -> bool:
     if over_budget:
         st.warning(t("cost.over_limit", limit=f"{costs.limit():.2f}"))
 
-    return over_budget
+    return over_budget or shared.month_blocked
 
 
 def plan_problems(plan) -> None:
@@ -1189,6 +1190,30 @@ def run_all_button(plan, active_run, environment_ok, over_budget, target_path, r
     ):
 
         start_run(plan, target_path)
+
+    if active_run is None:
+        estimate_line(len(plan.remaining))
+
+
+def estimate_line(remaining: int) -> None:
+    """What running the rest will likely cost, from recent tasks."""
+
+    guess = costs.estimate(remaining, repository.get_all())
+
+    if guess is None:
+        return
+
+    st.caption(
+        t(
+            "cost.estimate",
+            total=f"{guess.total:.2f}",
+            low=f"{guess.total_low:.2f}",
+            high=f"{guess.total_high:.2f}",
+            tasks=guess.tasks,
+            each=f"{guess.typical:.2f}",
+            sample=guess.sample,
+        )
+    )
 
 
 def close_plan_button() -> None:

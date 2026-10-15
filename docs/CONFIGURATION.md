@@ -300,6 +300,13 @@ never during one: half a task is files nobody reviews, and costs no less for
 being cut. Over the limit, the plan's run buttons are disabled and it says
 why; raise the limit here to carry on.
 
+**`MONTH_COST_LIMIT`** — dollars everything may spend in a calendar month
+(UTC), from `DEVLOOP_MONTH_LIMIT` in `.env` (default 0, no limit). The size
+of the API balance is a good figure. Once reached, a background run stops
+before its next task and the page disables everything that would spend:
+planning, running a task, revising one, the check after an install. The
+sidebar shows the month against the limit.
+
 **`SPLIT_HINT_TASKS`** — above this many tasks, a plan suggests splitting
 its requirement into issues, so each part gets its own pull request. Only a
 hint: nothing is split without a human confirming the stories, and a small
@@ -382,6 +389,9 @@ GITHUB_ADMIN_PAT=
 
 # Optional: a password for the page (python -m services.auth)
 DEVLOOP_PASSWORD_HASH=
+
+# Optional: dollars all work may spend in a month (0 = no limit)
+DEVLOOP_MONTH_LIMIT=
 ```
 
 Only `ANTHROPIC_API_KEY` is needed to generate, review and commit code.

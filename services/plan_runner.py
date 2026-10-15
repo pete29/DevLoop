@@ -393,6 +393,15 @@ def work(
 
             spent = costs.plan_spent(plan, tasks.get_all())
 
+            if costs.month_over(tasks.get_all(), plans.get_all()):
+                runs.finish(
+                    run,
+                    RunStatus.STOPPED,
+                    f"Monthly cost limit reached: ${costs.month_limit():.2f}; "
+                    f"task {item.id} not started.",
+                )
+                break
+
             if costs.over_limit(spent):
                 runs.finish(
                     run,

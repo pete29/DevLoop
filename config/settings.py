@@ -162,6 +162,13 @@ class Settings:
     # never cut off midway -- the check is before each one.
     PLAN_COST_LIMIT = 5.0
 
+    # Dollars all plans and tasks may spend in a calendar
+    # month (UTC) before nothing more starts: no planning,
+    # no task, no revision. 0 means no limit. Set here or as
+    # DEVLOOP_MONTH_LIMIT in .env -- the size of the API
+    # balance is a good figure.
+    MONTH_COST_LIMIT = float(os.getenv("DEVLOOP_MONTH_LIMIT") or 0)
+
     # A Windows notification when a background run ends:
     # which plan, how it ended, how many tasks wait for
     # approval. No package needed; off here if unwanted,
