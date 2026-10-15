@@ -63,9 +63,10 @@ PYTHONIOENCODING=utf-8 PYTHONPATH=. .venv/Scripts/python tests/<name>_test.py
 
 CI (`.github/workflows/tests.yml`, Windows) runs the offline suites on every PR and on `main`.
 
-**The eval** (`evals/run_eval.py <label>`, ~$0.12, never in CI) runs four real tasks on a copy of
-`evals/fixture` and writes a report; `evals/compare.py` compares two. Baseline 2026-10-15: 4/4,
-$0.1163. Run it around any prompt, model or effort change.
+**The eval** (`evals/run_eval.py <label>`, ~$0.25, never in CI) runs six real cases on copies of
+`evals/fixture` - four tasks, a task needing an npm package, a planned requirement - and writes a
+report; `evals/compare.py` compares two. Baseline `2026-10-15-baseline-v2`: 6/6, $0.2454. Run it
+around any prompt, model or effort change.
 
 There are 38 test files. **35 run offline** and all pass. Three call a real model and are skipped
 in routine runs: `architect_test`, `workflow_test`, `ollama_test` (needs a

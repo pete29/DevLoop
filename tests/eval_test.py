@@ -68,6 +68,23 @@ check("the table has a row per case, an error included", ("lowercase-rule" in re
 
 check("and the total", "0/2 passed, $0.0900 in all" in report, True)
 
+noted = table(
+    {
+        "results": [
+            {**GOOD, "id": "hash-password", "passed": True, "packages_asked": ["@types/node"]},
+            {**GOOD, "id": "policy-plan", "passed": True, "tasks": 3, "plan_problems": ["x"]},
+        ],
+        "passed": 2,
+        "total_cost": 0.1,
+    }
+)
+
+check(
+    "a case notes the packages it asked for, a plan its tasks and problems",
+    ("asked for @types/node" in noted, "3 tasks, 1 plan problems" in noted),
+    (True, True),
+)
+
 diff = compare(before, after)
 
 check(

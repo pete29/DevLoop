@@ -407,10 +407,14 @@ repository.
 
 ## The eval
 
-`evals/run_eval.py` runs the four tasks in `evals/cases.json` through the
-real pipeline, each on a fresh copy of `evals/fixture` - a TypeScript
-project with a password validator and six rules, so every case builds on
-existing code - and writes `evals/reports/<date>-<label>.json`: per case,
+`evals/run_eval.py` runs the cases in `evals/cases.json` through the real
+pipeline, each on a fresh copy of `evals/fixture` - a TypeScript project
+with a password validator and six rules, so every case builds on existing
+code. A case is a task; a task with `install_packages`, which, when it stops
+for a missing package, has it installed on the copy and its files checked
+again, as the button does; or a `plan`, where the Planner plans a
+requirement and every planned task runs in order. It writes
+`evals/reports/<date>-<label>.json`: per case,
 compile and test results, the Architect's score and verdict, review rounds,
 blockers and warnings, files, cost, output tokens and time. A case passes
 when it compiles, its tests pass and it is approved. `evals/compare.py`
@@ -419,7 +423,7 @@ table and the comparison offline.
 
 It costs money, so it is never part of CI. Run it around any change to a
 prompt, a model or an effort; the baseline is
-`evals/reports/2026-10-15-baseline.json` (4/4, $0.1163). One run is one
+`evals/reports/2026-10-15-baseline-v2.json` (6/6, $0.2454). One run is one
 sample: the same task reviewed twice raises different minor findings, so
 read a single-case difference as noise until it repeats.
 

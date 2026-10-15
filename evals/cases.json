@@ -18,5 +18,18 @@
     "id": "repeated-characters",
     "what": "a small rule with an edge case",
     "task": "Create the RepeatedCharactersRule class\n\nImplement the existing PasswordRule interface. Reject a password that contains the same character three or more times in a row, with an error message that says so, and return null otherwise."
+  },
+  {
+    "id": "hash-password",
+    "what": "a task that needs a package the project lacks (@types/node), installed as the button would",
+    "kind": "task",
+    "install_packages": true,
+    "task": "Create the hashPassword helper\n\nIn src/hash-password.ts, hashPassword(password: string, salt: string): string derives a key with Node's crypto scryptSync (64 bytes) and returns it as hex. Never return or store the plain password."
+  },
+  {
+    "id": "policy-plan",
+    "what": "a requirement planned, then every planned task run in order",
+    "kind": "plan",
+    "requirement": "Password policies\n\n- a PasswordPolicy type: a name plus the list of PasswordRule instances it enforces\n- two predefined policies built from the existing rules: basic (min length 8) and strict (min length 12, uppercase, digit, special character)\n- a policyValidator(policy) function that returns a PasswordValidator for a policy\n\nDo not change PasswordRule, PasswordValidator or the existing rules."
   }
 ]

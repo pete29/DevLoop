@@ -71,7 +71,7 @@ What has been built, in the order it was built, and what the next step is.
 | 12.17 | **A notification when a run ends** — which plan, how it ended, how many tasks wait; nothing installed |
 | 12.16 | **CI on the pull request** — the PR's check runs and a failed job's log, read only; a failure sent back to a task like a review comment |
 | 12.15 | **Packages a task needs** — a missing import stops the task before any paid fix and is offered for installation, names only and without install scripts; then the same files are checked again |
-| 12.14 | **An eval** — four real tasks on a fixture project, one command, a dated report and a comparison; baseline 4/4 at $0.12 |
+| 12.14 | **An eval** — real tasks, a task needing a package, and a planned requirement on a fixture project; one command, a dated report and a comparison; baseline 6/6 at $0.25 |
 | 12.13 | **The page split** — app.py from 3,849 lines to a page of about 160 and seven modules in ui/; the LangGraph variant and the Gemini provider removed |
 | 12.12 | **A structured review** — the Architect answers in a JSON schema on Claude; findings carry their file; nothing is parsed out of prose |
 | 12.11 | **Continuing a plan** — done tasks stay; the planner plans only what is missing, on the same branch and pull request |
