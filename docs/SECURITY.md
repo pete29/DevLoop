@@ -154,7 +154,8 @@ exist, and no others:
 | `GET /repos/{owner}/{repo}/pulls/{n}/comments` | read inline review comments |
 | `GET /repos/{owner}/{repo}/pulls/{n}/reviews` | read reviews and their text |
 | `GET /repos/{owner}/{repo}/issues/{n}/comments` | read a pull request's conversation |
-| `GET /repos/{owner}/{repo}/commits/{sha}/check-runs` | read a commit's CI checks (by full or short SHA, never a branch name) |
+| `GET /repos/{owner}/{repo}/actions/runs` | find the workflow runs of a commit (`head_sha`) |
+| `GET /repos/{owner}/{repo}/actions/runs/{n}/jobs` | read a run's jobs: name, state, failed steps |
 | `GET /repos/{owner}/{repo}/actions/jobs/{n}/logs` | read a failed job's log; GitHub redirects to a signed download |
 | `GET /repos/{owner}/{repo}` | read the default branch |
 | `GET /repos/{owner}/{repo}/issues` | list open issues |

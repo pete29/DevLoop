@@ -35,11 +35,15 @@ ALLOWED_CALLS = (
         "GET",
         re.compile(r"^/repos/[^/]+/[^/]+/issues/\d+/comments$"),
     ),
-    # Read the CI checks of a commit, and a failed GitHub
-    # Actions job's log. Read only: nothing is re-run.
+    # Read the GitHub Actions runs of a commit, their jobs,
+    # and a failed job's log. Through the Actions API, not
+    # the Checks API: a fine-grained token cannot be given
+    # Checks at all, and Actions: read is enough here. Read
+    # only: nothing is re-run.
+    ("GET", re.compile(r"^/repos/[^/]+/[^/]+/actions/runs$")),
     (
         "GET",
-        re.compile(r"^/repos/[^/]+/[^/]+/commits/[0-9a-f]{7,40}/check-runs$"),
+        re.compile(r"^/repos/[^/]+/[^/]+/actions/runs/\d+/jobs$"),
     ),
     (
         "GET",
@@ -475,20 +479,39 @@ class GitHubService:
 
         return [item for item in data if isinstance(item, dict)] if isinstance(data, list) else []
 
-    def list_check_runs(self, sha: str) -> list[dict]:
-        """The check runs on one commit."""
+    def list_jobs(self, sha: str) -> list[dict]:
+        """Every GitHub Actions job run for one commit.
 
-        data = self._request(
+        A commit can have several workflow runs (one per
+        workflow and event); their jobs are what a reviewer
+        sees as the request's checks.
+        """
+
+        base = f"/repos/{self.owner}/{self.repository}/actions"
+
+        runs = self._request(
             "GET",
-            f"/repos/{self.owner}/{self.repository}/commits/{sha}/check-runs",
-            params={"per_page": 100},
+            f"{base}/runs",
+            params={"head_sha": sha, "per_page": 100},
         )
 
-        return [
-            item
-            for item in (data.get("check_runs") or [])
-            if isinstance(item, dict)
-        ] if isinstance(data, dict) else []
+        jobs: list[dict] = []
+
+        for run in (runs.get("workflow_runs") or []) if isinstance(runs, dict) else []:
+
+            data = self._request(
+                "GET",
+                f"{base}/runs/{int(run.get('id') or 0)}/jobs",
+                params={"per_page": 100},
+            )
+
+            jobs.extend(
+                item
+                for item in (data.get("jobs") or [])
+                if isinstance(item, dict)
+            )
+
+        return jobs
 
     def job_log(self, job_id: int) -> str:
         """A GitHub Actions job's log, as text.

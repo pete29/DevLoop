@@ -160,8 +160,8 @@ branch **`main`**. The old history did not come along: it all landed as one comm
 - **Refused:** `pull`, `clone`, `merge`, `rebase`, `reset`, `tag`, `cherry-pick`, `submodule`.
 
 **GitHub reads added for review feedback and CI:** a PR's inline comments, reviews and
-conversation; a commit's check runs; a failed Actions job's log. The last two need `Checks: read`
-and `Actions: read` on `GITHUB_PAT` (403 on the private sandbox until added).
+conversation; a commit's Actions runs and jobs; a failed job's log. These need `Actions: Read-only`
+on `GITHUB_PAT` (a fine-grained token cannot hold `Checks`, hence the Actions API).
 
 **GitHub writes (all on a human's click):** create PR; PATCH PR `title`/`body`; create issue
 (`title`/`body`); link sub-issue (`sub_issue_id`); comment on an issue; PATCH issue

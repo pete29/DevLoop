@@ -567,12 +567,13 @@ intact:
 
 Both record what went wrong and let you retry.
 
-**CI on the pull request.** **🧪 Check the PR's CI** reads the check runs
+**CI on the pull request.** **🧪 Check the PR's CI** reads the GitHub Actions jobs
 of the request's latest commit (✅ / ❌ / ⏳). For a failed GitHub Actions
 job it shows the end of the job's log, and **Send this failure back for
 revision** gives it to the task you choose as revision notes; after you
 accept and push, CI runs again. Read only: nothing is re-run or changed.
-The token needs `Checks: read` and `Actions: read` for this.
+The token needs `Actions: Read-only` for this (a fine-grained token
+cannot hold `Checks`, so the Actions API is used).
 
 **Review on GitHub comes back.** While the plan's pull request is open,
 **💬 Load the PR's review comments** reads what reviewers wrote: comments on

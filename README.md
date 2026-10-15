@@ -82,7 +82,7 @@ GITHUB_ADMIN_PAT=
 
 Use a **fine-grained** GitHub token scoped to the target repositories only,
 with `Contents`, `Pull requests` and `Issues` set to read and write, and
-`Checks` and `Actions` set to read (for the PR's CI). Without
+`Actions` set to read-only (for the PR's CI). Without
 it the GitHub buttons are disabled and say so; nothing else breaks.
 
 ---
@@ -259,12 +259,13 @@ open **one pull request for the whole plan**: the requirement, a task
 checklist with states, scores, compile and test results, files, findings
 and cost. Every later push rewrites that description.
 
-**CI on the pull request.** **🧪 Check the PR's CI** reads the check runs
+**CI on the pull request.** **🧪 Check the PR's CI** reads the GitHub Actions jobs
 of the request's latest commit (✅ / ❌ / ⏳). For a failed GitHub Actions
 job it shows the end of the job's log, and **Send this failure back for
 revision** gives it to the task you choose as revision notes; after you
 accept and push, CI runs again. Read only: nothing is re-run or changed.
-The token needs `Checks: read` and `Actions: read` for this.
+The token needs `Actions: Read-only` for this (a fine-grained token
+cannot hold `Checks`, so the Actions API is used).
 
 **Review on GitHub comes back.** While the plan's pull request is open,
 **💬 Load the PR's review comments** reads what reviewers wrote: comments on

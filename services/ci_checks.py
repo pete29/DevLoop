@@ -1,13 +1,15 @@
-"""The CI checks on a plan's pull request, read only.
+"""The CI on a plan's pull request, read only.
 
 DevLoop's own gates compile and test in the working folder;
 the target repository may run more on GitHub (a linter, a
 build, another test suite) and that verdict never reached
-the plan. This reads the check runs of the request's head
-commit and, for a failed GitHub Actions job, the end of its
+the plan. This reads the GitHub Actions jobs of the
+request's head commit and, for a failed one, the end of its
 log -- what a human reads to see why -- so a failure can be
 sent back to a task like a review comment.
 
+Through the Actions API: a fine-grained token cannot hold the
+Checks permission, and Actions: read is all this needs.
 Nothing is re-run, cancelled or written.
 """
 
@@ -56,7 +58,7 @@ class CheckRun:
 
 
 def read(service: GitHubService, number: int) -> tuple[str, list[CheckRun]]:
-    """The request's head commit and its check runs."""
+    """The request's head commit and its Actions jobs."""
 
     head = (service.read_pull_request(number).get("head") or {}).get("sha", "")
 
@@ -70,19 +72,23 @@ def read(service: GitHubService, number: int) -> tuple[str, list[CheckRun]]:
             status=item.get("status") or "",
             conclusion=item.get("conclusion") or "",
             url=item.get("html_url") or "",
-            summary=((item.get("output") or {}).get("summary") or "").strip(),
+            summary=", ".join(
+                step.get("name", "")
+                for step in item.get("steps") or []
+                if step.get("conclusion") in FAILED
+            ),
         )
-        for item in service.list_check_runs(head)
+        for item in service.list_jobs(head)
     ]
 
     return head, sorted(runs, key=lambda run: (not run.failed, run.name))
 
 
 def log_tail(service: GitHubService, run: CheckRun, lines: int = LOG_TAIL_LINES) -> str:
-    """The last lines of a failed job's log, or its summary.
+    """The last lines of a failed job's log, or its failed steps.
 
-    A check from another app than GitHub Actions has no job
-    log; its summary is what there is.
+    A log that cannot be read (expired, or no access) leaves
+    the names of the steps that failed.
     """
 
     try:

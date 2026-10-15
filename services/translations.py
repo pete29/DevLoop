@@ -1165,8 +1165,8 @@ MESSAGES: dict[str, dict[str, str]] = {
         "en": "No CI checks on the PR's latest commit.",
     },
     "ci.failed_to_read": {
-        "pl": "Nie odczytano CI: {reason}. Token potrzebuje uprawnień Checks: read i Actions: read dla tego repozytorium.",
-        "en": "CI could not be read: {reason}. The token needs Checks: read and Actions: read on this repository.",
+        "pl": "Nie odczytano CI: {reason}. Token potrzebuje uprawnienia Actions: Read-only dla tego repozytorium.",
+        "en": "CI could not be read: {reason}. The token needs Actions: Read-only on this repository.",
     },
     "ci.heading": {
         "pl": "🧪 CI na {sha}: {passed} ok, {failed} nie, {pending} w toku",
