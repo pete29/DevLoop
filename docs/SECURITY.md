@@ -99,6 +99,21 @@ readable error instead of hanging the app on a prompt nobody can see.
 
 ---
 
+## Packages a model asked for
+
+A task whose code imports a package the project lacks offers to install
+it (`package_installer.add_packages`). That is riskier than `npm ci` on a
+committed lock file - a model chose the name, and a misspelt or look-alike
+name can be a real package someone published - so:
+
+- a name must be a registry package name (`packages.is_valid_name`): no
+  version, tag, URL, path, git reference or flag passes, and one bad name
+  refuses the whole list;
+- the human sees the names before pressing the button, and nothing installs
+  on its own;
+- the packages' install scripts are not run (`--ignore-scripts`);
+- `ENABLE_PACKAGE_INSTALLATION` switches it off with the other install.
+
 ## Executing generated code
 
 The test gate is the only place the platform runs code it did not write.

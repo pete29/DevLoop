@@ -21,7 +21,7 @@ from models.structure_report import StructureReport
 from models.task import Task
 from models.task_status import TaskStatus
 from models.test_result import TestResult, TestStatus
-from services import type_checker, usage_ledger
+from services import packages, type_checker, usage_ledger
 from services.bootstrap import bootstrap
 from services.file_parser import FileParser
 from services.file_writer import FileWriter
@@ -393,6 +393,32 @@ class WorkflowOrchestrator:
 
             if not gates.passed:
 
+                # A package nobody installed is no reason to
+                # rewrite code: no rewrite makes it exist.
+                # The run stops here and a human is offered
+                # the install, instead of fixes being spent
+                # on errors the developer cannot fix.
+                needed = packages.missing(
+                    [item.content for item in source_files],
+                    repository_path,
+                )
+
+                if needed:
+                    return self.needs_packages(
+                        task_description,
+                        repository_id,
+                        repository_path,
+                        source_files,
+                        steps,
+                        on_disk,
+                        spent,
+                        created,
+                        gates,
+                        rounds,
+                        needed,
+                        review_history,
+                    )
+
                 if fixes >= Settings.MAX_GATE_FIXES:
                     break
 
@@ -715,6 +741,102 @@ class WorkflowOrchestrator:
             )
 
         return TestExecutionAgent.execute(repository_path)
+
+    def needs_packages(
+        self,
+        task_description: str,
+        repository_id: str,
+        repository_path: str,
+        source_files: list[GeneratedFile],
+        steps: StepRecorder,
+        on_disk: RunFiles,
+        spent,
+        created: list[str],
+        gates: "Gates",
+        rounds: int,
+        needed: list[str],
+        review_history: list[ReviewHistory],
+    ) -> Task:
+        """A task stopped before review, waiting for packages."""
+
+        steps.record("step.packages", ", ".join(needed), ok=False)
+
+        calls = usage_ledger.since(spent)
+
+        cost = usage_ledger.describe(calls)
+
+        if cost:
+            steps.record("step.usage", cost)
+
+        review = self.unreviewed(gates, rounds)
+
+        return Task(
+            repository_id=repository_id,
+            repository_path=repository_path,
+            description=task_description,
+            architecture_review=review.review,
+            architecture_score=0,
+            recommendation=ReviewDecision.REQUEST_CHANGES,
+            structural=gates.report.blockers,
+            review_iterations=len(review_history),
+            review_history=review_history,
+            generated_files=source_files,
+            compile_result=gates.compile_result,
+            diffs=GitDiffService.compare(
+                repository_path,
+                [item.path for item in source_files],
+            ),
+            environment=created,
+            created_files=sorted(on_disk.created),
+            steps=steps.steps,
+            cost=usage_ledger.dollars(calls),
+            packages=needed,
+            status=TaskStatus.WAITING_FOR_APPROVAL,
+        )
+
+    def recheck(self, task: Task) -> Task:
+        """The task's own files through the checks again.
+
+        After its packages are installed the code is the
+        same and may now be right: it needs the compiler,
+        the review, QA and the tests, not a rewrite.
+        """
+
+        spent = usage_ledger.mark()
+
+        steps = StepRecorder()
+
+        root = task.repository_path
+
+        sources = [
+            GeneratedFile(
+                path=item.path,
+                file_type=item.file_type,
+                content=open(
+                    FileWriter.resolve(root, item.path),
+                    encoding="utf-8",
+                ).read(),
+            )
+            for item in task.generated_files
+            if item.file_type == FileType.SOURCE
+        ]
+
+        steps.record("step.recheck", describe_files(sources))
+
+        return self.finish(
+            task.description,
+            task.repository_id,
+            root,
+            sources,
+            steps,
+            RunFiles(
+                written={item.path for item in task.generated_files},
+                created=set(task.created_files),
+            ),
+            spent,
+            task.environment,
+            list(task.review_history),
+        )
 
     @staticmethod
     def unreviewed(

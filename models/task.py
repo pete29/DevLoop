@@ -116,6 +116,11 @@ class Task:
     # counts towards that plan; "" outside a plan.
     plan_id: str = ""
 
+    # npm packages the code imports and the repository
+    # lacks: offered to a human to install, never installed
+    # on their own.
+    packages: list[str] = field(default_factory=list)
+
     status: TaskStatus = TaskStatus.NEW
 
     created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())

@@ -141,7 +141,52 @@ def install(repository_path: str) -> InstallResult:
             reason=f"Refusing to run 'npm {subcommand}'.",
         )
 
-    command = f"npm {subcommand}"
+    return _run_npm(repository_path, [subcommand], f"npm {subcommand}")
+
+
+def add_packages(repository_path: str, names: list[str]) -> InstallResult:
+    """Adds the packages a task asked for, by name only.
+
+    A model chose these names, which is a different thing
+    from installing a lock file a person committed: a
+    misspelt or look-alike name is a real package someone
+    may have published. So a name is a registry name and
+    nothing else -- no version, URL, path or git reference
+    -- the human sees the list before pressing the button,
+    and the packages' install scripts are not run.
+    """
+
+    from services.packages import is_valid_name
+
+    reason = blocked(repository_path)
+
+    if reason:
+        return InstallResult(ran=False, reason=reason)
+
+    wanted = sorted(set(names))
+
+    bad = [name for name in wanted if not is_valid_name(name)]
+
+    if not wanted or bad:
+        return InstallResult(
+            ran=False,
+            reason=f"Refusing to install {bad or 'nothing'}: not package names.",
+        )
+
+    return _run_npm(
+        repository_path,
+        ["install", *wanted, "--save", "--ignore-scripts"],
+        "npm install " + " ".join(wanted),
+    )
+
+
+def _run_npm(repository_path: str, arguments: list[str], command: str) -> InstallResult:
+
+    if arguments[0] not in ALLOWED_SUBCOMMANDS:
+        return InstallResult(
+            ran=False,
+            reason=f"Refusing to run 'npm {arguments[0]}'.",
+        )
 
     try:
 
@@ -149,7 +194,7 @@ def install(repository_path: str) -> InstallResult:
             [
                 shutil.which("node"),
                 npm_cli(),
-                subcommand,
+                *arguments,
                 # No audit, no funding chatter: neither
                 # changes what is installed, and both make
                 # the output harder to read when it fails.

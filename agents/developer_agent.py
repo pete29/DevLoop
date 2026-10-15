@@ -7,6 +7,7 @@ from services.file_naming import FileNaming
 from services.file_parser import FileParseError, FileParser
 from services.import_repair import drop_self_imports
 from services.llm_factory import LLMFactory
+from services.packages import describe_installed
 from services.prompt_cache import ask
 from services.repository_survey import (
     RepositorySurvey,
@@ -240,7 +241,7 @@ You are a Senior TypeScript Developer.
 
 Task:
 {task}
-{self._repository_section(found, task)}"""
+{self._repository_section(found, task)}{describe_installed(found.root) if found.root else ""}"""
 
     def _plan(
         self,

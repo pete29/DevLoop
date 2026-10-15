@@ -295,6 +295,16 @@ without undoing the approval or the push.
 
 ### The pipeline and the plan's branch
 
+`tests.packages_test` — imports are read in every form (static, dynamic,
+`require`, re-export), scoped packages by scope and name, local files left
+out; missing means neither declared nor installed, and a Node built-in
+means `@types/node`; only registry names pass; installing refuses a list
+with one bad name without running npm, and runs `install <names> --save
+--ignore-scripts`. `tests.orchestrator_test` also checks that a missing
+package stops the run with no fix, review, QA or test paid for, and that
+checking again after the install uses the same files and goes on to the
+review and the tests.
+
 `tests.structured_review_test` — on a provider with structured outputs
 the Architect sends `REVIEW_SCHEMA` and the rules with the JSON
 instructions (not the text format) as its cached block; the score is

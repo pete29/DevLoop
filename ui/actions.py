@@ -197,37 +197,37 @@ def continue_plan(plan) -> None:
     st.rerun()
 
 
-def revise_task(task, feedback: str):
-    """Sends a task back with a human's notes, saved.
+def install_and_recheck(task):
+    """Installs a task's packages, then checks its files again.
 
-    The revision is a new record on the same files; the
-    old one becomes REVISED, and the plan's execution
-    points at the new one, so the plan, the review state
-    and the pull request all follow the latest version.
+    The install is the human's click; the recheck is a new
+    record replacing the old one, as a revision is.
     """
 
-    if task.branch and GitService(task.repository_path).is_repository():
+    from services.package_installer import add_packages
 
-        current = GitService(task.repository_path).current_branch()
+    require_branch(task)
 
-        if current != task.branch:
-            raise ValueError(
-                t(
-                    "revise.wrong_branch",
-                    branch=task.branch,
-                    current=current,
-                )
-            )
+    result = add_packages(task.repository_path, task.packages)
 
-    revised = orchestrator.revise(task, feedback)
+    if not result.succeeded:
+        raise RuntimeError(result.message + ("\n" + result.output[-800:] if result.output else ""))
 
-    revised.branch = task.branch
+    checked = orchestrator.recheck(task)
 
-    revised.issue = task.issue
+    return replace_task(task, checked)
 
-    revised.plan_id = task.plan_id
 
-    repository.save(revised)
+def replace_task(task, newer):
+    """Saves a newer version of a task in place of the old one."""
+
+    newer.branch = task.branch
+
+    newer.issue = task.issue
+
+    newer.plan_id = task.plan_id
+
+    repository.save(newer)
 
     task.status = TaskStatus.REVISED
 
@@ -248,7 +248,7 @@ def revise_task(task, feedback: str):
                     status=ExecutionStatus.COMPLETED,
                     started_at=execution.started_at,
                     completed_at=now(),
-                    task_record_id=revised.id,
+                    task_record_id=newer.id,
                 )
             )
 
@@ -262,7 +262,42 @@ def revise_task(task, feedback: str):
 
             break
 
-    return revised
+    return newer
+
+
+def require_branch(task) -> None:
+    """Refuses to work on a task's files from another branch.
+
+    Its files are read from disk, and on another branch
+    they are another branch's files.
+    """
+
+    if task.branch and GitService(task.repository_path).is_repository():
+
+        current = GitService(task.repository_path).current_branch()
+
+        if current != task.branch:
+            raise ValueError(
+                t(
+                    "revise.wrong_branch",
+                    branch=task.branch,
+                    current=current,
+                )
+            )
+
+
+def revise_task(task, feedback: str):
+    """Sends a task back with a human's notes, saved.
+
+    The revision is a new record on the same files; the
+    old one becomes REVISED, and the plan's execution
+    points at the new one, so the plan, the review state
+    and the pull request all follow the latest version.
+    """
+
+    require_branch(task)
+
+    return replace_task(task, orchestrator.revise(task, feedback))
 
 
 def reopen_in_plan(task) -> None:

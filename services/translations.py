@@ -816,6 +816,34 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "Recenzja architekta",
         "en": "Architect review",
     },
+    "step.packages": {
+        "pl": "Brakuje pakietów npm",
+        "en": "npm packages are missing",
+    },
+    "step.recheck": {
+        "pl": "Ponowne sprawdzenie tych samych plików",
+        "en": "The same files checked again",
+    },
+    "packages.needed": {
+        "pl": "📦 Ten kod importuje pakiety, których projekt nie ma: {names}. Kompilacja nie przejdzie, dopóki ich nie zainstalujesz. Sprawdź nazwy: wybrał je model.",
+        "en": "📦 This code imports packages the project lacks: {names}. It cannot compile until they are installed. Check the names: a model chose them.",
+    },
+    "packages.install": {
+        "pl": "📦 Zainstaluj {names} i sprawdź ponownie",
+        "en": "📦 Install {names} and check again",
+    },
+    "packages.spinner": {
+        "pl": "📦 Instaluję pakiety i sprawdzam kod ponownie ...",
+        "en": "📦 Installing the packages and checking the code again ...",
+    },
+    "packages.done": {
+        "pl": "Zainstalowano {names}. Nowa wersja zadania czeka na akceptację.",
+        "en": "Installed {names}. The task's new version waits for approval.",
+    },
+    "packages.failed": {
+        "pl": "Nie zainstalowano: {reason}",
+        "en": "Not installed: {reason}",
+    },
     "step.revision": {
         "pl": "Developer poprawił kod według uwag człowieka",
         "en": "Developer revised the code from a human's notes",

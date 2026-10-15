@@ -64,6 +64,7 @@ COLUMNS = (
     "created_files",
     "cost",
     "plan_id",
+    "packages",
 )
 
 COLUMN_LIST = ",\n                ".join(COLUMNS)
@@ -88,6 +89,7 @@ ADDED_COLUMNS = {
     "created_files": "TEXT NOT NULL DEFAULT '[]'",
     "cost": "REAL NOT NULL DEFAULT 0",
     "plan_id": "TEXT NOT NULL DEFAULT ''",
+    "packages": "TEXT NOT NULL DEFAULT '[]'",
     "review_history": "TEXT NOT NULL DEFAULT '[]'",
     "review_iterations": "INTEGER NOT NULL DEFAULT 0",
     "generated_files": "TEXT NOT NULL DEFAULT '[]'",
@@ -335,6 +337,7 @@ class TaskRepository:
                 json.dumps(task.created_files),
                 task.cost,
                 task.plan_id,
+                json.dumps(task.packages),
             ),
         )
 
@@ -710,6 +713,7 @@ class TaskRepository:
             created_files=self._parse_findings(row[28]),
             cost=float(row[29] or 0),
             plan_id=row[30] or "",
+            packages=json.loads(row[31] or "[]"),
         )
 
     def get_all(

@@ -196,7 +196,9 @@ Each task goes through the pipeline above:
   builds on real interfaces instead of guessing method names. It writes one
   file per call; test files are QA's and never the Developer's.
 - The **free checks** — structural validator and `tsc` — run before the
-  Architect sees anything, with their own budget (`MAX_GATE_FIXES`).
+  Architect sees anything, with their own budget (`MAX_GATE_FIXES`). A
+  missing npm package stops the task there and is offered for installation
+  (below).
 - The **Architect** reviews design only (coupling, abstractions, SOLID),
   up to `MAX_REVIEW_LOOPS` times, in at most three findings of two sentences,
   answered as JSON in a schema (score, recommendation, findings with severity
@@ -214,6 +216,14 @@ The tab can be closed and the page reloaded; the run carries on.
 A task described on its own (**Generate code** at the bottom of the page) becomes a plan of one task: it gets its branch before anything is generated, runs in the background worker, and has a pull request and a cost like any planned task. **⏹ Stop
 after this task** stops it between tasks, and a worker that died is marked
 `INTERRUPTED` on the next page load.
+
+**Packages a task needs.** The Developer is told which packages the project
+has. When the code imports one it lacks (or a Node built-in such as
+`crypto` without `@types/node`), the free checks stop the task there - no
+fixes are paid for, since no rewrite installs a package - and the task
+window offers **📦 Install <names> and check again**: `npm install
+<names> --save --ignore-scripts`, registry names only, then the same files
+through the compiler, the Architect, QA and the tests.
 
 Each task shows its tokens and cost per agent.
 
@@ -378,7 +388,7 @@ It calls the real model (about $0.12 for the four cases) and never runs in
 CI. Run it before and after changing a prompt, a model or an effort. The
 baseline: 4/4 passed, scores 93-96, one review round each, $0.1163.
 
-There are 36 test files. 33 run offline, against fake transports and
+There are 37 test files. 34 run offline, against fake transports and
 throwaway repositories; `compile_test`, `install_test` and
 `test_execution_test` need Node on `PATH`. Three call a real model and are
 skipped in routine runs: `architect_test`, `workflow_test`,

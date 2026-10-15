@@ -605,6 +605,70 @@ try:
         True,
     )
 
+    print()
+    print("=" * 80)
+    print("A MISSING PACKAGE STOPS THE RUN, AND IS OFFERED")
+    print("=" * 80)
+
+    package_root = tempfile.mkdtemp()
+
+    try:
+
+        with open(os.path.join(package_root, "package.json"), "w", encoding="utf-8") as handle:
+            handle.write('{"devDependencies": {"typescript": "^5"}}')
+
+        USES_ZOD = source("src/schema.ts", 'import { z } from "zod";\nexport const s = z.string();')
+
+        compiles(CompileStatus.FAILED)
+        tests_report()
+
+        stopped = run(Developer([USES_ZOD], []), Architect(), QA(), package_root)
+
+        check(
+            "the task asks for the package",
+            (stopped.packages, "step.packages" in step_names(stopped)),
+            (["zod"], True),
+        )
+
+        check(
+            "and no fix, review, QA or test was paid for meanwhile",
+            [call for call in CALLS if call in ("improve", "architect", "qa", "vitest")],
+            [],
+        )
+
+        # The human installs it.
+        os.makedirs(os.path.join(package_root, "node_modules", "zod"))
+
+        with open(os.path.join(package_root, "node_modules", "zod", "package.json"), "w", encoding="utf-8") as handle:
+            handle.write("{}")
+
+        compiles()
+        tests_report()
+
+        CALLS.clear()
+
+        rechecker = WorkflowOrchestrator()
+        rechecker.developer = Developer([], [])
+        rechecker.architect = Architect()
+        rechecker.qa = QA()
+
+        checked = rechecker.recheck(stopped)
+
+        check(
+            "checking again uses the same files: no developer call, then review, QA and tests",
+            ("developer" in CALLS, "improve" in CALLS, "architect" in CALLS, "vitest" in CALLS),
+            (False, False, True, True),
+        )
+
+        check(
+            "and nothing is missing any more",
+            (checked.packages, checked.recommendation),
+            ([], ReviewDecision.APPROVE),
+        )
+
+    finally:
+        shutil.rmtree(package_root, ignore_errors=True)
+
 finally:
     shutil.rmtree(root, ignore_errors=True)
 

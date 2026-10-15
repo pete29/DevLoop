@@ -223,7 +223,8 @@ repository produces code that cannot be built or tested. Leave it on
 unless the scaffolding is managed elsewhere.
 
 **`ENABLE_PACKAGE_INSTALLATION`** — whether the **Run npm install**
-button exists.
+button exists, and the **Install <names> and check again** button a task
+offers when its code imports a package the project lacks.
 
 Installing reaches the network and runs whatever `postinstall` scripts
 the packages carry, which is a different class of act from anything else

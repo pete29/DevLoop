@@ -14,8 +14,44 @@ from models.test_result import TestStatus
 from services.git_diff_service import GitDiffService
 from services.git_service import GitError, GitService
 from services.task_rollback import roll_back
-from ui.actions import plan_context, reopen_in_plan, revise_task
+from ui.actions import install_and_recheck, plan_context, reopen_in_plan, revise_task
 from ui.shared import file_content, repository, repository_label, resolve_repository, show_files, show_message, t
+
+
+def packages_panel(task) -> None:
+    """The packages a task's code needs, and the button."""
+
+    if not task.packages or task.status != TaskStatus.WAITING_FOR_APPROVAL:
+        return
+
+    names = ", ".join(task.packages)
+
+    st.warning(t("packages.needed", names=names))
+
+    if not st.button(
+        t("packages.install", names=names),
+        key=f"packages-{task.id}",
+        type="primary",
+        use_container_width=True,
+    ):
+        return
+
+    try:
+
+        with st.spinner(t("packages.spinner")):
+            checked = install_and_recheck(task)
+
+    except Exception as error:
+
+        st.session_state.git_message = ("warning", t("packages.failed", reason=error))
+
+        st.rerun()
+
+    st.session_state.task = checked
+
+    st.session_state.git_message = ("success", t("packages.done", names=names))
+
+    st.rerun()
 
 
 def revision_panel(task) -> None:
@@ -1075,6 +1111,8 @@ def task_view() -> None:
             st.code(preview["message"], language="text")
 
     st.divider()
+
+    packages_panel(task)
 
     revision_panel(task)
 
