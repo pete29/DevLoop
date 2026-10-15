@@ -169,6 +169,11 @@ class Settings:
     # balance is a good figure.
     MONTH_COST_LIMIT = float(os.getenv("DEVLOOP_MONTH_LIMIT") or 0)
 
+    # The password section of the settings panel. Hidden for
+    # now; a password set in .env (python -m services.auth)
+    # still guards the page either way.
+    PASSWORD_IN_SETTINGS = False
+
     # A Windows notification when a background run ends:
     # which plan, how it ended, how many tasks wait for
     # approval. No package needed; off here if unwanted,

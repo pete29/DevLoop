@@ -189,10 +189,11 @@ the paths out of the review text — and leaves the others byte-identical.
 
 ### Language
 
-The interface speaks Polish or English, chosen in the sidebar and kept
-per browser session rather than in a module-level variable, so two
-browsers pointed at the same server do not change each other's
-interface.
+The interface speaks English (the default) or Polish, chosen in
+**⚙️ Settings** and remembered across reloads in the database's
+`preferences` table. The active language is read from session state
+rather than a module-level variable, so a choice takes effect for the
+session that made it at once.
 
 Every message lives in `services/translations.py`, keyed by a name rather
 than by its English text, so rewording the English cannot silently orphan
@@ -376,6 +377,17 @@ cannot cache (Ollama) receives the same text as one string.
 ---
 
 ## `.env`
+
+**⚙️ Settings** in the sidebar writes these from the page: the Anthropic
+key, both GitHub tokens and `DEVLOOP_MONTH_LIMIT`, plus the language. A
+saved key is never shown back -- only that it is set, how it starts and
+its length -- and each takes effect at once, without a restart: the
+Claude client reads `ANTHROPIC_API_KEY` at call time. One line of `.env`
+changes per save; comments, order and other settings stay as they were.
+Values with spaces, quotes, `#`, `=` or line breaks are refused, as are
+keys of the wrong kind (`sk-ant-`, `github_pat_`/`ghp_`). The password
+section is hidden for now (`PASSWORD_IN_SETTINGS` in `config/settings.py`);
+`python -m services.auth` still sets one.
 
 ```env
 # The default provider

@@ -13,7 +13,6 @@ from services import costs
 from services.git_service import GitError, GitService
 from services.github_issue_service import tree as issue_tree
 from services.repository_context import describe
-from services.translations import LANGUAGES
 from ui import shared
 from ui.plans import install_panel
 from ui.repositories import add_repository_panel, new_repository_panel
@@ -21,7 +20,7 @@ from ui.shared import plan_store, repository, repository_store, requirement_stor
 
 
 def sidebar() -> None:
-    """The sidebar: language, cost, repositories, requirements, issues, plans, history."""
+    """The sidebar: cost, settings, repositories, requirements, issues, plans, history."""
 
     with st.sidebar:
 
@@ -39,16 +38,7 @@ def sidebar() -> None:
 
 
 def sidebar_settings() -> None:
-    """The language, and what this month has cost."""
-
-    st.session_state.language = st.selectbox(
-        t("app.language"),
-        tuple(LANGUAGES),
-        format_func=lambda code: LANGUAGES[code],
-        index=tuple(LANGUAGES).index(
-            st.session_state.language
-        ),
-    )
+    """What this month has cost, the cost history, the settings."""
 
     # Every task and plan of the month, whichever repository.
     st.caption(
@@ -68,6 +58,10 @@ def sidebar_settings() -> None:
 
     if st.button(t("cost.history"), key="cost-history", use_container_width=True):
         st.session_state.show_costs = True
+        st.rerun()
+
+    if st.button(t("settings.open"), key="settings-open", use_container_width=True):
+        st.session_state.show_settings = True
         st.rerun()
 
 

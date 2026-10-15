@@ -68,7 +68,8 @@ py -3.13 -m venv .venv
 pip install -r requirements.txt
 ```
 
-Create a `.env` in the project root (it is gitignored):
+Create a `.env` in the project root (it is gitignored), or start the app
+and enter the keys in **⚙️ Settings** in the sidebar, which writes it:
 
 ```env
 ANTHROPIC_API_KEY=your_key
@@ -443,7 +444,7 @@ CI. Run it before and after changing a prompt, a model or an effort. The
 baseline: 6/6 passed, $0.2454; the package case asked for `@types/node`, and
 the plan case planned 3 tasks with no plan problems.
 
-There are 43 test files. 40 run offline, against fake transports and
+There are 44 test files. 41 run offline, against fake transports and
 throwaway repositories; `compile_test`, `install_test` and
 `test_execution_test` need Node on `PATH`. Three call a real model and are
 skipped in routine runs: `architect_test`, `workflow_test`,

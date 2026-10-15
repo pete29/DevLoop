@@ -21,7 +21,7 @@ LANGUAGES = {
     "en": "English",
 }
 
-DEFAULT_LANGUAGE = "pl"
+DEFAULT_LANGUAGE = "en"
 
 MESSAGES: dict[str, dict[str, str]] = {
     # ---------------------------------------------- app
@@ -472,6 +472,134 @@ MESSAGES: dict[str, dict[str, str]] = {
     "login.logout": {
         "pl": "🚪 Wyloguj",
         "en": "🚪 Sign out",
+    },
+    "settings.open": {
+        "pl": "⚙️ Ustawienia",
+        "en": "⚙️ Settings",
+    },
+    "settings.heading": {
+        "pl": "⚙️ Ustawienia",
+        "en": "⚙️ Settings",
+    },
+    "settings.caption": {
+        "pl": "Zapisywane w pliku .env i działają od razu, bez restartu. Zapisany klucz nigdy nie jest tu pokazywany.",
+        "en": "Saved to .env and in effect at once, without a restart. A saved key is never shown here.",
+    },
+    "settings.no_password": {
+        "pl": "Strona nie ma hasła: każdy w Twojej sieci może tu wejść i zmienić te ustawienia. Ustaw hasło na dole.",
+        "en": "The page has no password: anyone on your network can open it and change these. Set one below.",
+    },
+    "settings.now": {
+        "pl": "Ustawiony: {value}",
+        "en": "Set: {value}",
+    },
+    "settings.unset": {
+        "pl": "Nie ustawiony",
+        "en": "Not set",
+    },
+    "settings.placeholder": {
+        "pl": "Nowa wartość",
+        "en": "New value",
+    },
+    "settings.save": {
+        "pl": "💾 Zapisz",
+        "en": "💾 Save",
+    },
+    "settings.clear": {
+        "pl": "Wyczyść",
+        "en": "Clear",
+    },
+    "settings.saved": {
+        "pl": "Zapisano {name}.",
+        "en": "Saved {name}.",
+    },
+    "settings.cleared": {
+        "pl": "Wyczyszczono {name}.",
+        "en": "Cleared {name}.",
+    },
+    "settings.close": {
+        "pl": "Zamknij ustawienia",
+        "en": "Close the settings",
+    },
+    "settings.anthropic": {
+        "pl": "Klucz API Anthropic",
+        "en": "Anthropic API key",
+    },
+    "settings.anthropic_help": {
+        "pl": "console.anthropic.com → API keys. Zaczyna się od sk-ant-.",
+        "en": "console.anthropic.com → API keys. Starts with sk-ant-.",
+    },
+    "settings.github": {
+        "pl": "Token GitHuba",
+        "en": "GitHub token",
+    },
+    "settings.github_help": {
+        "pl": "Fine-grained, tylko na repozytoria, z którymi pracujesz: Contents, Pull requests i Issues do zapisu, Actions do odczytu.",
+        "en": "Fine-grained, only for the repositories you work on: Contents, Pull requests and Issues read and write, Actions read-only.",
+    },
+    "settings.github_admin": {
+        "pl": "Token GitHuba do tworzenia repozytoriów",
+        "en": "GitHub token for creating repositories",
+    },
+    "settings.github_admin_help": {
+        "pl": "Tylko dla „Nowe repozytorium”: Administration do zapisu na koncie. Używany tylko do tego jednego wywołania.",
+        "en": "Only for \"New repository\": account-level Administration write. Used for that one call only.",
+    },
+    "settings.month_limit": {
+        "pl": "Miesięczny limit kosztów (USD)",
+        "en": "Monthly cost limit (USD)",
+    },
+    "settings.month_limit_help": {
+        "pl": "Po jego osiągnięciu nic, co kosztuje, nie startuje do końca miesiąca. 0 albo puste: bez limitu.",
+        "en": "Once reached, nothing that costs money starts until the month ends. 0 or empty: no limit.",
+    },
+    "settings.password": {
+        "pl": "Hasło do strony",
+        "en": "The page's password",
+    },
+    "settings.password_set": {
+        "pl": "Ustawione. Do zmiany albo usunięcia potrzebne jest obecne.",
+        "en": "Set. Changing or removing it takes the current one.",
+    },
+    "settings.password_unset": {
+        "pl": "Nie ustawione: strona jest otwarta.",
+        "en": "Not set: the page is open.",
+    },
+    "settings.password_current": {
+        "pl": "Obecne hasło",
+        "en": "Current password",
+    },
+    "settings.password_new": {
+        "pl": "Nowe hasło (min. 8 znaków)",
+        "en": "New password (at least 8 characters)",
+    },
+    "settings.password_again": {
+        "pl": "Nowe hasło jeszcze raz",
+        "en": "The new password again",
+    },
+    "settings.password_remove": {
+        "pl": "Usuń hasło",
+        "en": "Remove the password",
+    },
+    "settings.password_wrong": {
+        "pl": "Obecne hasło się nie zgadza.",
+        "en": "The current password does not match.",
+    },
+    "settings.password_short": {
+        "pl": "Hasło musi mieć co najmniej 8 znaków.",
+        "en": "The password needs at least 8 characters.",
+    },
+    "settings.password_mismatch": {
+        "pl": "Nowe hasła się różnią.",
+        "en": "The new passwords differ.",
+    },
+    "settings.password_saved": {
+        "pl": "Hasło zapisane. Od następnego wejścia strona o nie zapyta.",
+        "en": "Password saved. The page asks for it from the next visit.",
+    },
+    "settings.password_removed": {
+        "pl": "Hasło usunięte: strona jest otwarta.",
+        "en": "Password removed: the page is open.",
     },
     "plan.close": {
         "pl": "🗑 Zamknij plan",

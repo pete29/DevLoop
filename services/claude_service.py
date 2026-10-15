@@ -1,4 +1,5 @@
 import json
+import os
 
 import anthropic
 
@@ -16,6 +17,18 @@ FALLBACK_BETA = "server-side-fallback-2026-07-01"
 MAX_CACHED_BLOCKS = 4
 
 
+# One client per key, made when first used.
+_clients: dict[str, anthropic.Anthropic] = {}
+
+
+def client_for(key: str) -> anthropic.Anthropic:
+
+    if key not in _clients:
+        _clients[key] = anthropic.Anthropic(api_key=key or None)
+
+    return _clients[key]
+
+
 class ClaudeService:
     def __init__(
         self,
@@ -24,16 +37,34 @@ class ClaudeService:
         role: str = "",
     ) -> None:
 
-        # The key is read from ANTHROPIC_API_KEY, which
-        # app.py loads from .env. Never from settings: that
-        # file is committed.
-        self.client = anthropic.Anthropic()
+        # A test's fake, when one is set.
+        self._client = None
 
         self.model = model or Settings.CLAUDE_MODEL
 
         self.effort = effort or Settings.CLAUDE_EFFORT
 
         self.role = role
+
+    @property
+    def client(self):
+        """The client for the key in effect now.
+
+        Read from ANTHROPIC_API_KEY at call time, not when
+        the service is made: a key changed in the settings
+        panel works at once, without a restart. Never from
+        settings.py: that file is committed.
+        """
+
+        if self._client is not None:
+            return self._client
+
+        return client_for((os.getenv("ANTHROPIC_API_KEY") or "").strip())
+
+    @client.setter
+    def client(self, value) -> None:
+
+        self._client = value
 
     def generate_text(
         self,

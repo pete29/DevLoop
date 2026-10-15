@@ -73,6 +73,19 @@ def init_session() -> None:
     if st.session_state.repository_id is None:
         st.session_state.repository_id = preferences.get("repository_id") or None
 
+    # The language too: a reload used to bring back the default.
+    if not st.session_state.get("language_loaded"):
+        st.session_state.language = preferences.get("language") or DEFAULT_LANGUAGE
+        st.session_state.language_loaded = True
+
+
+def select_language(language: str) -> None:
+    """Switches the interface's language, and remembers it."""
+
+    st.session_state.language = language
+
+    preferences.set("language", language)
+
 
 def select_repository(repository_id: str) -> None:
     """Selects a repository, and remembers it for the next session."""

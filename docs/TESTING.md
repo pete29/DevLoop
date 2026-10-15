@@ -351,6 +351,12 @@ from a project with TypeScript and Vitest installed
 (`DEVLOOP_TYPESCRIPT_HOME`, or a sibling folder that has both) through a
 junction; without one, as in CI, it says SKIPPED and passes.
 
+`tests.settings_test` — `.env` is written one line at a time with every
+other line kept, a duplicate definition removed, a key never shown back,
+and values that would break the file or are of the wrong kind refused;
+on the real page, the panel saves the monthly limit into effect, has no
+password section, starts in English and remembers a language chosen.
+
 `tests.reject_plan_test` — the real page, headless, on a real repository:
 **🗑 Reject the whole plan** rejects every waiting task after a
 confirmation, deletes the files they created, restores the file git knows,

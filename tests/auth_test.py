@@ -96,13 +96,13 @@ try:
 
     check("the page did not fail", [e.value for e in at.exception], [])
 
-    check("only the password is asked for", [item.label for item in at.text_input], ["Hasło"])
+    check("only the password is asked for", [item.label for item in at.text_input], ["Password"])
 
     check("the sidebar is empty", len(at.sidebar.button), 0)
 
     sign_in(at, "wrong")
 
-    check("a wrong password is refused", [item.value for item in at.error], ["Złe hasło."])
+    check("a wrong password is refused", [item.value for item in at.error], ["Wrong password."])
 
     check("and the page stays closed", at.session_state.signed_in if "signed_in" in at.session_state else False, False)
 
@@ -114,7 +114,7 @@ try:
 
     [b for b in at.sidebar.button if b.key == "logout"][0].click().run()
 
-    check("signing out closes it again", [item.label for item in at.text_input], ["Hasło"])
+    check("signing out closes it again", [item.label for item in at.text_input], ["Password"])
 
     print()
     print("=" * 80)

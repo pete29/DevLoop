@@ -16,6 +16,7 @@ from ui.page import quick_task_panel, status_line, task_window
 from ui.plans import plan_view
 from ui.requirements import requirement_view
 from ui.shared import init_session, run_store, show_message
+from ui.settings_view import settings_view
 from ui.sidebar import sidebar
 
 load_dotenv()
@@ -40,6 +41,9 @@ if st.session_state.task is None:
 sidebar()
 
 logout_button()
+
+if st.session_state.get("show_settings"):
+    settings_view()
 
 if st.session_state.get("show_costs"):
     cost_view()
