@@ -1,6 +1,7 @@
 """What the page does, apart from drawing: runs, revisions, plans continued."""
 
 import streamlit as st
+
 from agents.planner_agent import PlannerAgent
 from models.repository import Repository
 from models.requirement import now
@@ -10,53 +11,6 @@ from services import plan_branch, plan_runner, usage_ledger
 from services.git_service import GitError, GitService
 from ui import shared
 from ui.shared import orchestrator, plan_store, repository, repository_path_now, repository_store, run_store, t
-
-
-def plan_context(task):
-    """The plan a task belongs to, and every task on its branch.
-
-    Found through the branch: the plan's branch name is
-    derived from the plan, so a task records nothing more
-    than the branch it ran on. (None, []) for a task that
-    ran outside a plan.
-
-    Plans made from the same issue share a branch, so the
-    plan that ran this task wins, and otherwise the newest.
-    """
-
-    if not task.branch:
-        return None, []
-
-    on_branch = sorted(
-        (
-            item
-            for item in plan_store.get_all()
-            if plan_branch.of(item) == task.branch
-        ),
-        key=lambda item: item.created_at,
-        reverse=True,
-    )
-
-    plan = next(
-        (
-            item
-            for item in on_branch
-            if any(
-                execution.task_record_id == task.id
-                for execution in item.executions
-            )
-        ),
-        on_branch[0] if on_branch else None,
-    )
-
-    if plan is None:
-        return None, []
-
-    return plan, [
-        other
-        for other in repository.get_all()
-        if other.branch == task.branch
-    ]
 
 
 def plan_records(plan) -> list:
@@ -218,6 +172,27 @@ def install_and_recheck(task):
     return replace_task(task, checked)
 
 
+def require_branch(task) -> None:
+    """Refuses to work on a task's files from another branch.
+
+    Its files are read from disk, and on another branch
+    they are another branch's files.
+    """
+
+    if task.branch and GitService(task.repository_path).is_repository():
+
+        current = GitService(task.repository_path).current_branch()
+
+        if current != task.branch:
+            raise ValueError(
+                t(
+                    "revise.wrong_branch",
+                    branch=task.branch,
+                    current=current,
+                )
+            )
+
+
 def replace_task(task, newer):
     """Saves a newer version of a task in place of the old one."""
 
@@ -265,25 +240,51 @@ def replace_task(task, newer):
     return newer
 
 
-def require_branch(task) -> None:
-    """Refuses to work on a task's files from another branch.
+def plan_context(task):
+    """The plan a task belongs to, and every task on its branch.
 
-    Its files are read from disk, and on another branch
-    they are another branch's files.
+    Found through the branch: the plan's branch name is
+    derived from the plan, so a task records nothing more
+    than the branch it ran on. (None, []) for a task that
+    ran outside a plan.
+
+    Plans made from the same issue share a branch, so the
+    plan that ran this task wins, and otherwise the newest.
     """
 
-    if task.branch and GitService(task.repository_path).is_repository():
+    if not task.branch:
+        return None, []
 
-        current = GitService(task.repository_path).current_branch()
+    on_branch = sorted(
+        (
+            item
+            for item in plan_store.get_all()
+            if plan_branch.of(item) == task.branch
+        ),
+        key=lambda item: item.created_at,
+        reverse=True,
+    )
 
-        if current != task.branch:
-            raise ValueError(
-                t(
-                    "revise.wrong_branch",
-                    branch=task.branch,
-                    current=current,
-                )
+    plan = next(
+        (
+            item
+            for item in on_branch
+            if any(
+                execution.task_record_id == task.id
+                for execution in item.executions
             )
+        ),
+        on_branch[0] if on_branch else None,
+    )
+
+    if plan is None:
+        return None, []
+
+    return plan, [
+        other
+        for other in repository.get_all()
+        if other.branch == task.branch
+    ]
 
 
 def revise_task(task, feedback: str):

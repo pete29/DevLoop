@@ -425,11 +425,13 @@ database/      SQLite persistence: repositories, requirements, plans, tasks
 tests/         see above
 evals/         the eval: cases, the fixture project, reports
 docs/          architecture, workflow, security, configuration, testing, roadmap
-app.py         the Streamlit page: session state, then the parts below, in order
-ui/            the page's parts: shared (stores, language), actions (runs,
-               revisions, plans continued), sidebar, repositories,
-               requirements, plans, tasks (the task window), costs; every visible
-               string in Polish and English
+app.py         the Streamlit page: about 50 lines that draw its parts in order
+ui/            the parts: shared (stores, session, language), actions (runs,
+               revisions, plans continued), page (status, a task on its own,
+               the task window), sidebar, repositories, requirements, plans,
+               tasks (the window's contents), costs. Each view is a short
+               function calling named sections; every visible string in
+               Polish and English
 ```
 
 ---

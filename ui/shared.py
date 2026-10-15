@@ -5,6 +5,7 @@ on every run of the page (refresh), so modules read it as shared.repositories.""
 
 import streamlit as st
 from dotenv import load_dotenv
+
 from database.plan_repository import PlanRepository
 from database.repository_repository import RepositoryRepository, same_path
 from database.requirement_repository import RequirementRepository
@@ -32,6 +33,38 @@ repositories = []
 repositories_by_id = {}
 
 
+# What the page remembers between its runs, and what it
+# starts as.
+SESSION_DEFAULTS = {
+    # The task in the window, the plan and requirement shown.
+    "task": None,
+    "plan": None,
+    "requirement": None,
+    "repository_id": None,
+    # The outcome of the last action, kept across the rerun
+    # that follows it so it is actually seen.
+    "git_message": None,
+    # The background run this page last saw active, so it
+    # can tell when that run ends and redraw once.
+    "watching_run": None,
+    # Open issues, and the remote they came from: Streamlit
+    # reruns the script on every click, and without the
+    # remote the app would call GitHub on every one.
+    "issues": None,
+    "issues_from": None,
+    "install_output": "",
+    "language": DEFAULT_LANGUAGE,
+}
+
+
+def init_session() -> None:
+    """Gives every key the page reads its starting value, once."""
+
+    for key, value in SESSION_DEFAULTS.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
+
+
 def refresh() -> None:
 
     global repositories, repositories_by_id
@@ -39,24 +72,6 @@ def refresh() -> None:
     repositories = repository_store.get_all()
 
     repositories_by_id = {item.id: item for item in repositories}
-
-
-def t(key: str, **values: object) -> str:
-    """One message, in the language this session chose.
-
-    The language lives in session state rather than in a
-    module-level variable, so two browsers pointed at the
-    same server do not change each other's interface.
-    """
-
-    return translate(
-        key,
-        st.session_state.get(
-            "language",
-            DEFAULT_LANGUAGE,
-        ),
-        **values,
-    )
 
 
 def repository_path_now() -> str:
@@ -67,39 +82,6 @@ def repository_path_now() -> str:
     )
 
     return selected.path if selected else ""
-
-
-def resolve_repository(task_like):
-    """The repository a task belongs to.
-
-    The stored id wins. When that row is gone, the folder
-    the files were written to is matched instead, so a
-    repository that is removed and added again still
-    reconnects to its tasks.
-    """
-
-    found = repositories_by_id.get(
-        task_like.repository_id
-    )
-
-    if found is not None:
-        return found
-
-    for candidate in repositories:
-
-        if same_path(candidate.path, task_like.repository_path):
-            return candidate
-
-    return None
-
-
-def file_content(root: str, generated) -> str | None:
-    """The file as it is on disk right now."""
-
-    if not root:
-        return None
-
-    return FileWriter.read(root, generated.path)
 
 
 def show_files(root: str, files, empty_message: str) -> None:
@@ -125,6 +107,33 @@ def show_files(root: str, files, empty_message: str) -> None:
                 st.code(content, language="typescript")
 
 
+def file_content(root: str, generated) -> str | None:
+    """The file as it is on disk right now."""
+
+    if not root:
+        return None
+
+    return FileWriter.read(root, generated.path)
+
+
+def t(key: str, **values: object) -> str:
+    """One message, in the language this session chose.
+
+    The language lives in session state rather than in a
+    module-level variable, so two browsers pointed at the
+    same server do not change each other's interface.
+    """
+
+    return translate(
+        key,
+        st.session_state.get(
+            "language",
+            DEFAULT_LANGUAGE,
+        ),
+        **values,
+    )
+
+
 def repository_label(task_like) -> str:
 
     found = resolve_repository(task_like)
@@ -139,6 +148,30 @@ def repository_label(task_like) -> str:
         return "Deleted repository"
 
     return "None"
+
+
+def resolve_repository(task_like):
+    """The repository a task belongs to.
+
+    The stored id wins. When that row is gone, the folder
+    the files were written to is matched instead, so a
+    repository that is removed and added again still
+    reconnects to its tasks.
+    """
+
+    found = repositories_by_id.get(
+        task_like.repository_id
+    )
+
+    if found is not None:
+        return found
+
+    for candidate in repositories:
+
+        if same_path(candidate.path, task_like.repository_path):
+            return candidate
+
+    return None
 
 
 def show_message() -> None:

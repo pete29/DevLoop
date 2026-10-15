@@ -150,7 +150,7 @@ branch **`main`**. The old history did not come along: it all landed as one comm
 | Git | `services/git_service.py` (allow-list), `agents/git_agent.py`, `services/plan_branch.py`, `task_rollback.py` | Stage by name, never `git add .`. `plan_branch.of(plan)` is the one way to get a plan's branch. |
 | GitHub | `services/github_service.py` (allow-list + per-call field limits), `github_issue_service.py`, `agents/pull_request_agent.py`, `issue_agent.py` | No merge, close or delete is reachable. |
 | Persistence | `database/*.py`, SQLite | `task_repository` columns are **positional**: append new ones at the end of `COLUMNS` and add them to `ADDED_COLUMNS`. `save()` is a plain INSERT, so a task cannot be saved twice. Plan tasks are JSON; new fields need a default in `_parse_tasks`. |
-| UI | `app.py` (the page, ~160 lines), `ui/*.py` (its parts), `services/translations.py` | Every visible string goes through `t()`, in Polish and English. `translation_test` enforces it. The task view is `task_view()` shown via `st.dialog(width="large")`. |
+| UI | `app.py` (the page, ~50 lines), `ui/*.py` (its parts; views are short functions calling named sections, modules ordered top-down), `services/translations.py` | Every visible string goes through `t()`, in Polish and English. `translation_test` enforces it. The task view is `task_view()` shown via `st.dialog(width="large")`. |
 
 **Git safety model (current):**
 - **Allowed:** `add`, `branch`, `checkout`, `commit`, `diff`, `fetch` (one shape), `init`

@@ -1,20 +1,13 @@
 """Adding a repository, and creating a new one."""
 
 import os
+
 import streamlit as st
+
 from services.repository_setup import check_new, create as create_repository, folder_name, pick_folder
 from ui import shared
 from ui.actions import register_repository
 from ui.shared import repository_store, t
-
-
-def name_from_path() -> None:
-    """Fills the name from the folder, unless one was typed."""
-
-    if not st.session_state.get("repo_add_name", "").strip():
-        st.session_state.repo_add_name = folder_name(
-            st.session_state.get("repo_add_path", "")
-        )
 
 
 def add_repository_panel() -> None:
@@ -88,6 +81,15 @@ def add_repository_panel() -> None:
             )
 
             st.rerun()
+
+
+def name_from_path() -> None:
+    """Fills the name from the folder, unless one was typed."""
+
+    if not st.session_state.get("repo_add_name", "").strip():
+        st.session_state.repo_add_name = folder_name(
+            st.session_state.get("repo_add_path", "")
+        )
 
 
 def new_repository_panel() -> None:

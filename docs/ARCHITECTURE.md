@@ -337,12 +337,17 @@ stop the page asked for in the meantime. A dead worker is recognised by its
 process (`process_alive`, which on Windows asks rather than signals:
 `os.kill(pid, 0)` there terminates the process).
 
-The page is `app.py`, which sets up the session and then calls the parts
-in `ui/`: `shared` (the stores, created once per process; the language;
-small helpers; the repository list, read again on every run as
-`shared.repositories`), `actions` (runs, revisions, continuing a plan —
-nothing that draws), `sidebar`, `repositories`, `requirements`, `plans` and
-`tasks` (the task window). A LangGraph wiring of the same agents existed
+The page is `app.py`, about fifty lines: it starts the session and draws
+the parts in `ui/` in order. `shared` holds the stores (created once per
+process), the session defaults, the language and small helpers, and the
+repository list, read again on every run as `shared.repositories`;
+`actions` is what the page does apart from drawing (runs, revisions,
+continuing a plan); `page` the main column's own parts (status, a task on
+its own, the task window); then `sidebar`, `repositories`, `requirements`,
+`plans`, `tasks` and `costs`. Each view reads as a list of named sections
+(`plan_view` → `plan_header`, `plan_cost_line`, `dependency_graph`,
+`plan_tasks`, `run_buttons`…), each module top-down: a view first, then
+what it calls, in the order it calls it. A LangGraph wiring of the same agents existed
 and was removed: only its own test used it.
 
 ---
