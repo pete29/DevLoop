@@ -77,6 +77,43 @@ check("it blocks", len(report.blockers), 1)
 
 print()
 print("=" * 80)
+print("AN ES MODULE IMPORT NAMES THE COMPILED FILE")
+print("=" * 80)
+
+# './types.js' in TypeScript means src/types.ts. Read as a
+# missing file, it sent the developer off to write a
+# types.js next to the real one.
+report = StructureValidator.validate(
+    [
+        source(
+            "src/days.ts",
+            'import type { CalendarDate } from "./types.js";\n'
+            'import { toDayNumber } from "./parse.js";\n'
+            "export const days = 1;",
+        ),
+        source(
+            "src/types.ts",
+            "export type CalendarDate = string;",
+        ),
+        source(
+            "src/parse.ts",
+            "export function toDayNumber() {}",
+        ),
+    ],
+)
+
+check("'./types.js' finds types.ts", report.missing_files, [])
+
+check(
+    "a .js import of nothing is still missing",
+    StructureValidator.resolve(
+        "src/days.ts", "./nope.js", {"src/types.ts"}
+    ),
+    None,
+)
+
+print()
+print("=" * 80)
 print("A SYMBOL IMPORTED BUT NEVER EXPORTED")
 print("=" * 80)
 

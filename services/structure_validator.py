@@ -30,6 +30,16 @@ DEFAULT_EXPORT = re.compile(r"\bexport\s+default\b")
 
 SOURCE_SUFFIXES = (".ts", ".tsx", ".js", ".mjs")
 
+# TypeScript compiled to ES modules imports its own files by
+# the name they will have once compiled: './types.js' means
+# src/types.ts.
+COMPILED_TO_SOURCE = {
+    ".js": (".ts", ".tsx"),
+    ".jsx": (".tsx",),
+    ".mjs": (".mts",),
+    ".cjs": (".cts",),
+}
+
 # A PascalCase name in one of these positions is a class
 # or interface, so it has to come from somewhere.
 USED_SYMBOL = re.compile(
@@ -301,8 +311,13 @@ class StructureValidator:
             f"{directory_of(importer)}/{target}"
         )
 
+        stem, dot, ending = base.rpartition(".")
+
+        sources = COMPILED_TO_SOURCE.get(f".{ending}", ()) if dot else ()
+
         candidates = [
             base,
+            *[f"{stem}{suffix}" for suffix in sources],
             *[
                 f"{base}{suffix}"
                 for suffix in SOURCE_SUFFIXES
