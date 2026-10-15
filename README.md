@@ -482,7 +482,7 @@ ui/            the parts: shared (stores, session, language), actions (runs,
 | Document | What it covers |
 |---|---|
 | [HANDOFF.md](HANDOFF.md) | current state, decisions, backlog and known traps |
-| [CHANGELOG.md](CHANGELOG.md) | every release; the version is in `config/version.py` and under the page title |
+| [CHANGELOG.md](CHANGELOG.md) | every release, and how one is made; tagged `vX.Y.Z` with a GitHub Release each |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | the agents, the services, who owns what |
 | [docs/WORKFLOW.md](docs/WORKFLOW.md) | the pipeline, the review loop, the severity model |
 | [docs/REPOSITORY_WORKFLOW.md](docs/REPOSITORY_WORKFLOW.md) | from folder to pull request |

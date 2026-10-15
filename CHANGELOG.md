@@ -6,6 +6,23 @@ moves with each release that adds something and the patch number with
 fixes. The version lives in `config/version.py` and is shown under the
 page title with the commit it was built from.
 
+**How a release is made.** Work goes to `main` as usual and is listed
+under *Unreleased* below. When a batch is worth naming:
+
+1. bump `config/version.py` (PATCH for fixes, MINOR for features);
+2. rename *Unreleased* to the new version and date, and start a new,
+   empty *Unreleased* above it;
+3. commit, tag the commit `vX.Y.Z` and push the tag;
+4. publish a GitHub Release from the tag, its notes copied from here.
+
+Tags `v*` are protected: a released version cannot be moved or deleted.
+There are no release branches; one is cut from a tag
+(`git branch release/0.9 v0.9.2`) only if an old line ever needs a fix.
+
+## Unreleased
+
+Nothing yet.
+
 ## 0.9.0 (alpha) — 2026-10-15
 
 The first numbered release: everything up to here.
