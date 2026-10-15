@@ -175,8 +175,8 @@ its own.
 2. **Review comments on GitHub** are read and sent back on a click (`services/review_feedback.py`);
    DevLoop does not reply to or resolve them on GitHub.
 3. **Output tokens are the bill.** Prompt caching is in (6.7% saved on two real tasks); the
-   Architect's review text is the largest single cost. Plans show their total and stop at
-   `PLAN_COST_LIMIT` (`services/costs.py`).
+   Architect's review is now three findings of two sentences (-32% per review, effort kept
+   high). Plans show their total and stop at `PLAN_COST_LIMIT` (`services/costs.py`).
 4. **Tasks outside a plan** still run synchronously in the page; planned tasks run in the
    background worker (`services/plan_runner.py`).
 5. **A second plan for an issue** is now warned about what exists, but has no "continue from

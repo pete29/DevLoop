@@ -193,8 +193,8 @@ Each task goes through the pipeline above:
 - The **free checks** — structural validator and `tsc` — run before the
   Architect sees anything, with their own budget (`MAX_GATE_FIXES`).
 - The **Architect** reviews design only (coupling, abstractions, SOLID),
-  up to `MAX_REVIEW_LOOPS` times. Claims about things a compiler decides are
-  filtered out.
+  up to `MAX_REVIEW_LOOPS` times, in at most three findings of two sentences
+  each. Claims about things a compiler decides are filtered out.
 - **QA** writes one Vitest suite per source file; after a fix only the
   suites of changed or failing files are rewritten.
 - The generated tests are **actually run**. Code that does not compile,

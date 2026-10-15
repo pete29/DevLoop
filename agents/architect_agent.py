@@ -32,6 +32,12 @@ from workflows.review_decision import (
 
 # Everything about how to review, and nothing about what:
 # identical bytes in every call.
+#
+# Three findings of two sentences, suggestions only when
+# worth a revision: output tokens are the bill, and on
+# four real reviews this cut them from 3752 to 2291 (-32%
+# in dollars) with the same main findings. Lowering the
+# effort instead saved 5% and missed more, so it stays.
 RULES = """
 You are a Senior Software Architect.
 
@@ -64,8 +70,11 @@ A structural validator already owns those,
 and repeating them makes the review wrong as
 often as it makes it right.
 
-Report at most 5 findings in total. Prefer
-the few that matter most.
+Report at most 3 findings in total: the
+ones that matter most. Write each finding in
+at most two sentences - what is wrong, and
+what to change. Leave SUGGESTIONS as "None"
+unless one is worth a revision.
 
 Classify every finding by severity.
 

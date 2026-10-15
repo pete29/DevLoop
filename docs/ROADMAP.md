@@ -67,6 +67,7 @@ What has been built, in the order it was built, and what the next step is.
 | 11.3 | **First live end-to-end run** — push, PR, merge and delivery verified against GitHub; the bugs it found fixed (below) |
 | 12 | **The human can say more than yes or no** — a task opens in a window, and can be sent back with chosen findings and the human's own notes |
 | 12.1 | **Issues both ways** — a requirement filed as an issue; a large one split into user stories, filed as sub-issues; the issue list as a tree; plans for an issue share `feature/issue-<n>-<slug>` |
+| 12.9 | **A shorter review** — three findings of two sentences, suggestions only when worth a revision: 32% less per review, same main findings |
 | 12.8 | **Review feedback from GitHub** — a pull request's review comments, chosen by a human, go back through the same revision as notes typed in the app |
 | 12.7 | **Costs** — a task's dollars stored, a plan's total and a month's shown, and a per-plan limit that stops a run before the next task |
 | 12.6 | **Prompt caching** — repeated blocks first and cached: the Architect's rules across a plan, the Developer's task context across its calls |
@@ -167,6 +168,13 @@ sentence nobody re-reads.
 on two real tasks. The prompts were already small; output tokens were the
 bill. Caching is right and stays, and the measurement says where the next
 saving is: what the agents write, not what they read.
+
+**12.9** — the review's cost was its writing, not its thinking. On the
+same four real reviews: effort high to medium saved 5% and once demoted a
+real warning; a format of three findings in two sentences each saved 32%
+($0.0914 -> $0.0621) at either effort. Effort stayed high. The same review
+run twice already differs in which minor issues it raises, which is the
+noise any such comparison has to be read against.
 
 **Across all of them** — the offline test suites caught none of these. Each
 came from a real run against a real model.
