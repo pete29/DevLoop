@@ -290,6 +290,16 @@ without undoing the approval or the push.
 
 ### The pipeline and the plan's branch
 
+`tests.plan_runner_test` — background runs. A stop the page asks for
+survives the worker's writes, and one asked after the end does not reopen
+the run. The worker (pipeline faked) runs ready tasks in dependency order,
+saves records and executions, honours a stop between tasks, stops at a
+failure, and runs one task only when one was asked for. A dead worker is
+found by its process; a queued run is left alone. Two runs of one plan are
+refused. And a **real worker process** runs against a throwaway database
+(`DEVLOOP_DATABASE`) on a plan with nothing left to do, so no model is
+called: it records its pid, finishes `DONE` and writes its log.
+
 `tests.orchestrator_test` — every agent, the compiler and the test runner
 are faked. The free checks run before the Architect; a fix after failing
 tests rewrites only the suites it must; a dropped file is removed; each run

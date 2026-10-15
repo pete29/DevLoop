@@ -23,11 +23,13 @@ from database.repository_repository import (
 from database.requirement_repository import (
     RequirementRepository,
 )
+from database.run_repository import RunRepository
 from database.task_repository import TaskRepository
 from models.compile_result import CompileStatus
 from models.file_type import FileType
 from models.git_push_operation import PushStatus
 from models.pipeline_step import PipelineStep
+from models.plan_run import RunStatus
 from models.pull_request_info import PullRequestState
 from models.repository import Repository
 from models.repository_context import TestFramework
@@ -52,6 +54,7 @@ from services.environment_step import (
     commit_scaffolding,
     write_scaffolding,
 )
+from services import plan_runner
 from services.repository_context import describe
 from services.repository_setup import (
     check_new,
@@ -75,6 +78,11 @@ repository = TaskRepository()
 repository_store = RepositoryRepository()
 plan_store = PlanRepository()
 requirement_store = RequirementRepository()
+run_store = RunRepository()
+
+# A worker that died says nothing; its process being gone
+# is the only evidence, so every page load looks.
+plan_runner.detect_interrupted(run_store)
 
 if "task" not in st.session_state:
     st.session_state.task = None
@@ -90,11 +98,10 @@ if "git_message" not in st.session_state:
 if "plan" not in st.session_state:
     st.session_state.plan = None
 
-# The id of the plan a run-all is working through. One task
-# runs per script run, so the page repaints between them;
-# this is the only thing that carries the intent across.
-if "auto_run" not in st.session_state:
-    st.session_state.auto_run = None
+# The background run this page last saw active, so it can
+# tell when that run ends and redraw once.
+if "watching_run" not in st.session_state:
+    st.session_state.watching_run = None
 
 if "requirement" not in st.session_state:
     st.session_state.requirement = None
@@ -204,42 +211,6 @@ def show_files(root: str, files, empty_message: str) -> None:
                 st.code(content, language="typescript")
 
 
-def run_task(
-    description: str,
-    repository_id: str,
-    path: str,
-    issue=None,
-    branch: str = "",
-    branch_note: str = "",
-):
-    """One task through the whole pipeline, saved."""
-
-    generated = orchestrator.execute(
-        description,
-        repository_id,
-        path,
-    )
-
-    generated.branch = branch
-
-    # First, because it happened first: the branch was
-    # entered before anything was generated.
-    if branch:
-        generated.steps.insert(
-            0,
-            PipelineStep(
-                name="step.branch",
-                detail=branch
-                + (f" · {branch_note}" if branch_note else ""),
-            ),
-        )
-
-    if issue is not None and issue.exists:
-        generated.issue = issue
-
-    repository.save(generated)
-
-    return generated
 
 
 def plan_context(task):
@@ -668,6 +639,107 @@ def new_repository_panel() -> None:
         st.rerun()
 
 
+def start_run(plan, target_path: str, task_id: int = 0) -> None:
+    """Hands a plan, or one of its tasks, to a worker."""
+
+    try:
+        run = plan_runner.start(run_store, plan.id, target_path, task_id)
+
+    except Exception as error:
+        st.session_state.git_message = (
+            "warning",
+            t("run.could_not_start", reason=error),
+        )
+
+    else:
+        st.session_state.watching_run = run.id
+
+    st.rerun()
+
+
+def log_tail(run, lines: int = 12) -> str:
+    """The end of the worker's console, or ""."""
+
+    try:
+        with open(
+            plan_runner.log_path(run),
+            encoding="utf-8",
+            errors="replace",
+        ) as handle:
+            return "\n".join(handle.read().splitlines()[-lines:])
+
+    except OSError:
+        return ""
+
+
+def run_panel(plan_id: str) -> None:
+    """The plan's background run, redrawn while it works.
+
+    A fragment refreshes this alone every few seconds; when
+    the run ends, the whole page is redrawn once, so the
+    dashboard, the tasks and the pull request catch up.
+    """
+
+    run = run_store.latest(plan_id)
+
+    if run is None:
+        return
+
+    if not run.status.active:
+
+        if st.session_state.watching_run == run.id:
+
+            st.session_state.watching_run = None
+
+            # A single task the human started: show it, as
+            # the synchronous button used to.
+            if run.task_id and run.produced:
+                st.session_state.task = repository.get_by_id(run.produced[-1])
+
+            st.rerun()
+
+        if run.status != RunStatus.DONE or run.message:
+            st.caption(
+                t(
+                    "run.ended",
+                    status=run.status.value,
+                    message=run.message or "",
+                )
+            )
+
+        return
+
+    st.session_state.watching_run = run.id
+
+    plan = plan_store.get_by_id(plan_id)
+
+    item = plan.task(run.current_task) if plan and run.current_task else None
+
+    st.info(
+        t(
+            "run.in_progress",
+            status=run.status.value,
+            task=f"{item.id}. {item.title}" if item else "—",
+            done=len(run.produced),
+            since=run.started_at[11:19],
+        )
+    )
+
+    console = log_tail(run)
+
+    if console:
+        st.code(console, language="text")
+
+    if run.status == RunStatus.RUNNING and st.button(
+        t("plan.stop_after_task"),
+        key=f"stop-run-{run.id}",
+        use_container_width=True,
+    ):
+        run_store.request_stop(run.id)
+
+        st.rerun()
+
+
 def remote_of(repository_id: str) -> str:
     """The repository's remote URL, or "" without one."""
 
@@ -1021,97 +1093,8 @@ def reopen_in_plan(task) -> None:
         return
 
 
-def mark_running(plan, item) -> str:
-    """Writes RUNNING before any work starts.
-
-    Saved first and only then rendered from, so the page
-    shows the task as running *while* it runs rather than
-    once it is over — and an interrupted run still reads as
-    RUNNING when the app comes back.
-    """
-
-    started = now()
-
-    plan.record(
-        TaskExecution(
-            task_id=item.id,
-            status=ExecutionStatus.RUNNING,
-            started_at=started,
-        )
-    )
-
-    plan_store.update_progress(plan)
-
-    return started
 
 
-def execute_planned(plan, item, target_path, started=""):
-    """Runs one planned task, recording how it went.
-
-    A failure is written down, so re-opening the plan shows
-    what went wrong rather than offering the task again as
-    if nothing had happened.
-
-    'started' is passed when the caller already marked the
-    task as running in an earlier script run, so the time
-    on screen is when the work began, not when this run
-    picked it up again.
-    """
-
-    started = started or mark_running(plan, item)
-
-    try:
-
-        # The plan's branch is checked out before anything
-        # is generated, so the task is written against the
-        # code of the tasks before it -- and committed
-        # where that code is.
-        entered = plan_branch.Entered("")
-
-        if GitService(target_path).is_repository():
-            entered = plan_branch.enter(
-                target_path,
-                plan_branch.of(plan),
-            )
-
-        generated = run_task(
-            item.prompt,
-            plan.repository_id,
-            target_path,
-            plan.issue,
-            entered.branch,
-            entered.note,
-        )
-
-    except Exception as error:
-
-        plan.record(
-            TaskExecution(
-                task_id=item.id,
-                status=ExecutionStatus.FAILED,
-                started_at=started,
-                completed_at=now(),
-                error=str(error),
-            )
-        )
-
-        plan_store.update_progress(plan)
-
-        return None, str(error)
-
-    plan.record(
-        TaskExecution(
-            task_id=item.id,
-            status=ExecutionStatus.COMPLETED,
-            started_at=started,
-            completed_at=now(),
-            task_record_id=generated.id,
-        )
-    )
-
-    plan_store.update_progress(plan)
-
-    return generated, ""
 
 
 def install_panel(path: str, where: str) -> None:
@@ -2062,7 +2045,11 @@ if st.session_state.requirement:
 
 if st.session_state.plan:
 
-    plan = st.session_state.plan
+    # From the database, not the session: a worker writes
+    # the plan's executions while this page shows it.
+    plan = plan_store.get_by_id(st.session_state.plan.id) or st.session_state.plan
+
+    st.session_state.plan = plan
 
     st.subheader(t("plan.planned_tasks"))
 
@@ -2106,54 +2093,15 @@ if st.session_state.plan:
 
     pull_request_panel(plan)
 
-    # A run-all does one task per script run, so the page
-    # repaints between tasks instead of freezing until the
-    # last one. The task is marked as running and saved
-    # before this page is drawn, so everything below shows
-    # work in progress; the work itself happens at the very
-    # end of the run, and a rerun picks up the next task.
-    pending = None
+    # Runs happen in a worker process; the page only reads
+    # them. While one is active, nothing else here may start
+    # a task on the same branch.
+    active_run = run_store.latest(plan.id)
 
-    started_at = ""
+    if active_run is not None and not active_run.status.active:
+        active_run = None
 
-    if st.session_state.auto_run == plan.id:
-
-        pending = (
-            plan.next_ready()
-            if target_path and environment_ok
-            else None
-        )
-
-        if pending is None:
-
-            st.session_state.auto_run = None
-
-            if target_path and not environment_ok:
-
-                st.session_state.git_message = (
-                    "warning",
-                    t("env.runs_blocked"),
-                )
-
-            elif plan.remaining and target_path:
-
-                waiting = plan.remaining[0]
-
-                st.session_state.git_message = (
-                    "warning",
-                    t(
-                        "plan.stopped_before",
-                        id=waiting.id,
-                        ids=", ".join(
-                            str(d)
-                            for d in plan.blocked_by(waiting)
-                        ),
-                    ),
-                )
-
-        else:
-
-            started_at = mark_running(plan, pending)
+    st.fragment(run_every=3 if active_run else None)(run_panel)(plan.id)
 
     if plan.issues:
 
@@ -2413,9 +2361,13 @@ if st.session_state.plan:
 
                 elif status == ExecutionStatus.RUNNING:
 
-                    st.warning(
-                        t("plan.marked_running")
-                    )
+                    if active_run is not None and active_run.current_task == item.id:
+                        st.info(t("run.task_in_progress"))
+
+                    else:
+                        st.warning(
+                            t("plan.marked_running")
+                        )
 
                 if st.button(
                     t("plan.run_again")
@@ -2429,39 +2381,10 @@ if st.session_state.plan:
                     disabled=bool(blocked)
                     or not target_path
                     or not environment_ok
-                    or pending is not None,
+                    or active_run is not None,
                 ):
 
-                    with st.spinner(
-                        f"🤖 {item.title} ..."
-                    ):
-
-                        generated, problem = (
-                            execute_planned(
-                                plan,
-                                item,
-                                target_path,
-                            )
-                        )
-
-                    if problem:
-
-                        st.session_state.git_message = (
-                            "warning",
-                            (
-                                t(
-                                    "plan.task_failed",
-                                    id=item.id,
-                                    reason=problem,
-                                )
-                            ),
-                        )
-
-                    else:
-
-                        st.session_state.task = generated
-
-                    st.rerun()
+                    start_run(plan, target_path, item.id)
 
     ready = [
         item
@@ -2476,19 +2399,7 @@ if st.session_state.plan:
 
     with run_all:
 
-        if pending is not None:
-
-            # Pressed while a task is running: the click is
-            # handled on the next script run, which is the
-            # one that would have started the task after
-            # this one.
-            if st.button(
-                t("plan.stop_after_task"),
-                use_container_width=True,
-            ):
-                st.session_state.auto_run = None
-
-        elif st.button(
+        if active_run is None and st.button(
             t("plan.run_all", count=len(plan.remaining)),
             disabled=not ready
             or not target_path
@@ -2496,9 +2407,7 @@ if st.session_state.plan:
             use_container_width=True,
         ):
 
-            st.session_state.auto_run = plan.id
-
-            st.rerun()
+            start_run(plan, target_path)
 
     with clear:
 
@@ -2509,42 +2418,7 @@ if st.session_state.plan:
 
             st.session_state.plan = None
 
-            st.session_state.auto_run = None
-
             st.rerun()
-
-    # Last, deliberately: everything above is on screen
-    # before the work starts, so the run is watched rather
-    # than waited out. The rerun that follows brings the
-    # next task, with the dashboard and the log already
-    # reflecting this one.
-    if pending is not None:
-
-        with st.spinner(
-            f"🤖 {pending.id}. {pending.title} ..."
-        ):
-
-            generated, problem = execute_planned(
-                plan,
-                pending,
-                target_path,
-                started_at,
-            )
-
-        if problem:
-
-            st.session_state.auto_run = None
-
-            st.session_state.git_message = (
-                "warning",
-                t(
-                    "plan.stopped_at",
-                    id=pending.id,
-                    reason=problem,
-                ),
-            )
-
-        st.rerun()
 
     st.divider()
 

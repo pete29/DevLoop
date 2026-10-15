@@ -433,6 +433,22 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "🗑 Zamknij plan",
         "en": "🗑 Close plan",
     },
+    "run.in_progress": {
+        "pl": "⚙️ Przebieg w tle ({status}): zadanie {task} · gotowe w tym przebiegu: {done} · od {since}",
+        "en": "⚙️ Running in the background ({status}): task {task} · done in this run: {done} · since {since}",
+    },
+    "run.task_in_progress": {
+        "pl": "⚙️ W toku, w tle. Możesz zamknąć kartę; przebieg trwa dalej.",
+        "en": "⚙️ In progress, in the background. You can close the tab; the run carries on.",
+    },
+    "run.ended": {
+        "pl": "Ostatni przebieg: {status}. {message}",
+        "en": "Last run: {status}. {message}",
+    },
+    "run.could_not_start": {
+        "pl": "Nie uruchomiono: {reason}",
+        "en": "Not started: {reason}",
+    },
     "plan.stop_after_task": {
         "pl": "⏹ Zatrzymaj po tym zadaniu",
         "en": "⏹ Stop after this task",

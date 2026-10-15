@@ -413,11 +413,19 @@ streamlit run app.py
 
 SQLite, `human_in_the_loop.db` in the project root, in `.gitignore`.
 
-Four tables: `repositories`, `requirements`, `plans` and `tasks`. Columns added by later sprints are applied
+Five tables: `repositories`, `requirements`, `plans`, `tasks` and
+`plan_runs`. Columns added by later sprints are applied
 by a migration that runs when the app starts, so an older database keeps
 working — it simply reports empty values for anything it predates.
 
 To start clean, delete the file. It is recreated on the next run.
+
+`DEVLOOP_DATABASE`, an environment variable, points DevLoop at another
+database file. The background worker inherits it from the page that started
+it; the tests use it to run a real worker against a throwaway database.
+
+A fifth table, `plan_runs`, holds background runs. Their consoles are in
+`storage/runs/` (gitignored).
 
 ---
 

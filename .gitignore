@@ -33,3 +33,6 @@ Thumbs.db
 *.log
 # Editor (local launch config)
 .vscode/
+
+# Background run consoles
+storage/runs/

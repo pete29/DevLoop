@@ -200,6 +200,13 @@ Each task goes through the pipeline above:
 - The generated tests are **actually run**. Code that does not compile,
   fails its tests, or never reached the Architect is never recommended.
 
+Tasks run **in the background**, in a worker process: **Run task** and
+**⏩ Run the whole plan** start one, and the plan shows what it is on, how
+far it got and the last lines of its console, refreshed every few seconds.
+The tab can be closed and the page reloaded; the run carries on. **⏹ Stop
+after this task** stops it between tasks, and a worker that died is marked
+`INTERRUPTED` on the next page load.
+
 Each task shows its tokens and cost per agent; the plan shows the cost of
 planning.
 
@@ -359,7 +366,8 @@ app.py         the Streamlit UI (every visible string in Polish and English)
   the app, a task can be sent back with notes; a comment on the pull request
   cannot yet.
 - **No prompt caching yet.** Prompts put the variable part first.
-- **Running a whole plan blocks the UI**; there is no worker or queue.
+- **A task outside a plan** ("Generate code" at the bottom) still runs in
+  the page, synchronously; only planned tasks have a worker.
 - **A single task outside a plan** is generated on whatever branch is
   checked out.
 - **The planner's file claims are checked, its judgement is not.** A plan

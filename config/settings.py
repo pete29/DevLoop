@@ -1,3 +1,5 @@
+import os
+
 from services.llm_provider import (
     LLMProvider,
 )
@@ -86,7 +88,10 @@ class Settings:
     # DATABASE
     # =====================
 
-    DATABASE_NAME = "human_in_the_loop.db"
+    # DEVLOOP_DATABASE points a process elsewhere: the tests
+    # run a real worker against a throwaway database, and the
+    # worker inherits the variable from whoever started it.
+    DATABASE_NAME = os.getenv("DEVLOOP_DATABASE", "human_in_the_loop.db")
 
     # =====================
     # WORKFLOW

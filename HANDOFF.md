@@ -136,6 +136,7 @@ branch **`main`**. The old history did not come along: it all landed as one comm
 | Area | Where | Notes |
 |---|---|---|
 | Orchestration | `workflows/workflow_orchestrator.py` | `execute()` and `revise()` share `finish()`: two budgets, test loop, recommendation override. |
+| Background runs | `services/plan_runner.py`, `database/run_repository.py`, `models/plan_run.py` | Worker process per run (`python -m services.plan_runner <id>`); the page reads `plan_runs` and a 3 s fragment. Worker writes only its own columns. `DEVLOOP_DATABASE` overrides the DB file. |
 | Planning | `agents/planner_agent.py`, `services/plan_validator.py`, `agents/story_splitter.py` | Planner sees `survey().render()` + referenced files; validator reports, never repairs. |
 | LLM | `services/llm_factory.py`, `claude_service.py`, `ollama_service.py`, `gemini_service.py` | Role-based; all record usage. |
 | Cost | `services/usage_ledger.py`, `Settings.CLAUDE_PRICES` | ASCII only in output (see §8). |
@@ -173,7 +174,8 @@ its own.
    step is reading PR review comments into the same `revise()` path.
 3. **Prompt caching:** prompts are single strings with the variable part first. Restructure as a
    stable prefix (rules, repo listing, referenced files) plus `cache_control`.
-4. **Run-all blocks the UI** (synchronous in the Streamlit request; no worker or queue).
+4. **Tasks outside a plan** still run synchronously in the page; planned tasks run in the
+   background worker (`services/plan_runner.py`).
 5. **A second plan for an issue** is now warned about what exists, but has no "continue from
    where the last plan stopped" mode; it replans from the requirement.
 6. **Single tasks outside a plan** are generated on whatever branch is checked out (only planned
@@ -231,8 +233,10 @@ its own.
 - **Heredocs:** bash heredocs with Python containing `'`, `\n` or regex escapes broke several
   times (in this session `\\n` arrived as a real newline). Write the script with the Write tool
   and run it instead.
-- **`runOnSave`:** saving `app.py` while the app runs reruns the page, which interrupts a task
-  being generated. Don't edit `app.py` while the user has a plan running.
+- **`runOnSave`:** saving `app.py` while the app runs reruns the page. Planned tasks run in a
+  detached worker now and are not affected; a task outside a plan, generated in the page, is.
+- **Windows `os.kill(pid, 0)` terminates the process** instead of testing it. Use
+  `plan_runner.process_alive`.
 - **PowerShell's PATH can be stale** after installing Node. The bash tool and new terminals see
   it; old processes don't.
 - **Streamlit `AppTest`** needs an absolute script path when the test script lives elsewhere.

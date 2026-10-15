@@ -309,6 +309,19 @@ The model's own recommendation is advisory: a structural finding forces
 `REQUEST_CHANGES` regardless, and an absence of blockers forces `APPROVE`
 even if the model asked for changes.
 
+### Running a plan — `services/plan_runner.py`
+
+A plan's tasks run in a worker process, not in the Streamlit request. The
+page writes a `plan_runs` row (`database/run_repository.py`) and starts
+`python -m services.plan_runner <run id>`, detached; the worker runs
+`execute_planned` task after task (branch, pipeline, task record,
+execution), checks for a stop between tasks, and writes its progress. The
+page reads the row and redraws a small fragment every few seconds. The
+worker writes only the columns it owns — a whole-row write would undo a
+stop the page asked for in the meantime. A dead worker is recognised by its
+process (`process_alive`, which on Windows asks rather than signals:
+`os.kill(pid, 0)` there terminates the process).
+
 `workflows/langgraph_workflow.py` is an alternative wiring of the same
 agents. The Streamlit app uses the orchestrator; LangGraph is exercised by
 its own test.
@@ -343,6 +356,7 @@ its own test.
 | `plan_branch` | one branch per plan, or per issue: `feature/issue-<n>-<slug>` |
 | `task_rollback` | undoes a rejected task's files; refuses a committed one |
 | `usage_ledger` | tokens and dollars per agent, per run |
+| `plan_runner` | the background worker: runs a plan's ready tasks, stops on request or failure |
 | `review_history_formatter` | previous rounds, for the Architect |
 | `code_cleaner` | strips fences and reasoning blocks |
 | `llm_factory` | picks Claude (per role), Ollama or Gemini |

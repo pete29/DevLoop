@@ -67,6 +67,7 @@ What has been built, in the order it was built, and what the next step is.
 | 11.3 | **First live end-to-end run** — push, PR, merge and delivery verified against GitHub; the bugs it found fixed (below) |
 | 12 | **The human can say more than yes or no** — a task opens in a window, and can be sent back with chosen findings and the human's own notes |
 | 12.1 | **Issues both ways** — a requirement filed as an issue; a large one split into user stories, filed as sub-issues; the issue list as a tree; plans for an issue share `feature/issue-<n>-<slug>` |
+| 12.5 | **Background runs** — a plan's tasks run in a worker process; the page reads its progress and console, can stop it between tasks, and notices a worker that died |
 | 12.4 | **CI** — the offline suites on every pull request, on Windows, with no secrets; one command runs them locally |
 | 12.3 | **Repositories from the file system** — a folder window fills the name and path; "New repository" makes a folder with git and a private GitHub repository as its origin |
 | 12.2 | **The planner sees the code** — file listing and exports, referenced files in full; tasks declare what they create and modify; `PlanValidator` checks the claims |
@@ -171,7 +172,6 @@ came from a real run against a real model.
 ```text
 PR review feedback      comments left on the pull request on GitHub feeding a revision
 Prompt caching          a stable prompt prefix (rules, listing, referenced files) with cache_control
-Background runs         "run the whole plan" off the request thread, so the UI stays usable
 Multi-repository plans  one requirement spanning several repositories
 Azure Boards            on hold, by decision: GitHub only for now
 ```

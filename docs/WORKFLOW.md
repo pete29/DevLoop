@@ -195,8 +195,9 @@ into shape behind you.
 The **Dependency graph** panel shows the tasks as layers: everything in one
 step can run once the steps above it are done.
 
-**Run single task** runs one. **Run entire plan** walks the remaining tasks
+**Run task** runs one. **Run the whole plan** walks the remaining tasks
 in order, stopping at the first failure so you can see what went wrong.
+Both run in the background; see below.
 
 ### What a plan remembers
 
@@ -231,24 +232,36 @@ whether it finished. It too offers **Run again**.
 
 ### Watching a run happen
 
-**Run entire plan** does **one task per script run**, not all of them in a
-single pass. The sequence for each task is:
+**Runs happen in a worker process**, not in the page
+(`services/plan_runner.py`, started as `python -m services.plan_runner
+<run id>`). **Run task** and **Run the whole plan** each start one, detached
+from Streamlit: closing the tab, a rerun, or saving `app.py` does not reach
+it. One run per plan at a time; while it is active, the plan's other run
+buttons are disabled.
 
-1. The task is marked `RUNNING` and written to SQLite.
-2. The page is drawn from what is now stored — the banner, the dashboard,
-   the progress bar and the log all show the task as running.
-3. Only then does the work start.
-4. When it ends, the outcome is written and the page reruns, which picks up
-   the next task.
+The worker does what the page used to do, task after task: mark the task
+`RUNNING` and save it, enter the plan's branch, run the pipeline, save the
+task record, write the execution. It stops at the first failure, as run-all
+always did, and when nothing more is ready. **Stop after this task** asks
+it to stop between tasks — never inside one, because half a task is files on
+disk nobody reviews.
 
-The order matters. Persisting before drawing is what makes a run watchable:
-the dashboard moves while the plan is running instead of jumping from 0 to
-11 at the end, and a failure appears the moment it happens rather than when
-the last task gives up.
+The page only reads. A `plan_runs` row says what the worker is on, and a
+fragment redraws the run panel every three seconds: the task in hand, how
+many are done, and the last lines of the worker's console
+(`storage/runs/run-<id>.log`) — "DEVELOPER: writing src/x.ts (3/8)" is the
+only progress there is inside a task, and it is now on screen. When the run
+ends, the whole page is redrawn once; a single task the human started opens
+in its window, as before.
 
-While a run is in flight the per-task buttons are disabled and the run-all
-button becomes **Stop after this task** — the click lands on the next
-script run, which is the one that would have started the following task.
+A worker that dies writes nothing, so every page load checks the process
+of each active run. One that is gone marks the run `INTERRUPTED`, naming the
+task it was on; its files may be on disk uncommitted, and the task offers
+**Run again**.
+
+Persisting before drawing still matters, and still holds: the worker writes
+`RUNNING` before any work, so the dashboard moves while the plan runs, and a
+failure appears the moment it happens.
 
 The **Execution log** is built from the stored executions rather than
 appended to as the run goes, so the log you see after a restart is the same
