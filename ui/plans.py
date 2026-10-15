@@ -113,106 +113,93 @@ def environment_panel(
 
     with st.container(border=True):
 
-        st.markdown(
-            t("env.heading_ready")
-            if step.ready
-            else t("env.heading")
-        )
+        st.markdown(t("env.heading_ready") if step.ready else t("env.heading"))
 
         if not step.git:
             st.error(t("env.no_git"))
 
-        if step.missing:
+        scaffolding_line(path, step)
 
-            st.write(
-                t(
-                    "env.scaffolding_missing",
-                    names=", ".join(step.missing),
-                )
-            )
+        dependencies_line(path, step)
 
-            if st.button(
-                t("env.create_scaffolding"),
-                key=f"env-scaffold-{path}",
-            ):
-
-                created = write_scaffolding(path)
-
-                st.session_state.git_message = (
-                    "success",
-                    t(
-                        "env.scaffolding_created",
-                        names=", ".join(created),
-                    ),
-                )
-
-                st.rerun()
-
-        else:
-            st.write(t("env.scaffolding_ok"))
-
-        if step.dependencies_missing:
-
-            st.write(t("env.dependencies_missing"))
-
-            # Nothing to install until package.json exists.
-            if not step.missing:
-                install_panel(path, "plan")
-
-        else:
-            st.write(t("env.dependencies_ok"))
-
-        if step.git and step.uncommitted:
-
-            st.write(
-                t(
-                    "env.uncommitted",
-                    names=", ".join(step.uncommitted),
-                )
-            )
-
-            # After the install when there is one, so the
-            # lock file goes into the same commit.
-            waiting = bool(step.missing) or (
-                step.dependencies_missing
-                and not step.install_blocked
-            )
-
-            if st.button(
-                t(
-                    "env.commit_scaffolding",
-                    branch=step.base_branch or "HEAD",
-                ),
-                key=f"env-commit-{path}",
-                disabled=waiting,
-            ):
-
-                try:
-
-                    commit_hash = commit_scaffolding(path)
-
-                    st.session_state.git_message = (
-                        "success",
-                        t(
-                            "env.committed",
-                            hash=commit_hash[:7],
-                        ),
-                    )
-
-                except GitError as error:
-
-                    st.session_state.git_message = (
-                        "warning",
-                        t("env.commit_failed", reason=error),
-                    )
-
-                st.rerun()
-
-        elif step.git and not step.missing:
-            st.write(t("env.committed_ok"))
+        scaffolding_commit_line(path, step)
 
         if not step.ready:
             st.checkbox(t("env.skip"), key=skip_key)
+
+
+def scaffolding_line(path: str, step: EnvironmentStep) -> None:
+    """The project files a plan needs, and writing the missing ones."""
+
+    if not step.missing:
+        st.write(t("env.scaffolding_ok"))
+        return
+
+    st.write(t("env.scaffolding_missing", names=", ".join(step.missing)))
+
+    if st.button(t("env.create_scaffolding"), key=f"env-scaffold-{path}"):
+
+        created = write_scaffolding(path)
+
+        st.session_state.git_message = (
+            "success",
+            t("env.scaffolding_created", names=", ".join(created)),
+        )
+
+        st.rerun()
+
+
+def dependencies_line(path: str, step: EnvironmentStep) -> None:
+    """Whether the packages are installed, and installing them."""
+
+    if not step.dependencies_missing:
+        st.write(t("env.dependencies_ok"))
+        return
+
+    st.write(t("env.dependencies_missing"))
+
+    # Nothing to install until package.json exists.
+    if not step.missing:
+        install_panel(path, "plan")
+
+
+def scaffolding_commit_line(path: str, step: EnvironmentStep) -> None:
+    """Committing the project files, once they are complete."""
+
+    if not step.git:
+        return
+
+    if not step.uncommitted:
+
+        if not step.missing:
+            st.write(t("env.committed_ok"))
+
+        return
+
+    st.write(t("env.uncommitted", names=", ".join(step.uncommitted)))
+
+    # After the install when there is one, so the lock file
+    # goes into the same commit.
+    waiting = bool(step.missing) or (
+        step.dependencies_missing and not step.install_blocked
+    )
+
+    if not st.button(
+        t("env.commit_scaffolding", branch=step.base_branch or "HEAD"),
+        key=f"env-commit-{path}",
+        disabled=waiting,
+    ):
+        return
+
+    try:
+        commit_hash = commit_scaffolding(path)
+
+        st.session_state.git_message = ("success", t("env.committed", hash=commit_hash[:7]))
+
+    except GitError as error:
+        st.session_state.git_message = ("warning", t("env.commit_failed", reason=error))
+
+    st.rerun()
 
 
 def install_panel(path: str, where: str) -> None:
@@ -523,21 +510,7 @@ def feedback_panel(plan, holder, records) -> None:
 
     key = f"feedback-{plan.id}"
 
-    if st.button(t("feedback.load"), key=f"{key}-load", use_container_width=True):
-
-        try:
-            found = review_feedback.read(
-                PullRequestAgent.service(holder),
-                holder.pull_request.id,
-            )
-
-        except Exception as error:
-            st.session_state.git_message = ("warning", t("feedback.failed", reason=error))
-            found = None
-
-        st.session_state[key] = found
-
-        st.rerun()
+    load_feedback_button(holder, key)
 
     found = st.session_state.get(key)
 
@@ -552,8 +525,45 @@ def feedback_panel(plan, holder, records) -> None:
         st.caption(t("feedback.none"))
         return
 
-    # A comment can only go to a task that has a version to
-    # revise: the plan's records, latest per plan task.
+    by_task = revisable_tasks(plan, records)
+
+    if not by_task:
+        return
+
+    chosen = feedback_choices(key, fresh, by_task, records)
+
+    if chosen:
+        send_feedback(plan, key, chosen, by_task)
+
+
+def load_feedback_button(holder, key: str) -> None:
+    """Reads the pull request's comments, on a click."""
+
+    if not st.button(t("feedback.load"), key=f"{key}-load", use_container_width=True):
+        return
+
+    try:
+        found = review_feedback.read(
+            PullRequestAgent.service(holder),
+            holder.pull_request.id,
+        )
+
+    except Exception as error:
+        st.session_state.git_message = ("warning", t("feedback.failed", reason=error))
+        found = None
+
+    st.session_state[key] = found
+
+    st.rerun()
+
+
+def revisable_tasks(plan, records) -> dict[str, str]:
+    """Record id to label, for each task with a version to revise.
+
+    A comment can only go to a task that has one: the
+    plan's records, latest per plan task.
+    """
+
     by_task = {}
 
     for item in plan.tasks:
@@ -565,8 +575,15 @@ def feedback_panel(plan, holder, records) -> None:
         if record is not None and record.generated_files:
             by_task[record.id] = f"{item.id}. {item.title}"
 
-    if not by_task:
-        return
+    return by_task
+
+
+def feedback_choices(key: str, fresh, by_task: dict[str, str], records) -> dict[str, list]:
+    """Each comment, ticked or not, with the task it goes to.
+
+    The comments to send, by record id -- once the send
+    button is pressed; until then, nothing.
+    """
 
     with st.expander(t("feedback.heading", count=len(fresh)), expanded=True):
 
@@ -615,7 +632,13 @@ def feedback_panel(plan, holder, records) -> None:
             type="primary",
             use_container_width=True,
         ):
-            return
+            return {}
+
+    return chosen
+
+
+def send_feedback(plan, key: str, chosen: dict[str, list], by_task: dict[str, str]) -> None:
+    """Sends each task its comments, as a revision."""
 
     revised = None
 

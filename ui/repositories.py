@@ -167,99 +167,81 @@ def new_repository_panel() -> None:
 
     with st.expander(t("repo.new")):
 
-        name = st.text_input(t("repo.new_name"), key="repo_new_name")
+        name, parent, description, on_github, private = new_repository_fields()
 
-        if st.button(
-            t("repo.pick"),
-            key="repo-new-pick",
-            use_container_width=True,
-        ):
+        problem = check_new(parent, name) if name else ""
 
-            chosen = pick_folder(st.session_state.repo_new_parent)
-
-            if chosen:
-                st.session_state.repo_new_parent = chosen
-
-            st.rerun()
-
-        parent = st.text_input(t("repo.new_parent"), key="repo_new_parent")
-
-        description = st.text_input(
-            t("repo.new_description"),
-            key="repo_new_description",
-        )
-
-        on_github = st.checkbox(
-            t("repo.new_on_github"),
-            value=True,
-            key="repo_new_on_github",
-        )
-
-        private = st.checkbox(
-            t("repo.new_private"),
-            value=True,
-            key="repo_new_private",
-            disabled=not on_github,
-        )
-
-        if on_github:
-            st.caption(t("repo.new_token_note"))
-
-        problem = check_new(parent.strip(), name.strip()) if name.strip() else ""
-
-        if name.strip() and not problem:
-            st.caption(
-                t(
-                    "repo.new_target",
-                    path=os.path.join(parent.strip(), name.strip()),
-                )
-            )
+        if name and not problem:
+            st.caption(t("repo.new_target", path=os.path.join(parent, name)))
 
         elif problem:
             st.caption(f"⚠️ {problem}")
 
-        if not st.button(
+        if st.button(
             t("repo.new_create"),
             key="repo-new-create",
             use_container_width=True,
             type="primary",
-            disabled=not name.strip() or bool(problem),
+            disabled=not name or bool(problem),
         ):
-            return
+            make_repository(name, parent, description, on_github, private)
 
-        try:
 
-            with st.spinner(t("repo.new_spinner")):
+def new_repository_fields() -> tuple[str, str, str, bool, bool]:
+    """Name, parent folder, description, and where it lives."""
 
-                made = create_repository(
-                    parent.strip(),
-                    name.strip(),
-                    on_github,
-                    private,
-                    description,
-                )
+    name = st.text_input(t("repo.new_name"), key="repo_new_name")
 
-        except Exception as error:
+    if st.button(t("repo.pick"), key="repo-new-pick", use_container_width=True):
 
-            st.session_state.git_message = (
-                "warning",
-                t("repo.new_failed", reason=error),
-            )
+        chosen = pick_folder(st.session_state.repo_new_parent)
 
-            st.rerun()
-
-        register_repository(name.strip(), made.path)
-
-        st.session_state.repo_new_reset = True
-
-        st.session_state.git_message = (
-            "success",
-            t("repo.new_created", name=name.strip(), path=made.path)
-            + (
-                t("repo.new_created_github", url=made.html_url)
-                if made.html_url
-                else ""
-            ),
-        )
+        if chosen:
+            st.session_state.repo_new_parent = chosen
 
         st.rerun()
+
+    parent = st.text_input(t("repo.new_parent"), key="repo_new_parent")
+
+    description = st.text_input(t("repo.new_description"), key="repo_new_description")
+
+    on_github = st.checkbox(t("repo.new_on_github"), value=True, key="repo_new_on_github")
+
+    private = st.checkbox(
+        t("repo.new_private"),
+        value=True,
+        key="repo_new_private",
+        disabled=not on_github,
+    )
+
+    if on_github:
+        st.caption(t("repo.new_token_note"))
+
+    return name.strip(), parent.strip(), description, on_github, private
+
+
+def make_repository(name: str, parent: str, description: str, on_github: bool, private: bool) -> None:
+    """Creates it, registers it, and says where it is."""
+
+    try:
+
+        with st.spinner(t("repo.new_spinner")):
+            made = create_repository(parent, name, on_github, private, description)
+
+    except Exception as error:
+
+        st.session_state.git_message = ("warning", t("repo.new_failed", reason=error))
+
+        st.rerun()
+
+    register_repository(name, made.path)
+
+    st.session_state.repo_new_reset = True
+
+    st.session_state.git_message = (
+        "success",
+        t("repo.new_created", name=name, path=made.path)
+        + (t("repo.new_created_github", url=made.html_url) if made.html_url else ""),
+    )
+
+    st.rerun()

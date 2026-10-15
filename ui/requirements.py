@@ -476,11 +476,49 @@ def split_panel(requirement, remote_url: str) -> None:
     if not proposal or proposal[0] != requirement.id:
         return
 
-    stories: list[Story] = proposal[1]
-
     st.markdown(f"**{t('split.heading')}**")
 
     st.caption(t("split.caption"))
+
+    chosen = split_stories(requirement, proposal[1])
+
+    if not split_confirmed(requirement, chosen, remote_url):
+        return
+
+    created: list[tuple[int, str]] = []
+
+    try:
+        linked = file_stories(requirement, chosen, remote_url, created)
+
+    except Exception as error:
+
+        st.session_state.git_message = (
+            "warning",
+            t("split.partial", count=len(created), reason=error),
+        )
+
+    else:
+
+        st.session_state.git_message = (
+            "success",
+            t(
+                "split.created",
+                count=len(created),
+                labels=", ".join(f"#{number}" for number, _ in created),
+            )
+            + linked,
+        )
+
+    st.session_state.split = None
+
+    # The sidebar's issue list was read before these existed.
+    st.session_state.issues_from = None
+
+    st.rerun()
+
+
+def split_stories(requirement, stories: list[Story]) -> list[Story]:
+    """Each proposed story, editable; the ones kept, as edited."""
 
     chosen: list[Story] = []
 
@@ -510,6 +548,12 @@ def split_panel(requirement, remote_url: str) -> None:
             if keep and title.strip():
                 chosen.append(Story(title=title, body=body))
 
+    return chosen
+
+
+def split_confirmed(requirement, chosen: list[Story], remote_url: str) -> bool:
+    """Cancel, or file the chosen stories: True for the second."""
+
     create_col, cancel_col = st.columns(2)
 
     with cancel_col:
@@ -525,96 +569,77 @@ def split_panel(requirement, remote_url: str) -> None:
 
     with create_col:
 
-        if not st.button(
+        return st.button(
             t("split.create", count=len(chosen)),
             key=f"split-create-{requirement.id}",
             disabled=not chosen or not remote_url,
             use_container_width=True,
             type="primary",
-        ):
-            return
+        )
 
-    parent = requirement.issue.number
 
-    created: list[tuple[int, str]] = []
+def file_stories(requirement, chosen: list[Story], remote_url: str, created: list[tuple[int, str]]) -> str:
+    """Files each story as an issue and a requirement; links them to the parent.
+
+    `created` fills as issues are made, so a failure part
+    way still says how many were. Returns what linking
+    them to the parent issue did, ready to append.
+    """
 
     child_ids: list[int] = []
 
-    linked = ""
+    for story in chosen:
+
+        issue = IssueAgent.create(
+            remote_url,
+            story.title,
+            child_body(story, requirement.issue.number),
+        )
+
+        requirement_store.save(
+            IssueAgent.to_requirement(
+                issue,
+                requirement.repository_id,
+            )
+        )
+
+        created.append((issue.number, issue.title))
+
+        child_ids.append(issue.id)
+
+    return link_children(requirement.issue.number, child_ids, created, remote_url)
+
+
+def link_children(parent: int, child_ids: list[int], created: list[tuple[int, str]], remote_url: str) -> str:
+    """Makes the new issues sub-issues of the parent.
+
+    The parent keeps track of its children on GitHub, where
+    people look, rather than in a table here: as real
+    sub-issues, and as a comment only where those are not
+    available.
+    """
+
+    if parent <= 0 or not created:
+        return ""
+
+    service = IssueAgent.service(remote_url)
 
     try:
 
-        for story in chosen:
+        for child_id in child_ids:
+            service.add_sub_issue(parent, child_id)
 
-            issue = IssueAgent.create(
-                remote_url,
-                story.title,
-                child_body(story, parent),
-            )
-
-            requirement_store.save(
-                IssueAgent.to_requirement(
-                    issue,
-                    requirement.repository_id,
-                )
-            )
-
-            created.append((issue.number, issue.title))
-
-            child_ids.append(issue.id)
-
-        # The parent keeps track of its children on GitHub,
-        # where people look, rather than in a table here:
-        # as real sub-issues, and as a comment only where
-        # those are not available.
-        linked = ""
-
-        if parent > 0 and created:
-
-            service = IssueAgent.service(remote_url)
-
-            try:
-
-                for child_id in child_ids:
-                    service.add_sub_issue(parent, child_id)
-
-                linked = t("split.linked", parent=parent)
-
-            except Exception as error:
-
-                service.add_comment(
-                    parent,
-                    children_comment(created),
-                )
-
-                linked = t(
-                    "split.not_linked",
-                    parent=parent,
-                    reason=error,
-                )
+        return t("split.linked", parent=parent)
 
     except Exception as error:
 
-        st.session_state.git_message = (
-            "warning",
-            t("split.partial", count=len(created), reason=error),
+        service.add_comment(
+            parent,
+            children_comment(created),
         )
 
-    else:
-
-        st.session_state.git_message = (
-            "success",
-            t(
-                "split.created",
-                count=len(created),
-                labels=", ".join(f"#{number}" for number, _ in created),
-            )
-            + linked,
+        return t(
+            "split.not_linked",
+            parent=parent,
+            reason=error,
         )
-
-    st.session_state.split = None
-
-    # The sidebar's issue list was read before these existed.
-    st.session_state.issues_from = None
-
-    st.rerun()

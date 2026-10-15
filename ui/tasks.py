@@ -855,244 +855,129 @@ def pull_request_details(task) -> None:
 def pull_request_form(task) -> None:
     """Opening the pull request: what it would say, and the button."""
 
-    if (
-        task.pull_request.state
-        == PullRequestState.FAILED
-    ):
-        st.error(
-            t(
-                "pr.failed",
-                reason=task.pull_request.error,
-            )
-        )
+    if task.pull_request.state == PullRequestState.FAILED:
+        st.error(t("pr.failed", reason=task.pull_request.error))
 
     pr_plan, pr_records = plan_context(task)
 
-    pr_preview = PullRequestAgent.preview(
-        task,
-        pr_plan,
-        pr_records,
-    )
+    pull_request_preview(PullRequestAgent.preview(task, pr_plan, pr_records))
 
-    pr_allowed, pr_reason = (
-        PullRequestAgent.can_create(task)
-    )
-
-    if pr_preview["owner"]:
-        st.write(
-            t(
-                "pr.repository_line",
-                owner=pr_preview["owner"],
-                repo=pr_preview["repository"],
-            )
-        )
-
-    st.write(
-        t(
-            "git.branch_line",
-            branch=pr_preview["branch"],
-        )
-    )
-
-    st.write(
-        t(
-            "pr.title_line",
-            title=pr_preview["title"],
-        )
-    )
-
-    with st.expander(
-        t("pr.description_preview")
-    ):
-        st.code(
-            pr_preview["body"],
-            language="markdown",
-        )
+    pr_allowed, pr_reason = PullRequestAgent.can_create(task)
 
     if not pr_allowed:
         st.warning(pr_reason)
 
-    st.caption(
-        t("pr.note")
-    )
+    st.caption(t("pr.note"))
 
-    if st.button(
-        t("pr.create"),
-        disabled=not pr_allowed,
-    ):
+    if st.button(t("pr.create"), disabled=not pr_allowed):
 
-        info = PullRequestAgent.execute(
-            task,
-            plan=pr_plan,
-            records=pr_records,
-        )
-
-        repository.update_pull_request(
-            task.id,
-            info,
-        )
-
-        task.pull_request = info
-
-        message = (
-            (
-                "success",
-                f"Opened {info.label}: {info.url}",
-            )
-            if info.exists
-            else (
-                "warning",
-                (
-                    "Pull request failed: "
-                    f"{info.error}"
-                ),
-            )
-        )
-
-        # Tell the backlog what happened. A
-        # failure here never undoes the pull
-        # request it is reporting.
-        if info.exists and task.issue.exists:
-
-            reported, detail = IssueAgent.report(
-                task,
-                task.git_push.remote_url,
-            )
-
-            message = (
-                (
-                    "success",
-                    (
-                        f"Opened {info.label} "
-                        "and commented on "
-                        f"{task.issue.label}"
-                    ),
-                )
-                if reported
-                else (
-                    "warning",
-                    (
-                        f"Opened {info.label}, "
-                        "but the issue was not "
-                        f"updated: {detail}"
-                    ),
-                )
-            )
-
-        st.session_state.git_message = message
+        st.session_state.git_message = open_pull_request(task, pr_plan, pr_records)
 
         st.rerun()
+
+
+def pull_request_preview(preview: dict) -> None:
+    """Where the pull request would go, and what it would say."""
+
+    if preview["owner"]:
+        st.write(t("pr.repository_line", owner=preview["owner"], repo=preview["repository"]))
+
+    st.write(t("git.branch_line", branch=preview["branch"]))
+
+    st.write(t("pr.title_line", title=preview["title"]))
+
+    with st.expander(t("pr.description_preview")):
+        st.code(preview["body"], language="markdown")
+
+
+def open_pull_request(task, plan, records) -> tuple[str, str]:
+    """Opens it, tells the issue, and says how both went."""
+
+    info = PullRequestAgent.execute(task, plan=plan, records=records)
+
+    repository.update_pull_request(task.id, info)
+
+    task.pull_request = info
+
+    if not info.exists:
+        return "warning", f"Pull request failed: {info.error}"
+
+    if not task.issue.exists:
+        return "success", f"Opened {info.label}: {info.url}"
+
+    # Tell the backlog what happened. A failure here never
+    # undoes the pull request it is reporting.
+    reported, detail = IssueAgent.report(task, task.git_push.remote_url)
+
+    if reported:
+        return "success", f"Opened {info.label} and commented on {task.issue.label}"
+
+    return "warning", f"Opened {info.label}, but the issue was not updated: {detail}"
 
 
 def push_form(task) -> None:
     """Pushing the branch: what would be sent, and the button."""
 
     if task.git_push.status == PushStatus.FAILED:
+        st.error(t("git.push_failed", reason=task.git_push.error))
 
-        st.error(
-            t(
-                "git.push_failed",
-                reason=task.git_push.error,
-            )
-        )
+    preview = GitAgent.push_preview(task)
 
-    push_preview = GitAgent.push_preview(task)
+    st.write(t("git.remote_line", remote=preview["remote"]))
+
+    st.write(t("git.branch_line", branch=preview["branch"]))
+
+    st.write(t("git.files_line", count=len(preview["files"])))
+
+    if preview["remote_url"]:
+        st.caption(preview["remote_url"])
 
     allowed, reason = GitAgent.can_push(task)
-
-    st.write(
-        t(
-            "git.remote_line",
-            remote=push_preview["remote"],
-        )
-    )
-
-    st.write(
-        t(
-            "git.branch_line",
-            branch=push_preview["branch"],
-        )
-    )
-
-    st.write(
-        t(
-            "git.files_line",
-            count=len(push_preview["files"]),
-        )
-    )
-
-    if push_preview["remote_url"]:
-        st.caption(push_preview["remote_url"])
 
     if not allowed:
         st.warning(reason)
 
-    st.caption(
-        t("git.push_note")
-    )
+    st.caption(t("git.push_note"))
 
-    if st.button(
-        t("git.push"),
-        disabled=not allowed,
-    ):
+    if st.button(t("git.push"), disabled=not allowed):
 
-        result = GitAgent.push(task)
-
-        repository.update_git_push(
-            task.id,
-            result,
-        )
-
-        task.git_push = result
-
-        st.session_state.git_message = (
-            ("success", f"Pushed {result.remote_branch}")
-            if result.pushed
-            else ("warning", f"Push failed: {result.error}")
-        )
-
-        # A plan's PR describes every task on the
-        # branch; this push added one, so the
-        # description is rebuilt. Opening the PR is
-        # still a separate click.
-        push_plan, push_records = plan_context(task)
-
-        if result.pushed and push_plan is not None:
-
-            synced = PullRequestAgent.sync(
-                task,
-                push_plan,
-                push_records,
-            )
-
-            if synced is not None and synced.exists:
-
-                repository.update_pull_request(
-                    task.id,
-                    synced,
-                )
-
-                st.session_state.git_message = (
-                    "success",
-                    t(
-                        "pr.synced",
-                        branch=result.remote_branch,
-                        label=synced.label,
-                    ),
-                )
-
-            elif synced is not None:
-
-                st.session_state.git_message = (
-                    "warning",
-                    t(
-                        "pr.sync_failed",
-                        branch=result.remote_branch,
-                        reason=synced.error,
-                    ),
-                )
+        st.session_state.git_message = push_branch(task)
 
         st.rerun()
+
+
+def push_branch(task) -> tuple[str, str]:
+    """Pushes, refreshes the plan's pull request, and says how it went."""
+
+    result = GitAgent.push(task)
+
+    repository.update_git_push(task.id, result)
+
+    task.git_push = result
+
+    if not result.pushed:
+        return "warning", f"Push failed: {result.error}"
+
+    # A plan's PR describes every task on the branch; this
+    # push added one, so the description is rebuilt.
+    # Opening the PR is still a separate click.
+    push_plan, push_records = plan_context(task)
+
+    synced = (
+        PullRequestAgent.sync(task, push_plan, push_records)
+        if push_plan is not None
+        else None
+    )
+
+    if synced is None:
+        return "success", f"Pushed {result.remote_branch}"
+
+    if not synced.exists:
+        return "warning", t("pr.sync_failed", branch=result.remote_branch, reason=synced.error)
+
+    repository.update_pull_request(task.id, synced)
+
+    return "success", t("pr.synced", branch=result.remote_branch, label=synced.label)
 
 
 def commit_preview(task) -> None:
