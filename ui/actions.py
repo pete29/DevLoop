@@ -84,7 +84,7 @@ def register_repository(name: str, path: str) -> None:
 
     repository_store.save(added)
 
-    st.session_state.repository_id = added.id
+    shared.select_repository(added.id)
 
 
 def start_run(plan, target_path: str, task_id: int = 0) -> None:

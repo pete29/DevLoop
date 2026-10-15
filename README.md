@@ -142,7 +142,11 @@ the everyday `GITHUB_PAT` keeps its narrow scope.
 constraints, acceptance criteria. **📥 GitHub Issues** turns an open issue of
 the repository's remote into a requirement; importing it again updates it.
 A requirement belongs to a repository, chosen above its text; opening it
-selects that repository, and choosing another moves it. Saving writes only
+selects that repository, and choosing another moves it. The sidebar lists
+only the selected repository's requirements, plans and task history
+(requirements with no repository yet are listed everywhere); switching
+repository closes whatever belonged to the last one, and the choice is
+remembered across reloads. Saving writes only
 the fields it changed, so a page left open does not undo a change made in
 another.
 

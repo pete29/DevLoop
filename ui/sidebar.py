@@ -93,15 +93,20 @@ def repository_list() -> None:
         if st.session_state.repository_id not in shared.repositories_by_id:
             st.session_state.repository_id = shared.repositories[0].id
 
-        st.session_state.repository_id = st.selectbox(
+        # Follows the selection made anywhere else on the
+        # page: opening a requirement, moving one. Set before
+        # the widget is drawn; a change made in the widget
+        # itself arrives through switch_repository first.
+        st.session_state.repository_select = st.session_state.repository_id
+
+        st.selectbox(
             t("repo.active"),
             [item.id for item in shared.repositories],
             format_func=lambda item_id: (
                 shared.repositories_by_id[item_id].name
             ),
-            index=[item.id for item in shared.repositories].index(
-                st.session_state.repository_id
-            ),
+            key="repository_select",
+            on_change=switch_repository,
         )
 
         active_repository = shared.repositories_by_id[st.session_state.repository_id]
@@ -123,6 +128,26 @@ def repository_list() -> None:
     else:
 
         st.info(t("repo.none_yet"))
+
+
+def switch_repository() -> None:
+    """Selects another repository, closing what belongs to the last one.
+
+    Runs before the page does, as the dropdown's callback.
+    A plan left open from another repository would run its
+    tasks in the folder now selected.
+    """
+
+    shared.select_repository(st.session_state.repository_select)
+
+    for key in ("requirement", "plan", "task"):
+
+        opened = st.session_state.get(key)
+
+        if opened is not None and not shared.in_selected_repository(opened):
+            st.session_state[key] = None
+
+    st.session_state.issues_from = None
 
 
 def repository_context(active_repository) -> None:
@@ -273,7 +298,9 @@ def requirements_section() -> None:
 
     st.header(t("requirement.heading"))
 
-    requirements = requirement_store.get_all()
+    requirements = [
+        item for item in requirement_store.get_all() if shared.in_selected_repository(item)
+    ]
 
     if not requirements:
         st.write(t("requirement.none_yet"))
@@ -291,7 +318,7 @@ def requirements_section() -> None:
 
             # Its repository is the one to plan in.
             if item.repository_id in shared.repositories_by_id:
-                st.session_state.repository_id = item.repository_id
+                shared.select_repository(item.repository_id)
 
             st.session_state.plan = None
 
@@ -447,7 +474,7 @@ def plans_section() -> None:
 
     st.header(t("plan.heading"))
 
-    plans = plan_store.get_all()
+    plans = [item for item in plan_store.get_all() if shared.in_selected_repository(item)]
 
     if not plans:
         st.write(t("plan.none_yet"))
@@ -479,7 +506,7 @@ def history_section() -> None:
 
     st.header(t("task.history"))
 
-    tasks = repository.get_all()
+    tasks = [item for item in repository.get_all() if shared.in_selected_repository(item)]
 
     if not tasks:
         st.write(t("task.none_yet"))

@@ -107,7 +107,7 @@ def requirement_repository(requirement) -> None:
 
     st.session_state.requirement = requirement
 
-    st.session_state.repository_id = chosen
+    shared.select_repository(chosen)
 
     st.session_state.issues_from = None
 

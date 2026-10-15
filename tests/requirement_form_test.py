@@ -65,18 +65,29 @@ try:
     at.run()
 
     print("=" * 80)
-    print("OPENING A REQUIREMENT SELECTS ITS REPOSITORY")
+    print("THE SIDEBAR LISTS THE SELECTED REPOSITORY'S WORK")
     print("=" * 80)
+
+    def listed() -> bool:
+        return any(item.key == f"req-{requirement.id}" for item in at.sidebar.button)
 
     at.session_state.repository_id = second.id
 
     at.run()
 
+    check("another repository's requirement is not listed", listed(), False)
+
+    at.session_state.repository_id = first.id
+
+    at.run()
+
+    check("its own repository's is", listed(), True)
+
     [item for item in at.sidebar.button if item.key == f"req-{requirement.id}"][0].click().run()
 
     check("the page did not fail", [e.value for e in at.exception], [])
 
-    check("its repository is selected", at.session_state.repository_id, first.id)
+    check("it opens", at.session_state.requirement.id, requirement.id)
 
     print()
     print("=" * 80)
@@ -93,6 +104,25 @@ try:
     check("it is stored in the new repository", stored().repository_id, second.id)
 
     check("which is now the selected one", at.session_state.repository_id, second.id)
+
+    check("and it stays open, listed under its new repository", (at.session_state.requirement.id, listed()), (requirement.id, True))
+
+    print()
+    print("=" * 80)
+    print("SWITCHING REPOSITORY CLOSES WHAT BELONGS TO ANOTHER")
+    print("=" * 80)
+
+    moved = copy.deepcopy(at.session_state.requirement)
+
+    at.selectbox(key="repository_select").set_value(first.id).run()
+
+    check("the page did not fail", [e.value for e in at.exception], [])
+
+    check("the requirement from the other repository is closed", at.session_state.requirement, None)
+
+    at.selectbox(key="repository_select").set_value(second.id).run()
+
+    at.session_state.requirement = moved
 
     print()
     print("=" * 80)
@@ -118,6 +148,19 @@ try:
         (stored().content, stored().repository_id),
         ("A calendar, in TypeScript.", second.id),
     )
+
+    print()
+    print("=" * 80)
+    print("A RELOAD REMEMBERS THE REPOSITORY")
+    print("=" * 80)
+
+    at.selectbox(key="repository_select").set_value(first.id).run()
+
+    reloaded = AppTest.from_file(app, default_timeout=60)
+
+    reloaded.run()
+
+    check("a new session starts on the repository chosen last", reloaded.session_state.repository_id, first.id)
 
 finally:
     shutil.rmtree(folder, ignore_errors=True)

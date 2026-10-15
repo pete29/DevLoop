@@ -330,9 +330,11 @@ instead of running it in the page.
 git cannot be added until **🌱 Make it a repository** runs `git init`; a
 folder inside a repository offers the repository instead.
 
-`tests.requirement_form_test` — the real page, headless: opening a
-requirement selects its repository, choosing another moves it, and a save
-from a page holding an older copy keeps the move.
+`tests.requirement_form_test` — the real page, headless: the sidebar lists
+only the selected repository's requirements, choosing another repository
+for one moves it, switching repository closes it, a save from a page
+holding an older copy keeps the move, and a new session starts on the
+repository chosen last.
 
 `tests.auth_test` — only a hash is stored and it matches only its
 password; with `DEVLOOP_PASSWORD_HASH` set the real page shows nothing but

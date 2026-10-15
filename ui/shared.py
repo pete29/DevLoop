@@ -7,6 +7,7 @@ import streamlit as st
 from dotenv import load_dotenv
 
 from database.plan_repository import PlanRepository
+from database.preference_repository import PreferenceRepository
 from database.repository_repository import RepositoryRepository, same_path
 from database.requirement_repository import RequirementRepository
 from database.run_repository import RunRepository
@@ -27,6 +28,7 @@ repository_store = RepositoryRepository()
 plan_store = PlanRepository()
 requirement_store = RequirementRepository()
 run_store = RunRepository()
+preferences = PreferenceRepository()
 
 # Read again on every run of the page: a repository added on
 # one run is listed on the next.
@@ -66,6 +68,18 @@ def init_session() -> None:
     for key, value in SESSION_DEFAULTS.items():
         if key not in st.session_state:
             st.session_state[key] = value
+
+    # The repository selected last time, in any session.
+    if st.session_state.repository_id is None:
+        st.session_state.repository_id = preferences.get("repository_id") or None
+
+
+def select_repository(repository_id: str) -> None:
+    """Selects a repository, and remembers it for the next session."""
+
+    st.session_state.repository_id = repository_id
+
+    preferences.set("repository_id", repository_id or "")
 
 
 def refresh() -> None:
@@ -179,6 +193,27 @@ def resolve_repository(task_like):
             return candidate
 
     return None
+
+
+def in_selected_repository(item) -> bool:
+    """Whether a task, plan or requirement belongs to the selected repository.
+
+    The sidebar listed every repository's work under
+    whichever one was selected. A requirement with no
+    repository yet is shown everywhere, so it can be given
+    one.
+    """
+
+    selected = st.session_state.get("repository_id")
+
+    if not selected:
+        return True
+
+    if hasattr(item, "repository_path"):
+        found = resolve_repository(item)
+        return found is not None and found.id == selected
+
+    return not item.repository_id or item.repository_id == selected
 
 
 def show_message() -> None:
