@@ -24,6 +24,10 @@ ALLOWED_CALLS = (
     ("GET", re.compile(r"^/repos/[^/]+/[^/]+$")),
     # Read issues.
     ("GET", re.compile(r"^/repos/[^/]+/[^/]+/issues$")),
+    # Create a repository for the signed-in account, on a
+    # human's click: "New repository" in the app. The fields
+    # are restricted below.
+    ("POST", re.compile(r"^/user/repos$")),
     # Create an issue, with a title and a body only: a
     # human writes a requirement here, or splits a large
     # one, and presses the button that files it.
@@ -77,6 +81,12 @@ PATCH_FIELDS = {
 # A new issue may carry its text and nothing else: no
 # assignees, labels or milestone set on someone's behalf.
 CREATE_ISSUE_FIELDS = frozenset({"title", "body"})
+
+# A new repository: its name, visibility, description and
+# a first commit. Never a template, a team or an org.
+CREATE_REPOSITORY_FIELDS = frozenset(
+    {"name", "private", "description", "auto_init"}
+)
 
 SUB_ISSUES_PATH = re.compile(
     r"^/repos/[^/]+/[^/]+/issues/\d+/sub_issues$"
@@ -232,6 +242,17 @@ class GitHubService:
                     f"A{'n' if kind == 'issue' else ''} "
                     f"{kind or 'resource'} may only have its "
                     f"{sorted(allowed)} changed; "
+                    f"got {sorted(sent)}."
+                )
+
+        if method == "POST" and path == "/user/repos":
+
+            sent = set((payload or {}).keys())
+
+            if "name" not in sent or not sent <= CREATE_REPOSITORY_FIELDS:
+                raise GitHubError(
+                    "A new repository may only have "
+                    f"{sorted(CREATE_REPOSITORY_FIELDS)}; "
                     f"got {sorted(sent)}."
                 )
 

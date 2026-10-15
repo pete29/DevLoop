@@ -15,6 +15,7 @@ ALLOWED_COMMANDS = frozenset(
         "commit",
         "diff",
         "fetch",
+        "init",
         "ls-files",
         "merge-base",
         "push",
@@ -42,7 +43,9 @@ FORBIDDEN_COMMANDS = frozenset(
 # read a URL but must never add or rewrite one, and 'push'
 # must never force, delete or mirror.
 ALLOWED_SUBCOMMANDS = {
-    "remote": frozenset({"get-url"}),
+    # "add" only as `remote add origin <url>`, and only
+    # into a repository without one: see add_origin.
+    "remote": frozenset({"get-url", "add"}),
     "merge-base": frozenset({"--is-ancestor"}),
 }
 
@@ -118,6 +121,13 @@ VALID_REMOTE = re.compile(
 CREDENTIALS_IN_URL = re.compile(
     r"(?P<scheme>[A-Za-z][A-Za-z0-9+.-]*://)"
     r"[^/@\s]+@"
+)
+
+
+# What `remote add` may point at: a GitHub-style https or
+# ssh URL, or -- for tests and local mirrors -- a path.
+REMOTE_URL = re.compile(
+    r"^(?:https://[^\s]+|git@[^\s:]+:[^\s]+|[A-Za-z]:[\\/][^\s]*|/[^\s]*)$"
 )
 
 
@@ -220,6 +230,39 @@ class GitService:
                     "'git fetch' is allowed only as "
                     "'git fetch --quiet <remote>'."
                 )
+
+        # A new repository, in one shape: quiet, with its
+        # first branch named. Never --bare, --template or a
+        # separate git dir.
+        if command == "init" and not (
+            len(arguments) == 3
+            and arguments[1] == "--quiet"
+            and arguments[2].startswith("--initial-branch=")
+            and is_valid_branch(
+                arguments[2].split("=", 1)[1]
+            )
+        ):
+            raise GitError(
+                "'git init' is allowed only as "
+                "'git init --quiet --initial-branch=<name>'."
+            )
+
+        if (
+            command == "remote"
+            and len(arguments) > 1
+            and arguments[1] == "add"
+            and not (
+                len(arguments) == 4
+                and arguments[2] == "origin"
+                and REMOTE_URL.match(arguments[3])
+                and not CREDENTIALS_IN_URL.search(arguments[3])
+            )
+        ):
+            raise GitError(
+                "'git remote add' is allowed only as "
+                "'git remote add origin <url>', with no "
+                "credentials in the URL."
+            )
 
         if command == "push":
 
@@ -396,6 +439,37 @@ class GitService:
         self._run("checkout", "-b", name)
 
         return name
+
+    def init(self, branch: str) -> None:
+        """Makes this folder a new repository.
+
+        Only an empty start: a folder that already holds a
+        repository of its own is somebody's, and is left
+        alone.
+        """
+
+        if os.path.exists(os.path.join(self.repository_path, ".git")):
+            raise GitError(
+                f"{self.repository_path} is already a repository."
+            )
+
+        self._run(
+            "init",
+            "--quiet",
+            f"--initial-branch={branch}",
+        )
+
+    def add_origin(self, url: str) -> None:
+        """Points a new repository at its remote, once.
+
+        Never rewrites an existing origin: that would send
+        somebody's pushes elsewhere.
+        """
+
+        if self.has_remote("origin"):
+            raise GitError("This repository already has an origin.")
+
+        self._run("remote", "add", "origin", url)
 
     def fetch(self, remote: str = "origin") -> None:
         """Updates origin/* from the remote. Nothing else."""

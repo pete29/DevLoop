@@ -104,7 +104,10 @@ check(
             "symbolic-ref",
         }
     ),
-    ["diff", "fetch", "ls-files", "merge-base", "remote"],
+    # init: only `init --quiet --initial-branch=<name>`, for
+    # "New repository"; remote adds only origin, once. Both
+    # shapes are pinned in tests.repository_setup_test.
+    ["diff", "fetch", "init", "ls-files", "merge-base", "remote"],
 )
 
 # Fetch is allowed because a factory whose main never

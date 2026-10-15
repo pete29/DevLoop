@@ -804,6 +804,86 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "Issues wymagają repozytorium z remote na GitHubie i GITHUB_PAT.",
         "en": "Issues need a repository with a GitHub remote and GITHUB_PAT.",
     },
+    "repo.pick": {
+        "pl": "📁 Wybierz folder…",
+        "en": "📁 Choose a folder…",
+    },
+    "repo.pick_none": {
+        "pl": "Nie wybrano folderu (albo okno nie mogło się otworzyć). Wpisz ścieżkę.",
+        "en": "No folder chosen (or the window could not open). Type the path instead.",
+    },
+    "repo.add_button": {
+        "pl": "Dodaj",
+        "en": "Add",
+    },
+    "repo.folder_missing": {
+        "pl": "Ten folder nie istnieje: {path}",
+        "en": "That folder does not exist: {path}",
+    },
+    "repo.added": {
+        "pl": "Dodano repozytorium {name}.",
+        "en": "Added the repository {name}.",
+    },
+    "repo.new": {
+        "pl": "🆕 Nowe repozytorium",
+        "en": "🆕 New repository",
+    },
+    "repo.new_name": {
+        "pl": "Nazwa (folder i repo na GitHubie)",
+        "en": "Name (the folder, and the GitHub repository)",
+    },
+    "repo.new_parent": {
+        "pl": "Folder nadrzędny",
+        "en": "Parent folder",
+    },
+    "repo.new_description": {
+        "pl": "Opis (opcjonalnie)",
+        "en": "Description (optional)",
+    },
+    "repo.new_on_github": {
+        "pl": "Załóż też na GitHubie i ustaw jako origin",
+        "en": "Also create it on GitHub and set it as origin",
+    },
+    "repo.new_private": {
+        "pl": "Prywatne",
+        "en": "Private",
+    },
+    "repo.new_target": {
+        "pl": "Powstanie: `{path}`",
+        "en": "Will be created: `{path}`",
+    },
+    "repo.new_token_note": {
+        "pl": (
+            "Zakładanie repo na GitHubie wymaga tokena z uprawnieniem "
+            "Administration: write. Użyty zostanie GITHUB_ADMIN_PAT, "
+            "a jeśli go nie ma, GITHUB_PAT."
+        ),
+        "en": (
+            "Creating a GitHub repository needs a token with "
+            "Administration: write. GITHUB_ADMIN_PAT is used, or "
+            "GITHUB_PAT when it is not set."
+        ),
+    },
+    "repo.new_create": {
+        "pl": "🆕 Utwórz repozytorium",
+        "en": "🆕 Create the repository",
+    },
+    "repo.new_spinner": {
+        "pl": "Tworzę repozytorium ...",
+        "en": "Creating the repository ...",
+    },
+    "repo.new_created": {
+        "pl": "Utworzono {name} w {path}.",
+        "en": "Created {name} in {path}.",
+    },
+    "repo.new_created_github": {
+        "pl": " Na GitHubie: {url}",
+        "en": " On GitHub: {url}",
+    },
+    "repo.new_failed": {
+        "pl": "Nie utworzono repozytorium: {reason}",
+        "en": "The repository was not created: {reason}",
+    },
     "split.button": {
         "pl": "✂️ Rozbij na issues",
         "en": "✂️ Split into issues",
