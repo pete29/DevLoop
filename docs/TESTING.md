@@ -290,6 +290,14 @@ without undoing the approval or the push.
 
 ### The pipeline and the plan's branch
 
+`tests.prompt_cache_test` — caching hits only on identical bytes, so that
+is what it pins down: the Developer's planning call and every file call open
+with the same context block (holding the code the task names), the file
+calls share the file list and differ only after it; the Architect sends the
+same rules in every review, with nothing of the task in them;
+`ClaudeService` marks every cached block with a breakpoint and folds more
+than four; a provider that cannot cache gets the same text as one string.
+
 `tests.plan_runner_test` — background runs. A stop the page asks for
 survives the worker's writes, and one asked after the end does not reopen
 the run. The worker (pipeline faked) runs ready tasks in dependency order,

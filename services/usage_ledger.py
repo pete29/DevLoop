@@ -80,6 +80,11 @@ def record(usage: Usage) -> None:
             else ""
         )
         + (
+            f" cache_write={usage.cache_write_tokens}"
+            if usage.cache_write_tokens
+            else ""
+        )
+        + (
             f" ${usage.cost:.4f}"
             if usage.cost is not None
             else ""

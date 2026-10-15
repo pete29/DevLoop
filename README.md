@@ -293,6 +293,24 @@ MAX_REVIEW_LOOPS = 3    # Architect reviews per task
 MAX_TEST_LOOPS = 1      # how often failing tests may send work back
 ```
 
+**Prompt caching.** Agents send what repeats as separate blocks, first, and
+Claude caches each (`services/prompt_cache.py`, `ClaudeService.generate_cached`):
+
+- the **Architect's rules** — identical in every review, so every task of a
+  plan after the first reads them from the cache;
+- the **Developer's task context** (role, task, repository listing, files
+  the task names) — identical in the planning call and every file call of
+  the task — and the **file list**, identical for every file of a round.
+
+A cache write costs 1.25× input and a read 0.05× (Opus 5.5) or 0.1×
+(Sonnet 5.5), so only text sent again within five minutes is cached; the
+planner (one call) and QA (rules under the 512-token minimum) are not.
+Measured on two real tasks: $0.100 against $0.108 for the same tokens
+uncached, 6.7% — the bill is mostly output tokens. The saving grows with the
+repository (listing and referenced files sit in the cached prefix) and with
+the number of tasks in a plan. The cost line of every task counts cache
+reads and writes at their own prices.
+
 `CLAUDE_PRICES` drives the cost report. `AUTO_BOOTSTRAP` and
 `ENABLE_PACKAGE_INSTALLATION` control Step 0; the second removes the
 `npm install` button entirely. `SPLIT_HINT_TASKS` (6) is the plan size above
@@ -319,7 +337,7 @@ CI runs the offline suites on every pull request and on `main`
 ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)): Windows,
 Python 3.13, Node 24, no secrets.
 
-There are 31 test files. 27 run offline, against fake transports and
+There are 32 test files. 28 run offline, against fake transports and
 throwaway repositories; `compile_test`, `install_test` and
 `test_execution_test` need Node on `PATH`. Four call a real model and are
 skipped in routine runs: `architect_test`, `workflow_test`,
@@ -365,7 +383,6 @@ app.py         the Streamlit UI (every visible string in Polish and English)
 - **Review comments left on GitHub don't flow back** to the Developer. In
   the app, a task can be sent back with notes; a comment on the pull request
   cannot yet.
-- **No prompt caching yet.** Prompts put the variable part first.
 - **A task outside a plan** ("Generate code" at the bottom) still runs in
   the page, synchronously; only planned tasks have a worker.
 - **A single task outside a plan** is generated on whatever branch is

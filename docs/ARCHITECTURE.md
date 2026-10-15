@@ -357,6 +357,7 @@ its own test.
 | `task_rollback` | undoes a rejected task's files; refuses a committed one |
 | `usage_ledger` | tokens and dollars per agent, per run |
 | `plan_runner` | the background worker: runs a plan's ready tasks, stops on request or failure |
+| `prompt_cache` | `ask(llm, cached, prompt)`: repeated blocks first, cached by Claude, concatenated for other providers |
 | `review_history_formatter` | previous rounds, for the Architect |
 | `code_cleaner` | strips fences and reasoning blocks |
 | `llm_factory` | picks Claude (per role), Ollama or Gemini |

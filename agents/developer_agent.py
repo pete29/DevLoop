@@ -7,6 +7,7 @@ from services.file_naming import FileNaming
 from services.file_parser import FileParseError, FileParser
 from services.import_repair import drop_self_imports
 from services.llm_factory import LLMFactory
+from services.prompt_cache import ask
 from services.repository_survey import (
     RepositorySurvey,
     is_test_path,
@@ -221,6 +222,26 @@ rewritten. Anything this task needs that is not
 there, name as a new file.
 {found.render_referenced(text, exclude)}"""
 
+    def _context(
+        self,
+        task: str,
+        found: RepositorySurvey,
+    ) -> str:
+        """Who is writing, what for, and what is already there.
+
+        The same bytes in the planning call and in every
+        file call of the task, so all but the first read it
+        from the cache. Nothing per file belongs here: one
+        changed character and the cache misses.
+        """
+
+        return f"""
+You are a Senior TypeScript Developer.
+
+Task:
+{task}
+{self._repository_section(found, task)}"""
+
     def _plan(
         self,
         task: str,
@@ -236,11 +257,6 @@ there, name as a new file.
         found = found or RepositorySurvey()
 
         prompt = f"""
-You are a Senior TypeScript Developer.
-
-Task:
-{task}
-{self._repository_section(found, task)}
 List only the files this task actually needs.
 
 Match the list to the task. "Initialise a node
@@ -257,7 +273,7 @@ One file is a perfectly good answer. At most
 
         try:
             entries = FileParser.parse(
-                self.llm.generate_text(prompt),
+                ask(self.llm, [self._context(task, found)], prompt),
                 FileType.SOURCE,
             )
 
@@ -516,13 +532,15 @@ task does not touch:
             else ""
         )
 
-        # The task and the review are what name the code
-        # this file has to fit; the file itself is shown
-        # above when it exists.
-        around = self._repository_section(
-            found,
-            f"{task}\n{review}",
-            {path},
+        # The task's referenced files are in the shared
+        # context; a review can name more, and those are
+        # this call's alone.
+        shown = {item for item, _ in found.referenced(task)}
+
+        from_review = (
+            found.render_referenced(review, shown | {path})
+            if review
+            else ""
         )
 
         correction = (
@@ -538,22 +556,25 @@ Keep everything it does not object to.
             else ""
         )
 
-        prompt = f"""
-You are a Senior TypeScript Developer.
-
-Overall task:
-{task}
-{around}
+        # Two cached blocks: the task's context, the same for
+        # the planning call, and the file list, the same for
+        # every file of this round.
+        cached = [
+            self._context(task, found),
+            f"""
 The solution is split across these files:
 {listing}
+""",
+        ]
 
+        prompt = f"""
 Write exactly one of them: {path}
 Its job: {purpose}
-{current}{correction}{WRITE_RULES}
+{from_review}{current}{correction}{WRITE_RULES}
 """
 
         try:
-            answer = self.llm.generate_text(prompt)
+            answer = ask(self.llm, cached, prompt)
 
         except Exception as error:  # noqa: BLE001
 

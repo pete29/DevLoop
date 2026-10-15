@@ -10,6 +10,7 @@ from services.finding_filter import cap, drop_structural
 from services.llm_factory import (
     LLMFactory,
 )
+from services.prompt_cache import ask
 from services.repository_survey import survey
 from services.review_history_formatter import (
     ReviewHistoryFormatter,
@@ -29,96 +30,11 @@ from workflows.review_decision import (
 )
 
 
-def _as_lines(findings: list[str]) -> str:
-
-    if not findings:
-        return "- None"
-
-    return "\n".join(f"- {finding}" for finding in findings)
-
-
-class ArchitectAgent:
-    def __init__(
-        self,
-    ) -> None:
-
-        self.llm = (
-            LLMFactory.create("architect")
-        )
-
-    def execute(
-        self,
-        task_description: str,
-        source_files: list[GeneratedFile],
-        review_history: list[
-            ReviewHistory
-        ] | None = None,
-        repository_path: str = "",
-    ) -> ArchitectureReview:
-
-        history = review_history or []
-
-        history_text = (
-            ReviewHistoryFormatter.format(
-                history
-            )
-        )
-
-        # Imports, missing files and requirement coverage
-        # are facts about the file set, so they are decided
-        # here rather than left to the model.
-        # What is already in the repository counts as
-        # known. Without it, importing a file an earlier
-        # task wrote reads as importing a file that does
-        # not exist, and the loop spends a round chasing a
-        # problem nobody has.
-        found = survey(repository_path)
-
-        report = StructureValidator.validate(
-            source_files,
-            task_description,
-            found,
-        )
-
-        # The code this task builds on, so a review of a
-        # class that implements PasswordRule can see what
-        # PasswordRule is. Context, not under review.
-        builds_on = found.render_referenced(
-            task_description,
-            {item.path for item in source_files},
-        )
-
-        structural_findings = report.blockers
-
-        prompt = f"""
+# Everything about how to review, and nothing about what:
+# identical bytes in every call.
+RULES = """
 You are a Senior Software Architect.
 
-Task:
-{task_description}
-
-Previous Reviews:
-
-{history_text}
-
-Project Structure:
-
-{FileBundle.structure(source_files)}
-
-Repository Validation Report:
-
-{report.summary()}
-
-A compiler-style pass has already checked
-this file set and recorded the problems
-below. They are handled. Do not repeat them,
-and do not look for more of their kind:
-
-{_as_lines(structural_findings)}
-
-Current Code:
-
-{FileBundle.render(source_files)}
-{builds_on}
 Review the project structure as well as the
 code. A file set should separate interfaces,
 services and providers, and each file should
@@ -248,11 +164,104 @@ SUGGESTIONS:
 - finding
 """
 
-        raw_review = (
-            self.llm.generate_text(
-                prompt
+
+def _as_lines(findings: list[str]) -> str:
+
+    if not findings:
+        return "- None"
+
+    return "\n".join(f"- {finding}" for finding in findings)
+
+
+class ArchitectAgent:
+    def __init__(
+        self,
+    ) -> None:
+
+        self.llm = (
+            LLMFactory.create("architect")
+        )
+
+    def execute(
+        self,
+        task_description: str,
+        source_files: list[GeneratedFile],
+        review_history: list[
+            ReviewHistory
+        ] | None = None,
+        repository_path: str = "",
+    ) -> ArchitectureReview:
+
+        history = review_history or []
+
+        history_text = (
+            ReviewHistoryFormatter.format(
+                history
             )
         )
+
+        # Imports, missing files and requirement coverage
+        # are facts about the file set, so they are decided
+        # here rather than left to the model.
+        # What is already in the repository counts as
+        # known. Without it, importing a file an earlier
+        # task wrote reads as importing a file that does
+        # not exist, and the loop spends a round chasing a
+        # problem nobody has.
+        found = survey(repository_path)
+
+        report = StructureValidator.validate(
+            source_files,
+            task_description,
+            found,
+        )
+
+        # The code this task builds on, so a review of a
+        # class that implements PasswordRule can see what
+        # PasswordRule is. Context, not under review.
+        builds_on = found.render_referenced(
+            task_description,
+            {item.path for item in source_files},
+        )
+
+        structural_findings = report.blockers
+
+        # The rules first, word for word the same in every
+        # review, so every task of a plan reads them from the
+        # cache; what is under review comes after.
+        prompt = f"""
+
+Task:
+{task_description}
+
+Previous Reviews:
+
+{history_text}
+
+Project Structure:
+
+{FileBundle.structure(source_files)}
+
+Repository Validation Report:
+
+{report.summary()}
+
+A compiler-style pass has already checked
+this file set and recorded the problems
+below. They are handled. Do not repeat them,
+and do not look for more of their kind:
+
+{_as_lines(structural_findings)}
+
+Current Code:
+
+{FileBundle.render(source_files)}
+{builds_on}
+Review it by the rules above, and answer in
+exactly the format they give.
+"""
+
+        raw_review = ask(self.llm, [RULES], prompt)
 
         score = ReviewParser.score(raw_review)
 

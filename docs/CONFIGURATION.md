@@ -331,6 +331,27 @@ A decline is retried on another model inside the same call (server-side
 fallback). An answer cut off at `CLAUDE_MAX_TOKENS` raises rather than
 reaching the validator as a broken file.
 
+**Prompt caching.** Agents send what repeats as separate blocks, first, and
+Claude caches each (`services/prompt_cache.py`, `ClaudeService.generate_cached`):
+
+- the **Architect's rules** — identical in every review, so every task of a
+  plan after the first reads them from the cache;
+- the **Developer's task context** (role, task, repository listing, files
+  the task names) — identical in the planning call and every file call of
+  the task — and the **file list**, identical for every file of a round.
+
+A cache write costs 1.25× input and a read 0.05× (Opus 5.5) or 0.1×
+(Sonnet 5.5), so only text sent again within five minutes is cached; the
+planner (one call) and QA (rules under the 512-token minimum) are not.
+Measured on two real tasks: $0.100 against $0.108 for the same tokens
+uncached, 6.7% — the bill is mostly output tokens. The saving grows with the
+repository (listing and referenced files sit in the cached prefix) and with
+the number of tasks in a plan. The cost line of every task counts cache
+reads and writes at their own prices.
+
+Nothing to configure: the blocks are chosen in the agents. A provider that
+cannot cache (Ollama, Gemini) receives the same text as one string.
+
 ### Switching to Gemini
 
 Set `LLM_PROVIDER = LLMProvider.GEMINI` and put `GEMINI_API_KEY` in `.env`.

@@ -10,6 +10,9 @@ from services.code_cleaner import strip_code_fences
 # twelve-file task loses whichever file it was on.
 FALLBACK_BETA = "server-side-fallback-2026-07-01"
 
+# The API allows four cache breakpoints per request.
+MAX_CACHED_BLOCKS = 4
+
 
 class ClaudeService:
     def __init__(
@@ -35,6 +38,42 @@ class ClaudeService:
         prompt: str,
     ) -> str:
 
+        return self._call(prompt)
+
+    def generate_cached(
+        self,
+        cached: list[str],
+        prompt: str,
+    ) -> str:
+        """The same call, with `cached` as reusable blocks.
+
+        Each block ends in a cache breakpoint, so a later
+        call that starts with the same blocks reads them
+        from the cache. Blocks beyond the API's limit are
+        folded into the last one rather than dropped.
+        """
+
+        blocks = list(cached)
+
+        if len(blocks) > MAX_CACHED_BLOCKS:
+            blocks = blocks[: MAX_CACHED_BLOCKS - 1] + [
+                "".join(blocks[MAX_CACHED_BLOCKS - 1 :])
+            ]
+
+        return self._call(
+            [
+                {
+                    "type": "text",
+                    "text": block,
+                    "cache_control": {"type": "ephemeral"},
+                }
+                for block in blocks
+            ]
+            + [{"type": "text", "text": prompt}]
+        )
+
+    def _call(self, content) -> str:
+
         # Streamed, because one file of real code can run
         # long enough to hit the HTTP timeout of a single
         # non-streaming request.
@@ -44,7 +83,7 @@ class ClaudeService:
             output_config={"effort": self.effort},
             betas=[FALLBACK_BETA],
             fallbacks="default",
-            messages=[{"role": "user", "content": prompt}],
+            messages=[{"role": "user", "content": content}],
         ) as stream:
             message = stream.get_final_message()
 
