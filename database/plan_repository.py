@@ -23,6 +23,7 @@ COLUMNS = (
     "created_at",
     "planning_cost",
     "failed_cost",
+    "acted_comments",
 )
 
 COLUMN_LIST = ",\n                ".join(COLUMNS)
@@ -38,6 +39,7 @@ ADDED_COLUMNS = {
     "issue": "TEXT NOT NULL DEFAULT '{}'",
     "planning_cost": "REAL NOT NULL DEFAULT 0",
     "failed_cost": "REAL NOT NULL DEFAULT 0",
+    "acted_comments": "TEXT NOT NULL DEFAULT '[]'",
 }
 
 
@@ -167,10 +169,32 @@ class PlanRepository:
                 plan.created_at,
                 plan.planning_cost,
                 plan.failed_cost,
+                json.dumps(plan.acted_comments),
             ),
         )
 
         self.connection.commit()
+
+    def mark_acted(self, plan_id: str, keys: list[str]) -> list[str]:
+        """Records review comments as sent back; returns them all."""
+
+        row = self.connection.execute(
+            "SELECT acted_comments FROM plans WHERE id = ?",
+            (plan_id,),
+        ).fetchone()
+
+        acted = json.loads(row[0] or "[]") if row else []
+
+        acted += [key for key in keys if key not in acted]
+
+        self.connection.execute(
+            "UPDATE plans SET acted_comments = ? WHERE id = ?",
+            (json.dumps(acted), plan_id),
+        )
+
+        self.connection.commit()
+
+        return acted
 
     def add_failed_cost(self, plan_id: str, dollars: float) -> None:
         """Adds what a failed attempt spent, in the database.
@@ -320,6 +344,7 @@ class PlanRepository:
             created_at=row[9],
             planning_cost=float(row[10] or 0),
             failed_cost=float(row[11] or 0),
+            acted_comments=json.loads(row[12] or "[]"),
         )
 
     def get_all(self) -> list[Plan]:

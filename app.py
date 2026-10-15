@@ -54,7 +54,7 @@ from services.environment_step import (
     commit_scaffolding,
     write_scaffolding,
 )
-from services import costs, plan_runner
+from services import costs, plan_runner, review_feedback
 from services.repository_context import describe
 from services.repository_setup import (
     check_new,
@@ -366,6 +366,148 @@ def branch_panel(plan, target_path: str) -> None:
         st.info(t("branch.continues", count=len(earlier)))
 
 
+def feedback_panel(plan, holder, records) -> None:
+    """Review comments from the plan's PR, sent back by choice.
+
+    Read on a click, not on every redraw: each read is
+    three calls to GitHub.
+    """
+
+    key = f"feedback-{plan.id}"
+
+    if st.button(t("feedback.load"), key=f"{key}-load", use_container_width=True):
+
+        try:
+            found = review_feedback.read(
+                PullRequestAgent.service(holder),
+                holder.pull_request.id,
+            )
+
+        except Exception as error:
+            st.session_state.git_message = ("warning", t("feedback.failed", reason=error))
+            found = None
+
+        st.session_state[key] = found
+
+        st.rerun()
+
+    found = st.session_state.get(key)
+
+    if found is None:
+        return
+
+    acted = set(plan.acted_comments)
+
+    fresh = [comment for comment in found if comment.key not in acted]
+
+    if not fresh:
+        st.caption(t("feedback.none"))
+        return
+
+    # A comment can only go to a task that has a version to
+    # revise: the plan's records, latest per plan task.
+    by_task = {}
+
+    for item in plan.tasks:
+        execution = plan.execution(item.id)
+        record = next(
+            (r for r in records if execution and r.id == execution.task_record_id),
+            None,
+        )
+        if record is not None and record.generated_files:
+            by_task[record.id] = f"{item.id}. {item.title}"
+
+    if not by_task:
+        return
+
+    with st.expander(t("feedback.heading", count=len(fresh)), expanded=True):
+
+        st.caption(t("feedback.caption"))
+
+        chosen: dict[str, list] = {}
+
+        options = list(by_task)
+
+        for comment in fresh:
+
+            with st.container(border=True):
+
+                st.markdown(
+                    f"**{comment.author}**"
+                    + (f" · `{comment.where}`" if comment.where else "")
+                    + (f" · [{comment.kind}]({comment.url})" if comment.url else f" · {comment.kind}")
+                )
+
+                st.write(comment.body)
+
+                tick, owner = st.columns([1, 3])
+
+                with tick:
+                    picked = st.checkbox("✔", key=f"{key}-pick-{comment.key}")
+
+                with owner:
+                    guess = review_feedback.owner_of(comment, [r for r in records if r.id in by_task])
+                    target = st.selectbox(
+                        t("feedback.task"),
+                        options,
+                        index=options.index(guess) if guess in options else len(options) - 1,
+                        format_func=lambda record_id: by_task[record_id],
+                        key=f"{key}-task-{comment.key}",
+                    )
+
+                if picked:
+                    chosen.setdefault(target, []).append(comment)
+
+        count = sum(len(items) for items in chosen.values())
+
+        if not st.button(
+            t("feedback.send", count=count),
+            key=f"{key}-send",
+            disabled=not count,
+            type="primary",
+            use_container_width=True,
+        ):
+            return
+
+    revised = None
+
+    sent = 0
+
+    for record_id, comments in chosen.items():
+
+        record = repository.get_by_id(record_id)
+
+        try:
+            with st.spinner(t("feedback.spinner", task=by_task[record_id])):
+                revised = revise_task(record, review_feedback.notes(comments))
+
+        except Exception as error:
+            st.session_state.git_message = (
+                "warning",
+                t("feedback.partial", task=by_task[record_id], reason=error),
+            )
+            break
+
+        # Recorded per task as it succeeds: a later failure
+        # must not offer these again.
+        plan_store.mark_acted(plan.id, [comment.key for comment in comments])
+
+        sent += len(comments)
+
+    else:
+        st.session_state.git_message = (
+            "success",
+            t("feedback.done", count=sent, tasks=len(chosen)),
+        )
+
+    st.session_state.pop(key, None)
+
+    if revised is not None:
+        st.session_state.task = revised
+
+    st.rerun()
+
+
 def pull_request_panel(plan) -> None:
     """The plan's pull request, and a way to ask GitHub.
 
@@ -424,6 +566,10 @@ def pull_request_panel(plan) -> None:
             )
 
             st.rerun()
+
+    # Feedback only matters while the request can change.
+    if info.state == PullRequestState.OPEN:
+        feedback_panel(plan, holder, records)
 
 
 def register_repository(name: str, path: str) -> None:

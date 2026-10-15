@@ -237,6 +237,17 @@ open **one pull request for the whole plan**: the requirement, a task
 checklist with states, scores, compile and test results, files, findings
 and cost. Every later push rewrites that description.
 
+**Review on GitHub comes back.** While the plan's pull request is open,
+**💬 Load the PR's review comments** reads what reviewers wrote: comments on
+lines of the diff, the text of reviews, and the conversation (bare approvals
+and DevLoop's own comments are left out). Tick the ones to act on; each goes
+to a task — an inline comment to the task that last wrote its file, a
+general one to the task you choose. Every task gets its comments as
+revision notes, through the same **Send back for revision** as notes typed
+in the app; accept and push, and the pull request's description updates. A
+comment sent back is remembered and not offered again. Reading is all
+DevLoop does on the pull request: it never comments, reviews or resolves.
+
 You merge on GitHub. **🔄 Check the PR** in the plan view then moves the
 requirement to `DELIVERED`. When the work came from an issue, the issue gets
 a comment with the pull request; it is never closed automatically.
@@ -344,7 +355,7 @@ CI runs the offline suites on every pull request and on `main`
 ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)): Windows,
 Python 3.13, Node 24, no secrets.
 
-There are 33 test files. 29 run offline, against fake transports and
+There are 34 test files. 30 run offline, against fake transports and
 throwaway repositories; `compile_test`, `install_test` and
 `test_execution_test` need Node on `PATH`. Four call a real model and are
 skipped in routine runs: `architect_test`, `workflow_test`,
@@ -387,9 +398,6 @@ app.py         the Streamlit UI (every visible string in Polish and English)
 
 ## Known limitations
 
-- **Review comments left on GitHub don't flow back** to the Developer. In
-  the app, a task can be sent back with notes; a comment on the pull request
-  cannot yet.
 - **A task outside a plan** ("Generate code" at the bottom) still runs in
   the page, synchronously; only planned tasks have a worker.
 - **A single task outside a plan** is generated on whatever branch is

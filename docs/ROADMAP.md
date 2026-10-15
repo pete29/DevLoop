@@ -67,6 +67,7 @@ What has been built, in the order it was built, and what the next step is.
 | 11.3 | **First live end-to-end run** — push, PR, merge and delivery verified against GitHub; the bugs it found fixed (below) |
 | 12 | **The human can say more than yes or no** — a task opens in a window, and can be sent back with chosen findings and the human's own notes |
 | 12.1 | **Issues both ways** — a requirement filed as an issue; a large one split into user stories, filed as sub-issues; the issue list as a tree; plans for an issue share `feature/issue-<n>-<slug>` |
+| 12.8 | **Review feedback from GitHub** — a pull request's review comments, chosen by a human, go back through the same revision as notes typed in the app |
 | 12.7 | **Costs** — a task's dollars stored, a plan's total and a month's shown, and a per-plan limit that stops a run before the next task |
 | 12.6 | **Prompt caching** — repeated blocks first and cached: the Architect's rules across a plan, the Developer's task context across its calls |
 | 12.5 | **Background runs** — a plan's tasks run in a worker process; the page reads its progress and console, can stop it between tasks, and notices a worker that died |
@@ -177,7 +178,6 @@ came from a real run against a real model.
 ### Sprint 10 and beyond, unbuilt
 
 ```text
-PR review feedback      comments left on the pull request on GitHub feeding a revision
 Prompt caching          a stable prompt prefix (rules, listing, referenced files) with cache_control
 Multi-repository plans  one requirement spanning several repositories
 Azure Boards            on hold, by decision: GitHub only for now

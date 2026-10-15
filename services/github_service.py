@@ -20,6 +20,21 @@ ALLOWED_CALLS = (
         "GET",
         re.compile(r"^/repos/[^/]+/[^/]+/pulls/\d+$"),
     ),
+    # Read what reviewers said on a pull request: inline
+    # comments, reviews, and the conversation (which GitHub
+    # serves from the issues endpoint). Read only.
+    (
+        "GET",
+        re.compile(r"^/repos/[^/]+/[^/]+/pulls/\d+/comments$"),
+    ),
+    (
+        "GET",
+        re.compile(r"^/repos/[^/]+/[^/]+/pulls/\d+/reviews$"),
+    ),
+    (
+        "GET",
+        re.compile(r"^/repos/[^/]+/[^/]+/issues/\d+/comments$"),
+    ),
     # Read the repository, to learn its default branch.
     ("GET", re.compile(r"^/repos/[^/]+/[^/]+$")),
     # Read issues.
@@ -438,6 +453,33 @@ class GitHubService:
             f"/repos/{self.owner}/{self.repository}"
             f"/pulls/{number}",
             payload={"title": title, "body": body},
+        )
+
+    def _list(self, path: str) -> list[dict]:
+
+        data = self._request("GET", path, params={"per_page": 100})
+
+        return [item for item in data if isinstance(item, dict)] if isinstance(data, list) else []
+
+    def list_review_comments(self, number: int) -> list[dict]:
+        """Comments on lines of the diff."""
+
+        return self._list(
+            f"/repos/{self.owner}/{self.repository}/pulls/{int(number)}/comments"
+        )
+
+    def list_reviews(self, number: int) -> list[dict]:
+        """Submitted reviews, each with its overall text."""
+
+        return self._list(
+            f"/repos/{self.owner}/{self.repository}/pulls/{int(number)}/reviews"
+        )
+
+    def list_conversation(self, number: int) -> list[dict]:
+        """The pull request's conversation comments."""
+
+        return self._list(
+            f"/repos/{self.owner}/{self.repository}/issues/{int(number)}/comments"
         )
 
     def read_pull_request(

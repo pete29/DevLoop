@@ -290,6 +290,14 @@ without undoing the approval or the push.
 
 ### The pipeline and the plan's branch
 
+`tests.review_feedback_test` — inline comments, review text and the
+conversation are read, oldest first, with bare approvals and DevLoop's own
+comments left out, and only reads are sent; an inline comment knows its file
+and line, becomes a note saying where and who, and goes to the latest record
+that wrote its file; writing on a pull request (comments, reviews, edits,
+deletes) is refused; a comment sent back is recorded once and not offered
+again.
+
 `tests.costs_test` — a task's cost, stored or read from an older usage
 line; a plan's total counts planning, failed attempts and every record of
 it (revisions and replaced versions too) and nothing of other plans; a

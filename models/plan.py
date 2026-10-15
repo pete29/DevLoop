@@ -48,6 +48,10 @@ class Plan:
 
     failed_cost: float = 0.0
 
+    # Review comments from its pull request already sent
+    # back for revision, by key, so none is offered twice.
+    acted_comments: list[str] = field(default_factory=list)
+
     created_at: str = field(
         default_factory=lambda: datetime.now(
             UTC

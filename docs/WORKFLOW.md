@@ -554,5 +554,16 @@ intact:
 
 Both record what went wrong and let you retry.
 
+**Review on GitHub comes back.** While the plan's pull request is open,
+**💬 Load the PR's review comments** reads what reviewers wrote: comments on
+lines of the diff, the text of reviews, and the conversation (bare approvals
+and DevLoop's own comments are left out). Tick the ones to act on; each goes
+to a task — an inline comment to the task that last wrote its file, a
+general one to the task you choose. Every task gets its comments as
+revision notes, through the same **Send back for revision** as notes typed
+in the app; accept and push, and the pull request's description updates. A
+comment sent back is remembered and not offered again. Reading is all
+DevLoop does on the pull request: it never comments, reviews or resolves.
+
 See [REPOSITORY_WORKFLOW.md](REPOSITORY_WORKFLOW.md) for what happens to
 the files themselves.

@@ -136,6 +136,9 @@ exist, and no others:
 | `POST /repos/{owner}/{repo}/pulls` | create a pull request |
 | `GET /repos/{owner}/{repo}/pulls` | find an existing one for a branch |
 | `GET /repos/{owner}/{repo}/pulls/{n}` | read one back |
+| `GET /repos/{owner}/{repo}/pulls/{n}/comments` | read inline review comments |
+| `GET /repos/{owner}/{repo}/pulls/{n}/reviews` | read reviews and their text |
+| `GET /repos/{owner}/{repo}/issues/{n}/comments` | read a pull request's conversation |
 | `GET /repos/{owner}/{repo}` | read the default branch |
 | `GET /repos/{owner}/{repo}/issues` | list open issues |
 | `GET /repos/{owner}/{repo}/issues/{n}` | read one issue |

@@ -1076,6 +1076,46 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "🔀 PR planu: [{label}]({url}) · **{state}**",
         "en": "🔀 The plan's PR: [{label}]({url}) · **{state}**",
     },
+    "feedback.load": {
+        "pl": "💬 Wczytaj uwagi z PR",
+        "en": "💬 Load the PR's review comments",
+    },
+    "feedback.none": {
+        "pl": "Brak nowych uwag w PR (pominięte: puste akceptacje, komentarze DevLoop i uwagi już odesłane).",
+        "en": "No new review comments on the PR (left out: bare approvals, DevLoop's own, and those already sent back).",
+    },
+    "feedback.failed": {
+        "pl": "Nie wczytano uwag z PR: {reason}",
+        "en": "The PR's comments could not be read: {reason}",
+    },
+    "feedback.heading": {
+        "pl": "💬 Uwagi z PR ({count})",
+        "en": "💬 Review comments on the PR ({count})",
+    },
+    "feedback.caption": {
+        "pl": "Zaznacz uwagi i wybierz zadanie, które ma je poprawić. Każde zadanie dostanie swoje uwagi jako notatki do rewizji; potem akceptujesz, wypychasz, a opis PR się odświeży.",
+        "en": "Tick comments and pick the task that should address each. Every task gets its comments as revision notes; then accept, push, and the PR's description updates.",
+    },
+    "feedback.task": {
+        "pl": "Zadanie",
+        "en": "Task",
+    },
+    "feedback.send": {
+        "pl": "🔁 Odeślij zaznaczone do poprawki ({count})",
+        "en": "🔁 Send the ticked ones back for revision ({count})",
+    },
+    "feedback.spinner": {
+        "pl": "🤖 Developer poprawia: {task} ...",
+        "en": "🤖 The Developer is revising: {task} ...",
+    },
+    "feedback.done": {
+        "pl": "Odesłano {count} uwag(i) do {tasks} zadań(nia). Nowe wersje czekają na akceptację.",
+        "en": "Sent {count} comment(s) back to {tasks} task(s). The new versions wait for approval.",
+    },
+    "feedback.partial": {
+        "pl": "Rewizja zadania {task} nie powiodła się: {reason}. Wcześniejsze odesłane uwagi zostały zapisane.",
+        "en": "Revising task {task} failed: {reason}. Comments sent back before it are recorded.",
+    },
     "plan.pr_refresh": {
         "pl": "🔄 Sprawdź stan PR",
         "en": "🔄 Check the PR",
