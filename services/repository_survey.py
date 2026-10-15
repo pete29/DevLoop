@@ -120,6 +120,12 @@ class RepositorySurvey:
 
         return not self.files
 
+    @property
+    def typescript(self) -> bool:
+        """A TypeScript project: it has a tsconfig.json."""
+
+        return "tsconfig.json" in self.files
+
     def has(self, path: str) -> bool:
 
         return path in self.exports or path in self.files

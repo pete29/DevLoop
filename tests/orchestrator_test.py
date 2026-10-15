@@ -19,7 +19,7 @@ import services.llm_factory as factory
 from agents.test_execution_agent import TestExecutionAgent
 from config.settings import Settings
 from models.architecture_review import ArchitectureReview
-from models.compile_result import CompileResult, CompileStatus
+from models.compile_result import CompileError, CompileResult, CompileStatus
 from models.file_type import FileType
 from models.generated_file import GeneratedFile
 from models.test_result import TestResult, TestStatus
@@ -166,6 +166,8 @@ def compiles(*statuses):
         )
 
     type_checker.check = fake
+
+    type_checker.baseline = lambda repository_path: CompileResult()
 
 
 def tests_report(*statuses):
@@ -668,6 +670,38 @@ try:
 
     finally:
         shutil.rmtree(package_root, ignore_errors=True)
+
+    print()
+    print("=" * 80)
+    print("AN ERROR LEFT BY AN EARLIER TASK IS NOT THIS ONE'S")
+    print("=" * 80)
+
+    old_error = CompileError("tests/errors.test.ts", 1, "TS1005", "';' expected.")
+
+    def still_broken(repository_path):
+        CALLS.append("tsc")
+        return CompileResult(status=CompileStatus.FAILED, errors=[old_error], output="old")
+
+    tests_report()
+
+    type_checker.check = still_broken
+
+    type_checker.baseline = lambda repository_path: CompileResult(
+        status=CompileStatus.FAILED,
+        errors=[CompileError("tests/errors.test.ts", 3, "TS1005", "';' expected.")],
+    )
+
+    task = run(Developer([A, B], [[A, B_FIXED]]), Architect(), QA(), root)
+
+    check("the developer is not paid to fix it", "improve" in CALLS, False)
+
+    check(
+        "the task compiles, and says what was there before",
+        (task.compile_result.status, "before this task" in task.compile_result.reason),
+        (CompileStatus.PASSED, True),
+    )
+
+    check("and is approvable", task.recommendation, ReviewDecision.APPROVE)
 
 finally:
     shutil.rmtree(root, ignore_errors=True)

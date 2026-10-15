@@ -1,3 +1,5 @@
+import re
+
 from config.settings import Settings
 from models.file_type import FileType
 from models.generated_file import GeneratedFile
@@ -99,6 +101,17 @@ paths above where you need them.
 Return the TypeScript only: no JSON, no markdown fence,
 no explanation.
 """
+
+
+# Config files a TypeScript project still writes in
+# JavaScript: eslint.config.js, .prettierrc.cjs and the like.
+JAVASCRIPT_CONFIG = re.compile(r"(^|/)(\.[^/]+|[^/]*\.config\.[cm]?js)$")
+
+
+def is_javascript_source(path: str) -> bool:
+    """A JavaScript file that is not a tool's config."""
+
+    return path.endswith((".js", ".jsx", ".mjs", ".cjs")) and not JAVASCRIPT_CONFIG.search(path)
 
 
 class DeveloperAgent:
@@ -393,7 +406,7 @@ One file is a perfectly good answer. At most
                 "did not come back: " + ", ".join(missing)
             )
 
-        files = self._settle(files)
+        files = self._settle(files, found)
 
         self._announce(files)
 
@@ -689,7 +702,7 @@ Its job: {purpose}
             and path in by_path
         ]
 
-        settled = self._settle(kept + added)
+        settled = self._settle(kept + added, found)
 
         self._announce(settled)
 
@@ -758,6 +771,7 @@ provider or component per file.
     @staticmethod
     def _settle(
         files: list[GeneratedFile],
+        found: RepositorySurvey | None = None,
     ) -> list[GeneratedFile]:
         """The last mechanical pass before the files leave.
 
@@ -796,6 +810,23 @@ provider or component per file.
                 print(
                     f"DEVELOPER: dropped {item.path}; "
                     "tests are QA's"
+                )
+
+                continue
+
+            # A TypeScript project is written in TypeScript.
+            # Told that './types.js' was missing, a model
+            # wrote types.js next to the real types.ts, and
+            # every later task built on the copy.
+            if (
+                found is not None
+                and found.typescript
+                and is_javascript_source(item.path)
+            ):
+
+                print(
+                    f"DEVELOPER: dropped {item.path}; "
+                    "this is a TypeScript project"
                 )
 
                 continue

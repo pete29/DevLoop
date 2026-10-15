@@ -13,7 +13,8 @@ from services.environment_step import EnvironmentStep, assess, commit_scaffoldin
 from services.git_service import GitError, GitService
 from services.github_service import GitHubError, parse_remote
 from services.package_installer import blocked, install
-from ui.actions import log_tail, plan_pull_request, plan_records, revise_task, start_run
+from services.task_rollback import Rollback
+from ui.actions import log_tail, plan_pull_request, plan_records, reject_plan, revise_task, start_run, waiting_records
 from ui.shared import plan_store, repository, repository_path_now, run_store, t
 
 
@@ -1121,6 +1122,58 @@ def run_buttons(plan, active_run, environment_ok, over_budget, target_path) -> N
     with clear:
 
         close_plan_button()
+
+    if active_run is None:
+        reject_plan_panel(plan)
+
+
+def reject_plan_panel(plan) -> None:
+    """Reject every waiting task of the plan, after a confirmation."""
+
+    waiting = waiting_records(plan)
+
+    if not waiting:
+        return
+
+    with st.expander(t("plan.reject_all", count=len(waiting))):
+
+        st.caption(t("plan.reject_all_caption"))
+
+        sure = st.checkbox(t("plan.reject_all_sure"), key=f"reject-all-sure-{plan.id}")
+
+        if not st.button(
+            t("plan.reject_all_button", count=len(waiting)),
+            key=f"reject-all-{plan.id}",
+            disabled=not sure,
+            use_container_width=True,
+        ):
+            return
+
+        try:
+            count, undone = reject_plan(plan)
+
+            st.session_state.git_message = ("success", rejected_message(count, undone))
+
+        except (GitError, ValueError, OSError) as error:
+            st.session_state.git_message = ("warning", t("task.rollback_failed", reason=error))
+
+        st.session_state.plan = plan_store.get_by_id(plan.id)
+
+        st.rerun()
+
+
+def rejected_message(count: int, undone: Rollback) -> str:
+
+    return t(
+        "plan.rejected_all",
+        count=count,
+        removed=len(undone.removed),
+        restored=len(undone.restored),
+    ) + (
+        " " + t("task.rollback_kept", names=", ".join(undone.kept))
+        if undone.kept
+        else ""
+    )
 
 
 def run_all_button(plan, active_run, environment_ok, over_budget, target_path, ready) -> None:

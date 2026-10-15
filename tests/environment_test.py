@@ -189,6 +189,17 @@ try:
     print("THE SCAFFOLDING IS COMMITTED ON THE BASE BRANCH")
     print("=" * 80)
 
+    # Added to the index by hand, never committed: tracked,
+    # yet on no branch. It counted as committed, and went
+    # into the first task's commit.
+    git(path, "add", *SCAFFOLDING)
+
+    check(
+        "staged is still not committed",
+        sorted(assess(path).uncommitted),
+        sorted(SCAFFOLDING + [LOCK_FILE]),
+    )
+
     # Left on a task branch by an earlier run.
     git(path, "checkout", "-b", "devloop/earlier-task")
 

@@ -119,11 +119,11 @@ def untracked(
     service: GitService,
     paths: list[str],
 ) -> list[str]:
-    """The paths git does not track yet."""
+    """The paths not in any commit yet, staged or not."""
 
-    tracked = service.tracked(paths)
+    committed = service.committed(paths)
 
-    return [path for path in paths if path not in tracked]
+    return [path for path in paths if path not in committed]
 
 
 def write_scaffolding(repository_path: str) -> list[str]:

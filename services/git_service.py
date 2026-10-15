@@ -576,6 +576,26 @@ class GitService:
             self._run("ls-files", "--", *paths).splitlines()
         )
 
+    def committed(self, paths: list[str]) -> set[str]:
+        """Which of these paths are in a commit.
+
+        Tracked is not committed: a file only added to the
+        index is tracked, yet on no branch. Scaffolding left
+        like that went into the first task's commit, on the
+        task's branch, instead of onto main.
+        """
+
+        if not paths:
+            return set()
+
+        staged_new = set(
+            self._run(
+                "diff", "--cached", "--name-only", "--diff-filter=A", "--", *paths
+            ).splitlines()
+        )
+
+        return self.tracked(paths) - staged_new
+
     def staged_files(self) -> list[str]:
 
         output = self._run(

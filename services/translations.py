@@ -429,6 +429,26 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "🧠 Planer ...",
         "en": "🧠 Planner ...",
     },
+    "plan.reject_all": {
+        "pl": "🗑 Odrzuć cały plan ({count} zadań czeka)",
+        "en": "🗑 Reject the whole plan ({count} tasks waiting)",
+    },
+    "plan.reject_all_caption": {
+        "pl": "Odrzuca każde zadanie czekające na decyzję i usuwa pliki, które utworzyło; zmienione pliki znane gitowi wracają do wersji z gita. Zacommitowanych zadań nie rusza. Potem plan można uruchomić od nowa.",
+        "en": "Rejects every task waiting for a decision and removes the files it created; changed files git knows go back to git's version. Committed tasks are left alone. The plan can then run again.",
+    },
+    "plan.reject_all_sure": {
+        "pl": "Tak, odrzuć wszystkie",
+        "en": "Yes, reject them all",
+    },
+    "plan.reject_all_button": {
+        "pl": "Odrzuć {count} zadań",
+        "en": "Reject {count} tasks",
+    },
+    "plan.rejected_all": {
+        "pl": "Odrzucono {count} zadań: usunięto {removed} plików, przywrócono {restored}.",
+        "en": "Rejected {count} tasks: {removed} files removed, {restored} restored.",
+    },
     "plan.close": {
         "pl": "🗑 Zamknij plan",
         "en": "🗑 Close plan",

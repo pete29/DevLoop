@@ -71,11 +71,56 @@ class CompileResult:
 
         return self.status == CompileStatus.FAILED
 
+    def since(self, baseline: "CompileResult | None") -> "CompileResult":
+        """Only the errors that were not there before.
+
+        A task is judged on what it broke. An error left by
+        an earlier task -- a suite that does not parse, say
+        -- failed every task after it, and each one paid the
+        developer to fix a file it had not written. Errors
+        match on file, code and message, not line: an edit
+        above an old error moves it without fixing it.
+        """
+
+        if (
+            baseline is None
+            or self.status != CompileStatus.FAILED
+            or baseline.status != CompileStatus.FAILED
+        ):
+            return self
+
+        known = {
+            (error.path, error.code, error.message)
+            for error in baseline.errors
+        }
+
+        new = [
+            error
+            for error in self.errors
+            if (error.path, error.code, error.message) not in known
+        ]
+
+        earlier = len(self.errors) - len(new)
+
+        if not earlier:
+            return self
+
+        return CompileResult(
+            status=CompileStatus.FAILED if new else CompileStatus.PASSED,
+            errors=new,
+            output=self.output,
+            reason=f"{earlier} error(s) were there before this task",
+            duration_seconds=self.duration_seconds,
+        )
+
     @property
     def summary(self) -> str:
 
         if self.status == CompileStatus.PASSED:
-            return "no type errors"
+            return "no new type errors · " + self.reason if self.reason else "no type errors"
+
+        if self.status == CompileStatus.FAILED and self.reason:
+            return f"{len(self.errors)} new type error(s) · {self.reason}"
 
         if self.status == CompileStatus.FAILED:
             return f"{len(self.errors)} type error(s)"

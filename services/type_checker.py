@@ -72,6 +72,16 @@ def unavailable_reason(repository_path: str) -> str:
     return ""
 
 
+def baseline(repository_path: str) -> CompileResult:
+    """The check before a task writes anything.
+
+    Its own name, so a test faking the checks a task is
+    judged by does not have this one use up its answers.
+    """
+
+    return check(repository_path)
+
+
 def check(repository_path: str) -> CompileResult:
     """Compiles the repository without emitting anything.
 

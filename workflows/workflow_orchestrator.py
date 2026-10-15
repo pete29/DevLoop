@@ -230,6 +230,10 @@ class WorkflowOrchestrator:
                 ", ".join(created),
             )
 
+        # What already fails to compile, before this task
+        # writes anything: those errors are not its to fix.
+        baseline = type_checker.baseline(repository_path)
+
         source_files = self.developer.execute(
             task_description,
             repository_path,
@@ -253,6 +257,7 @@ class WorkflowOrchestrator:
             on_disk,
             spent,
             created,
+            baseline=baseline,
         )
 
     def revise(self, task: Task, feedback: str) -> Task:
@@ -342,8 +347,15 @@ class WorkflowOrchestrator:
         spent,
         created: list[str],
         review_history: list[ReviewHistory] | None = None,
+        baseline: CompileResult | None = None,
     ) -> Task:
-        """Checks, review, tests: everything after the first draft."""
+        """Checks, review, tests: everything after the first draft.
+
+        `baseline` is the type check from before the task
+        wrote anything; errors already in it are not this
+        task's. A revision has none: its own files are on
+        disk, and their errors are exactly what it is for.
+        """
 
         review_history = review_history or []
 
@@ -383,6 +395,7 @@ class WorkflowOrchestrator:
                 task_description,
                 source_files,
                 repository_path,
+                baseline,
             )
 
             steps.record(
@@ -521,7 +534,7 @@ class WorkflowOrchestrator:
         # reports nothing passing out of nothing -- which
         # reads like nothing happened rather than like the
         # code is broken.
-        compile_result = type_checker.check(repository_path)
+        compile_result = type_checker.check(repository_path).since(baseline)
 
         steps.record(
             "step.types",
@@ -621,6 +634,7 @@ class WorkflowOrchestrator:
                 task_description,
                 source_files,
                 repository_path,
+                baseline,
             )
 
             compile_result = gates.compile_result
@@ -714,6 +728,7 @@ class WorkflowOrchestrator:
         task_description: str,
         source_files: list[GeneratedFile],
         repository_path: str,
+        baseline: CompileResult | None = None,
     ) -> Gates:
         """The free checks, against what is on disk now."""
 
@@ -725,7 +740,7 @@ class WorkflowOrchestrator:
             ),
             compile_result=type_checker.check(
                 repository_path
-            ),
+            ).since(baseline),
         )
 
     @staticmethod

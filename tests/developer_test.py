@@ -816,6 +816,40 @@ Settings.GENERATE_FILE_BY_FILE = True
 
 print()
 print("=" * 80)
+print("A TYPESCRIPT PROJECT GETS NO JAVASCRIPT COPIES")
+print("=" * 80)
+
+from agents.developer_agent import DeveloperAgent  # noqa: E402
+from services.repository_survey import RepositorySurvey  # noqa: E402
+
+settled = DeveloperAgent._settle(
+    [
+        GeneratedFile("src/days.ts", FileType.SOURCE, "export const a = 1;"),
+        GeneratedFile("types.js", FileType.SOURCE, "export {};"),
+        GeneratedFile("eslint.config.js", FileType.SOURCE, "export default [];"),
+    ],
+    RepositorySurvey(files=["tsconfig.json", "src/types.ts"]),
+)
+
+check(
+    "types.js is dropped, a tool's config is kept",
+    [item.path for item in settled],
+    ["src/days.ts", "eslint.config.js"],
+)
+
+check(
+    "a JavaScript project keeps its JavaScript",
+    len(
+        DeveloperAgent._settle(
+            [GeneratedFile("src/a.js", FileType.SOURCE, "export {};")],
+            RepositorySurvey(files=["package.json"]),
+        )
+    ),
+    1,
+)
+
+print()
+print("=" * 80)
 
 if failures:
     print(f"FAILED: {len(failures)}")

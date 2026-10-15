@@ -9,6 +9,7 @@ from models.task_execution import ExecutionStatus, TaskExecution
 from models.task_status import TaskStatus
 from services import plan_branch, plan_runner, usage_ledger
 from services.git_service import GitError, GitService
+from services.task_rollback import Rollback, roll_back_all
 from ui import shared
 from ui.shared import orchestrator, plan_store, repository, repository_path_now, repository_store, run_store, t
 
@@ -26,6 +27,38 @@ def plan_records(plan) -> list:
         ),
         key=lambda other: other.created_at,
     )
+
+
+def waiting_records(plan) -> list:
+    """The plan's records still waiting for a decision."""
+
+    return [
+        record
+        for record in plan_records(plan)
+        if record.status == TaskStatus.WAITING_FOR_APPROVAL
+        and not record.git_operation.committed
+    ]
+
+
+def reject_plan(plan) -> tuple[int, Rollback]:
+    """Rejects every waiting record of the plan, files first.
+
+    One click for what a broken run leaves behind: eight
+    tasks rejected one window at a time, and the files
+    they wrote removed by hand.
+    """
+
+    records = waiting_records(plan)
+
+    undone = roll_back_all(records)
+
+    for record in records:
+
+        reopen_in_plan(record)
+
+        repository.update_status(record.id, TaskStatus.REJECTED)
+
+    return len(records), undone
 
 
 def plan_pull_request(records):

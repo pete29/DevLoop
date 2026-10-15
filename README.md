@@ -190,7 +190,8 @@ Before the first task, the plan's environment panel:
 1. writes the missing `package.json`, `tsconfig` and Vitest config from
    templates (an existing file is never touched),
 2. runs `npm install` — **only when you press the button**,
-3. commits the scaffolding on the base branch.
+3. commits the scaffolding on the base branch. Files only staged with
+   `git add` count as not committed: they are on no branch yet.
 
 Tasks stay disabled until Step 0 is done, unless you explicitly override it.
 
@@ -201,9 +202,12 @@ Each task goes through the pipeline above:
 - The **Developer** reads the repository first. Existing files whose
   exported symbols are named in the task are given to it in full, so it
   builds on real interfaces instead of guessing method names. It writes one
-  file per call; test files are QA's and never the Developer's.
+  file per call; test files are QA's and never the Developer's, and in a
+  TypeScript project it writes no JavaScript (a tool's `*.config.js` aside).
 - The **free checks** — structural validator and `tsc` — run before the
-  Architect sees anything, with their own budget (`MAX_GATE_FIXES`). A
+  Architect sees anything, with their own budget (`MAX_GATE_FIXES`). `tsc`
+  runs once before the task too: an error already there is not the task's,
+  and nobody is paid to fix it. A
   missing npm package stops the task there and is offered for installation
   (below).
 - The **Architect** reviews design only (coupling, abstractions, SOLID),
@@ -259,6 +263,9 @@ tests, diff and git. Three answers:
 - **❌ Reject** deletes the files the task created, restores the tracked
   files it changed, and reopens the task in the plan so it can run again;
   tasks that depend on it wait. A committed task cannot be rejected.
+- **🗑 Reject the whole plan** (under the plan's buttons) does the same for
+  every task still waiting, newest first, after a confirmation: one click for
+  what a broken run leaves behind.
 
 ### 7. Push, pull request, delivery
 
@@ -411,7 +418,7 @@ CI. Run it before and after changing a prompt, a model or an effort. The
 baseline: 6/6 passed, $0.2454; the package case asked for `@types/node`, and
 the plan case planned 3 tasks with no plan problems.
 
-There are 40 test files. 37 run offline, against fake transports and
+There are 41 test files. 38 run offline, against fake transports and
 throwaway repositories; `compile_test`, `install_test` and
 `test_execution_test` need Node on `PATH`. Three call a real model and are
 skipped in routine runs: `architect_test`, `workflow_test`,

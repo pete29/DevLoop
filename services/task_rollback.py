@@ -100,3 +100,30 @@ def roll_back(task: Task) -> Rollback:
     service.restore(result.restored)
 
     return result
+
+
+def roll_back_all(tasks: list[Task]) -> Rollback:
+    """Undoes several tasks' files, the newest first.
+
+    In that order each task finds the folder as it left
+    it: a later task that rewrote an earlier one's file is
+    undone before the earlier one deletes it.
+    """
+
+    result = Rollback()
+
+    for task in sorted(tasks, key=lambda item: item.created_at, reverse=True):
+
+        undone = roll_back(task)
+
+        result.removed += [path for path in undone.removed if path not in result.removed]
+
+        result.restored += [path for path in undone.restored if path not in result.restored]
+
+        result.kept += [path for path in undone.kept if path not in result.kept]
+
+    # A file one task kept and another removed is gone.
+    result.kept = [path for path in result.kept if path not in result.removed]
+
+    return result
+
