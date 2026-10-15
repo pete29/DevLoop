@@ -254,6 +254,11 @@ only progress there is inside a task, and it is now on screen. When the run
 ends, the whole page is redrawn once; a single task the human started opens
 in its window, as before.
 
+Before each task the worker adds up what the plan has cost — planning,
+every attempt and revision, failed attempts — and stops (`STOPPED`, "Cost
+limit reached") once that reaches `PLAN_COST_LIMIT`. The plan shows the
+running total; the sidebar shows the month.
+
 A worker that dies writes nothing, so every page load checks the process
 of each active run. One that is gone marks the run `INTERRUPTED`, naming the
 task it was on; its files may be on disk uncommitted, and the task offers

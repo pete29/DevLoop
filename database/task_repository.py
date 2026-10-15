@@ -62,6 +62,8 @@ COLUMNS = (
     "compile_result",
     "branch",
     "created_files",
+    "cost",
+    "plan_id",
 )
 
 COLUMN_LIST = ",\n                ".join(COLUMNS)
@@ -84,6 +86,8 @@ ADDED_COLUMNS = {
     "compile_result": "TEXT NOT NULL DEFAULT '{}'",
     "branch": "TEXT NOT NULL DEFAULT ''",
     "created_files": "TEXT NOT NULL DEFAULT '[]'",
+    "cost": "REAL NOT NULL DEFAULT 0",
+    "plan_id": "TEXT NOT NULL DEFAULT ''",
     "review_history": "TEXT NOT NULL DEFAULT '[]'",
     "review_iterations": "INTEGER NOT NULL DEFAULT 0",
     "generated_files": "TEXT NOT NULL DEFAULT '[]'",
@@ -100,9 +104,12 @@ class TaskRepository:
         self,
         db_name: str = Settings.DATABASE_NAME,
     ) -> None:
+        # A background worker writes tasks too; wait for its
+        # lock rather than failing at once.
         self.connection = sqlite3.connect(
             db_name,
             check_same_thread=False,
+            timeout=30,
         )
 
         self.create_table()
@@ -326,6 +333,8 @@ class TaskRepository:
                 ),
                 task.branch,
                 json.dumps(task.created_files),
+                task.cost,
+                task.plan_id,
             ),
         )
 
@@ -699,6 +708,8 @@ class TaskRepository:
             compile_result=self._parse_compile(row[26]),
             branch=row[27] or "",
             created_files=self._parse_findings(row[28]),
+            cost=float(row[29] or 0),
+            plan_id=row[30] or "",
         )
 
     def get_all(

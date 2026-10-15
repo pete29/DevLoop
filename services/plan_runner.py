@@ -24,7 +24,7 @@ from models.pipeline_step import PipelineStep
 from models.plan_run import PlanRun, RunStatus
 from models.task_execution import ExecutionStatus, TaskExecution
 from models.requirement import now
-from services import plan_branch
+from services import costs, plan_branch, usage_ledger
 from services.git_service import GitService
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -49,6 +49,7 @@ def run_task(
     issue=None,
     branch: str = "",
     branch_note: str = "",
+    plan_id: str = "",
 ):
     """One task through the whole pipeline, saved."""
 
@@ -59,6 +60,8 @@ def run_task(
     )
 
     generated.branch = branch
+
+    generated.plan_id = plan_id
 
     # First, because it happened first: the branch was
     # entered before anything was generated.
@@ -122,6 +125,8 @@ def execute_planned(
 
     started = started or mark_running(plans, plan, item)
 
+    spent = usage_ledger.mark()
+
     try:
 
         # The plan's branch is checked out before anything
@@ -145,9 +150,17 @@ def execute_planned(
             plan.issue,
             entered.branch,
             entered.note,
+            plan.id,
         )
 
     except Exception as error:
+
+        # No record will carry what this attempt spent, so
+        # the plan does: a failure is not free.
+        wasted = usage_ledger.dollars(usage_ledger.since(spent))
+
+        if wasted:
+            plans.add_failed_cost(plan.id, wasted)
 
         plan.record(
             TaskExecution(
@@ -373,6 +386,19 @@ def work(
 
         else:
             item = plan.next_ready()
+
+        if item is not None:
+
+            spent = costs.plan_spent(plan, tasks.get_all())
+
+            if costs.over_limit(spent):
+                runs.finish(
+                    run,
+                    RunStatus.STOPPED,
+                    f"Cost limit reached: ${spent:.2f} of "
+                    f"${costs.limit():.2f}; task {item.id} not started.",
+                )
+                break
 
         if item is None:
             runs.finish(

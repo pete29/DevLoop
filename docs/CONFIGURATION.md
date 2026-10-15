@@ -286,6 +286,13 @@ and `tsc`) may ask for before each review. A separate budget on purpose:
 when the two shared one, compile errors used up the rounds the Architect's
 blockers needed, and those blockers were never fixed.
 
+**`PLAN_COST_LIMIT`** — dollars one plan may spend before a background run
+stops starting tasks (default 5.0; 0 for no limit). Planning, every attempt,
+every revision and failed attempts all count. The check is before each task,
+never during one: half a task is files nobody reviews, and costs no less for
+being cut. Over the limit, the plan's run buttons are disabled and it says
+why; raise the limit here to carry on.
+
 **`SPLIT_HINT_TASKS`** — above this many tasks, a plan suggests splitting
 its requirement into issues, so each part gets its own pull request. Only a
 hint: nothing is split without a human confirming the stories, and a small
@@ -444,6 +451,11 @@ To start clean, delete the file. It is recreated on the next run.
 `DEVLOOP_DATABASE`, an environment variable, points DevLoop at another
 database file. The background worker inherits it from the page that started
 it; the tests use it to run a real worker against a throwaway database.
+
+Tasks store their cost in dollars and the plan they belong to (`cost`,
+`plan_id`); plans store what planning and failed attempts cost
+(`planning_cost`, `failed_cost`). Tasks saved before that have their cost
+read from their usage line.
 
 A fifth table, `plan_runs`, holds background runs. Their consoles are in
 `storage/runs/` (gitignored).

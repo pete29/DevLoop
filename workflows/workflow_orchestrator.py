@@ -644,9 +644,9 @@ class WorkflowOrchestrator:
         ):
             recommendation = ReviewDecision.REQUEST_CHANGES
 
-        cost = usage_ledger.describe(
-            usage_ledger.since(spent)
-        )
+        calls = usage_ledger.since(spent)
+
+        cost = usage_ledger.describe(calls)
 
         if cost:
             steps.record("step.usage", cost)
@@ -679,6 +679,7 @@ class WorkflowOrchestrator:
             environment=created,
             created_files=sorted(on_disk.created),
             steps=steps.steps,
+            cost=usage_ledger.dollars(calls),
             status=TaskStatus.WAITING_FOR_APPROVAL,
         )
 

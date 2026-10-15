@@ -41,6 +41,13 @@ class Plan:
     # rather than silently repaired.
     issues: list[str] = field(default_factory=list)
 
+    # Dollars spent outside any task record: the planning
+    # call, and attempts that failed before a record was
+    # saved. Task records carry their own.
+    planning_cost: float = 0.0
+
+    failed_cost: float = 0.0
+
     created_at: str = field(
         default_factory=lambda: datetime.now(
             UTC

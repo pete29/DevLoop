@@ -228,6 +228,63 @@ try:
 
     print()
     print("=" * 80)
+    print("THE COST LIMIT STOPS A RUN BEFORE A TASK, NEVER IN ONE")
+    print("=" * 80)
+
+    from config.settings import Settings
+    from services import usage_ledger
+
+    class Priced(Pipeline):
+        """Every task costs $2."""
+
+        def execute(self, description, repository_id="", repository_path=""):
+            task = super().execute(description, repository_id, repository_path)
+            task.cost = 2.0
+            return task
+
+    Settings.PLAN_COST_LIMIT = 3.0
+
+    plan = make_plan(plans)
+
+    pipeline = Priced()
+
+    limited = run_with(pipeline, plan)
+
+    check(
+        "it ran while under the limit, then stopped before the next task",
+        (pipeline.ran, limited.status, "Cost limit reached: $4.00 of $3.00" in limited.message),
+        (["one", "two"], RunStatus.STOPPED, True),
+    )
+
+    check(
+        "and the records carry their plan",
+        {tasks.get_by_id(task_id).plan_id for task_id in limited.produced},
+        {plan.id},
+    )
+
+    Settings.PLAN_COST_LIMIT = 0
+
+    class Wasteful(Pipeline):
+        """Spends, then fails before a record exists."""
+
+        def execute(self, description, repository_id="", repository_path=""):
+            usage_ledger.record(
+                usage_ledger.Usage(role="developer", model="claude-sonnet-5-5", output_tokens=100_000)
+            )
+            raise RuntimeError("the model refused")
+
+    plan = make_plan(plans)
+
+    run_with(Wasteful(), plan)
+
+    check(
+        "what a failed attempt spent is kept on the plan",
+        round(plans.get_by_id(plan.id).failed_cost, 2),
+        1.0,
+    )
+
+    print()
+    print("=" * 80)
     print("A WORKER THAT DIED IS FOUND BY ITS PROCESS")
     print("=" * 80)
 

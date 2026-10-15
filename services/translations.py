@@ -433,6 +433,22 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "🗑 Zamknij plan",
         "en": "🗑 Close plan",
     },
+    "cost.plan": {
+        "pl": "💰 Plan kosztował dotąd ${spent} (planowanie, wszystkie próby i rewizje){limit}",
+        "en": "💰 The plan has cost ${spent} so far (planning, every attempt and revision){limit}",
+    },
+    "cost.of_limit": {
+        "pl": " · limit ${limit}",
+        "en": " · limit ${limit}",
+    },
+    "cost.over_limit": {
+        "pl": "Plan osiągnął limit kosztów (${limit}, PLAN_COST_LIMIT). Nowe zadania nie startują; podnieś limit w config/settings.py, jeśli chcesz kontynuować.",
+        "en": "The plan has reached its cost limit (${limit}, PLAN_COST_LIMIT). No new task starts; raise the limit in config/settings.py to carry on.",
+    },
+    "cost.month": {
+        "pl": "💰 Ten miesiąc: ${spent}",
+        "en": "💰 This month: ${spent}",
+    },
     "run.in_progress": {
         "pl": "⚙️ Przebieg w tle ({status}): zadanie {task} · gotowe w tym przebiegu: {done} · od {since}",
         "en": "⚙️ Running in the background ({status}): task {task} · done in this run: {done} · since {since}",

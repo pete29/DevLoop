@@ -63,7 +63,7 @@ PYTHONIOENCODING=utf-8 PYTHONPATH=. .venv/Scripts/python tests/<name>_test.py
 
 CI (`.github/workflows/tests.yml`, Windows) runs the offline suites on every PR and on `main`.
 
-There are 32 test files. **28 run offline** and all pass. Four call a real model and are skipped
+There are 33 test files. **29 run offline** and all pass. Four call a real model and are skipped
 in routine runs: `architect_test`, `workflow_test`, `langgraph_test`, `ollama_test` (needs a
 local Ollama). Node must be on PATH for `compile_test`, `install_test` and
 `test_execution_test`.
@@ -173,7 +173,8 @@ its own.
 2. **PR review comments don't flow back** from GitHub. The in-app revision exists; the next
    step is reading PR review comments into the same `revise()` path.
 3. **Output tokens are the bill.** Prompt caching is in (6.7% saved on two real tasks); the
-   Architect's review text is the largest single cost. Cost limits and a plan total are #6.
+   Architect's review text is the largest single cost. Plans show their total and stop at
+   `PLAN_COST_LIMIT` (`services/costs.py`).
 4. **Tasks outside a plan** still run synchronously in the page; planned tasks run in the
    background worker (`services/plan_runner.py`).
 5. **A second plan for an issue** is now warned about what exists, but has no "continue from

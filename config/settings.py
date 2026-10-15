@@ -158,6 +158,12 @@ class Settings:
     # requirement stays one branch with a commit per task.
     SPLIT_HINT_TASKS = 6
 
+    # Dollars one plan may spend before a background run
+    # stops starting tasks: planning, every attempt and
+    # every revision count. 0 means no limit. A task is
+    # never cut off midway -- the check is before each one.
+    PLAN_COST_LIMIT = 5.0
+
     # How many files one call writes.
     #
     # Batching looks like it should cut the time and does

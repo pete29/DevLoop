@@ -207,8 +207,14 @@ The tab can be closed and the page reloaded; the run carries on. **⏹ Stop
 after this task** stops it between tasks, and a worker that died is marked
 `INTERRUPTED` on the next page load.
 
-Each task shows its tokens and cost per agent; the plan shows the cost of
-planning.
+Each task shows its tokens and cost per agent.
+
+**What it costs.** Every task stores its dollars; the plan shows its total —
+planning, every attempt, every revision, and attempts that failed before a
+record was saved — and the sidebar shows the month. `PLAN_COST_LIMIT`
+(default $5, 0 for none) stops a background run **before** a task once the
+plan has spent that much, never inside one; the run buttons are disabled
+and the plan says why.
 
 ### 6. Accept, send back, or reject
 
@@ -314,7 +320,8 @@ reads and writes at their own prices.
 `CLAUDE_PRICES` drives the cost report. `AUTO_BOOTSTRAP` and
 `ENABLE_PACKAGE_INSTALLATION` control Step 0; the second removes the
 `npm install` button entirely. `SPLIT_HINT_TASKS` (6) is the plan size above
-which a split into issues is suggested.
+which a split into issues is suggested. `PLAN_COST_LIMIT` (5.0 dollars) is
+what one plan may spend before no new task starts.
 
 ---
 
@@ -337,7 +344,7 @@ CI runs the offline suites on every pull request and on `main`
 ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)): Windows,
 Python 3.13, Node 24, no secrets.
 
-There are 32 test files. 28 run offline, against fake transports and
+There are 33 test files. 29 run offline, against fake transports and
 throwaway repositories; `compile_test`, `install_test` and
 `test_execution_test` need Node on `PATH`. Four call a real model and are
 skipped in routine runs: `architect_test`, `workflow_test`,

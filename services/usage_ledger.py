@@ -163,6 +163,16 @@ def _line(role: str, items: list[Usage]) -> str:
     )
 
 
+def dollars(items: list[Usage]) -> float:
+    """What the calls cost, unpriced ones counted as 0.
+
+    For adding up, where a sum is needed whatever happens;
+    the per-task line still says "?" for an unpriced model.
+    """
+
+    return sum(item.cost or 0.0 for item in items)
+
+
 def _cost(items: list[Usage]) -> float | None:
 
     costs = [item.cost for item in items]

@@ -54,7 +54,7 @@ from services.environment_step import (
     commit_scaffolding,
     write_scaffolding,
 )
-from services import plan_runner
+from services import costs, plan_runner
 from services.repository_context import describe
 from services.repository_setup import (
     check_new,
@@ -940,6 +940,8 @@ def revise_task(task, feedback: str):
 
     revised.issue = task.issue
 
+    revised.plan_id = task.plan_id
+
     repository.save(revised)
 
     task.status = TaskStatus.REVISED
@@ -1316,6 +1318,14 @@ with st.sidebar:
         index=tuple(LANGUAGES).index(
             st.session_state.language
         ),
+    )
+
+    # Every task and plan of the month, whichever repository.
+    st.caption(
+        t(
+            "cost.month",
+            spent=f"{costs.month_spent(repository.get_all(), plan_store.get_all(), now()[:7]):.2f}",
+        )
     )
 
     st.divider()
@@ -1929,6 +1939,10 @@ if st.session_state.requirement:
 
                 plan.issue = requirement.issue
 
+                plan.planning_cost = usage_ledger.dollars(
+                    usage_ledger.since(spent)
+                )
+
                 plan_store.save(plan)
 
                 st.session_state.plan = plan
@@ -2102,6 +2116,25 @@ if st.session_state.plan:
         active_run = None
 
     st.fragment(run_every=3 if active_run else None)(run_panel)(plan.id)
+
+    plan_cost = costs.plan_spent(plan, repository.get_all())
+
+    over_budget = costs.over_limit(plan_cost)
+
+    st.caption(
+        t(
+            "cost.plan",
+            spent=f"{plan_cost:.2f}",
+            limit=(
+                t("cost.of_limit", limit=f"{costs.limit():.2f}")
+                if costs.limit() > 0
+                else ""
+            ),
+        )
+    )
+
+    if over_budget:
+        st.warning(t("cost.over_limit", limit=f"{costs.limit():.2f}"))
 
     if plan.issues:
 
@@ -2381,7 +2414,8 @@ if st.session_state.plan:
                     disabled=bool(blocked)
                     or not target_path
                     or not environment_ok
-                    or active_run is not None,
+                    or active_run is not None
+                    or over_budget,
                 ):
 
                     start_run(plan, target_path, item.id)
@@ -2403,7 +2437,8 @@ if st.session_state.plan:
             t("plan.run_all", count=len(plan.remaining)),
             disabled=not ready
             or not target_path
-            or not environment_ok,
+            or not environment_ok
+            or over_budget,
             use_container_width=True,
         ):
 

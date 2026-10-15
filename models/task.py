@@ -108,6 +108,14 @@ class Task:
     # deleted, because it is somebody's.
     created_files: list[str] = field(default_factory=list)
 
+    # Dollars this attempt spent on models, as a number:
+    # what a plan's total and a month's are added from.
+    cost: float = 0.0
+
+    # The plan that ran it, so a revision or a rerun still
+    # counts towards that plan; "" outside a plan.
+    plan_id: str = ""
+
     status: TaskStatus = TaskStatus.NEW
 
     created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())

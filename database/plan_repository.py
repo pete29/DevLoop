@@ -21,6 +21,8 @@ COLUMNS = (
     "executions",
     "issues",
     "created_at",
+    "planning_cost",
+    "failed_cost",
 )
 
 COLUMN_LIST = ",\n                ".join(COLUMNS)
@@ -34,6 +36,8 @@ ADDED_COLUMNS = {
     "issues": "TEXT NOT NULL DEFAULT '[]'",
     "requirement_id": "TEXT NOT NULL DEFAULT ''",
     "issue": "TEXT NOT NULL DEFAULT '{}'",
+    "planning_cost": "REAL NOT NULL DEFAULT 0",
+    "failed_cost": "REAL NOT NULL DEFAULT 0",
 }
 
 
@@ -42,9 +46,11 @@ class PlanRepository:
         self,
         db_name: str = Settings.DATABASE_NAME,
     ) -> None:
+        # A background worker writes plans too.
         self.connection = sqlite3.connect(
             db_name,
             check_same_thread=False,
+            timeout=30,
         )
 
         self.create_table()
@@ -159,7 +165,24 @@ class PlanRepository:
                 self._executions_json(plan),
                 json.dumps(plan.issues),
                 plan.created_at,
+                plan.planning_cost,
+                plan.failed_cost,
             ),
+        )
+
+        self.connection.commit()
+
+    def add_failed_cost(self, plan_id: str, dollars: float) -> None:
+        """Adds what a failed attempt spent, in the database.
+
+        An increment rather than a write of the plan's copy:
+        the page and a worker may both hold the plan, and
+        the later write would drop the other's addition.
+        """
+
+        self.connection.execute(
+            "UPDATE plans SET failed_cost = failed_cost + ? WHERE id = ?",
+            (dollars, plan_id),
         )
 
         self.connection.commit()
@@ -295,6 +318,8 @@ class PlanRepository:
             ),
             issues=json.loads(row[8] or "[]"),
             created_at=row[9],
+            planning_cost=float(row[10] or 0),
+            failed_cost=float(row[11] or 0),
         )
 
     def get_all(self) -> list[Plan]:

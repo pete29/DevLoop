@@ -290,6 +290,15 @@ without undoing the approval or the push.
 
 ### The pipeline and the plan's branch
 
+`tests.costs_test` — a task's cost, stored or read from an older usage
+line; a plan's total counts planning, failed attempts and every record of
+it (revisions and replaced versions too) and nothing of other plans; a
+month counts only its own; the limit and its "0 means none"; costs survive
+storage, and failed-attempt costs add up in the database rather than in a
+copy. `tests.plan_runner_test` also checks that a run stops **before** the
+task that would start over the limit, and that a failed attempt's spend
+lands on the plan.
+
 `tests.prompt_cache_test` — caching hits only on identical bytes, so that
 is what it pins down: the Developer's planning call and every file call open
 with the same context block (holding the code the task names), the file
