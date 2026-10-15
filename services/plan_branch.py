@@ -6,6 +6,8 @@ from services.git_service import GitService
 
 PREFIX = "feature/plan-"
 
+ISSUE_PREFIX = "feature/issue-"
+
 MAX_SLUG_WORDS = 4
 
 
@@ -30,17 +32,36 @@ def slug(text: str) -> str:
     return "-".join(words[:MAX_SLUG_WORDS])
 
 
-def name(plan_id: str, epic: str) -> str:
-    """The plan's branch: feature/plan-<id>-<words>.
+def name(plan_id: str, epic: str, issue: int = 0) -> str:
+    """The plan's branch: feature/plan-<id>-<words>, or
+    feature/issue-<number>-<words> for a plan made from a
+    GitHub issue.
 
     Derived, not stored on the plan: the same plan always
     gets the same name, so a plan saved before branches
     existed still finds its own.
+
+    One branch per issue, by decision: a second plan for
+    the same issue continues on the first one's branch and
+    in its pull request, so the issue has one place where
+    its work is.
     """
 
     words = slug(epic.splitlines()[0] if epic else "")
 
-    return PREFIX + plan_id[:8] + (f"-{words}" if words else "")
+    start = (
+        f"{ISSUE_PREFIX}{issue}"
+        if issue > 0
+        else PREFIX + plan_id[:8]
+    )
+
+    return start + (f"-{words}" if words else "")
+
+
+def of(plan) -> str:
+    """The branch of a stored plan."""
+
+    return name(plan.id, plan.epic, plan.issue.number)
 
 
 @dataclass

@@ -115,7 +115,9 @@ computed in code; problems are reported above the plan, never repaired
 silently. A task whose dependencies have not finished is blocked.
 
 Every plan gets **one branch** (`feature/plan-<id8>-<slug>`), checked out
-before anything is generated. Its base is the freshest point that loses
+before anything is generated. A plan made from a GitHub issue is named after
+the issue instead (`feature/issue-<number>-<slug>`), and a second plan for
+the same issue continues on that branch and in its pull request. Its base is the freshest point that loses
 nothing: local `main` if it already contains `origin/main`, otherwise
 `origin/main`.
 

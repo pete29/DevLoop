@@ -147,6 +147,18 @@ try:
         "feature/plan-abcdef12",
     )
 
+    check(
+        "a plan from an issue is named after the issue",
+        plan_branch.name("abcdef12", "Walidator haseł", 42),
+        "feature/issue-42-walidator-hasel",
+    )
+
+    check(
+        "so a second plan for it shares the branch",
+        plan_branch.name("99999999", "Walidator haseł", 42),
+        "feature/issue-42-walidator-hasel",
+    )
+
     print()
     print("=" * 80)
     print("TASKS OF ONE PLAN SHARE ONE BRANCH")

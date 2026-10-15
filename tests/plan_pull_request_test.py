@@ -219,6 +219,25 @@ check(
     True,
 )
 
+earlier = record("Old contract\n\nFrom the plan before.", "src/old.ts", True)
+
+earlier.created_at = "2000-01-01T00:00:00+00:00"
+
+shared = plan_description(plan, [earlier, *records])
+
+check(
+    "an earlier plan's commit on the shared branch is listed",
+    "- [x] Old contract — earlier plan, committed ccccccc" in shared
+    and "src/old.ts" in shared,
+    True,
+)
+
+check(
+    "and a task of this plan is not mistaken for one",
+    "earlier plan" in body,
+    False,
+)
+
 check(
     "a commit subject reads only the title line",
     summary("Utwórz regułę cyfry\n\nZaimplementuj klasę DigitRule."),

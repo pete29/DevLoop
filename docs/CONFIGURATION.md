@@ -413,4 +413,6 @@ sandbox: generation overwrites files whose paths collide.
 For the commit, push and pull request stages the folder must be a git
 repository with a remote named `origin`, and it needs a base branch
 (`main` or `master`) for plan branches to be cut from. Each plan gets one
-branch, `feature/plan-<id8>-<slug>`, and one pull request.
+branch, `feature/plan-<id8>-<slug>`, and one pull request. A plan made
+from a GitHub issue uses `feature/issue-<number>-<slug>`, shared by every
+plan for that issue.

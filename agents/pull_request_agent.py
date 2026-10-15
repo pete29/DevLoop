@@ -153,6 +153,31 @@ def plan_description(plan: Plan, records: list[Task]) -> str:
             committed.append(record)
             labels[record.id] = f"{item.id}. {item.title}"
 
+    # Plans made from the same issue share a branch and its
+    # pull request; what an earlier plan committed there is
+    # part of the change too. Earlier means before this plan
+    # existed: a task of this plan that was superseded by a
+    # rerun is not another plan's work.
+    earlier = [
+        record
+        for record in records
+        if record.git_operation.commit_hash
+        and record.created_at < plan.created_at
+    ]
+
+    for record in earlier:
+
+        lines = record.description.strip().splitlines()
+
+        rows.append(
+            f"- [x] {lines[0] if lines else record.id}"
+            f" — earlier plan, {task_state(record)}"
+        )
+
+        labels[record.id] = lines[0] if lines else record.id
+
+        committed.append(record)
+
     files = sorted(
         {
             item.path

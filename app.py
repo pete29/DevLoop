@@ -235,18 +235,34 @@ def plan_context(task):
     derived from the plan, so a task records nothing more
     than the branch it ran on. (None, []) for a task that
     ran outside a plan.
+
+    Plans made from the same issue share a branch, so the
+    plan that ran this task wins, and otherwise the newest.
     """
 
     if not task.branch:
         return None, []
 
-    plan = next(
+    on_branch = sorted(
         (
             item
             for item in plan_store.get_all()
-            if plan_branch.name(item.id, item.epic) == task.branch
+            if plan_branch.of(item) == task.branch
         ),
-        None,
+        key=lambda item: item.created_at,
+        reverse=True,
+    )
+
+    plan = next(
+        (
+            item
+            for item in on_branch
+            if any(
+                execution.task_record_id == task.id
+                for execution in item.executions
+            )
+        ),
+        on_branch[0] if on_branch else None,
     )
 
     if plan is None:
@@ -262,7 +278,7 @@ def plan_context(task):
 def plan_records(plan) -> list:
     """Every task record that ran on this plan's branch."""
 
-    branch = plan_branch.name(plan.id, plan.epic)
+    branch = plan_branch.of(plan)
 
     return sorted(
         (
@@ -443,7 +459,7 @@ def execute_planned(plan, item, target_path, started=""):
         if GitService(target_path).is_repository():
             entered = plan_branch.enter(
                 target_path,
-                plan_branch.name(plan.id, plan.epic),
+                plan_branch.of(plan),
             )
 
         generated = run_task(
