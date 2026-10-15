@@ -83,6 +83,33 @@ the title. No explanations outside the JSON.
 """
 
 
+CONTINUE = """
+This requirement already has a plan, and part of it
+is done. These tasks are committed on the plan's
+branch, and their code is in the repository below:
+
+{done}
+
+Plan only what the requirement still needs. Do not
+plan any of the tasks above again, nor anything the
+repository already does. Number the new tasks from
+{start}. A new task may depend on a task above by its
+id.
+"""
+
+
+def done_section(done: list[TaskBreakdown]) -> str:
+
+    if not done:
+        return "- (none yet)"
+
+    return "\n".join(
+        f"- {item.id}. {item.title}"
+        + (f" (created {', '.join(item.creates)})" if item.creates else "")
+        for item in done
+    )
+
+
 def order_tasks(
     tasks: list[TaskBreakdown],
 ) -> list[TaskBreakdown]:
@@ -291,6 +318,119 @@ class PlannerAgent:
             tasks=tasks,
             issues=issues,
         )
+
+    def extend(
+        self,
+        plan: Plan,
+        repository_path: str = "",
+    ) -> tuple[list[TaskBreakdown], list[str]]:
+        """What the plan still needs, given what it has done.
+
+        The tasks a plan finished stay; the ones that never
+        did are planned again from the requirement, the
+        code on the branch and the list of what is done.
+        Returns the plan's new task list -- done tasks
+        first, then the new ones, numbered on from them --
+        and the problems found in it.
+        """
+
+        done = [item for item in plan.tasks if plan.is_done(item.id)]
+
+        start = max([item.id for item in plan.tasks] or [0]) + 1
+
+        context = describe(repository_path)
+
+        found = survey(repository_path)
+
+        raw = self.llm.generate_text(
+            PROMPT.format(
+                epic=plan.epic,
+                maximum=MAX_TASKS,
+                repository=(
+                    chr(10) + context.render() + chr(10)
+                    if repository_path
+                    else ""
+                ),
+                code=(
+                    "Files already in the repository:"
+                    + chr(10)
+                    + found.render()
+                    + chr(10)
+                    + found.render_referenced(plan.epic)
+                    if repository_path and not found.empty
+                    else ""
+                )
+                + CONTINUE.format(done=done_section(done), start=start),
+            )
+        )
+
+        try:
+            entries = self._entries(raw)
+
+        except (FileParseError, ValueError) as error:
+            raise RuntimeError(
+                f"PlannerAgent returned no usable continuation: {error}"
+            ) from error
+
+        issues: list[str] = []
+
+        done_ids = {item.id for item in done}
+
+        added: list[TaskBreakdown] = []
+
+        used = set(done_ids)
+
+        for position, entry in enumerate(entries[:MAX_TASKS], start=start):
+
+            if not isinstance(entry, dict):
+                continue
+
+            title = str(entry.get("content", "")).strip()
+
+            if not title:
+                continue
+
+            task_id = self._identifier(entry, position, used)
+
+            used.add(task_id)
+
+            added.append(
+                TaskBreakdown(
+                    id=task_id,
+                    title=title,
+                    description=str(entry.get("description", "")).strip(),
+                    priority=Priority.parse(entry.get("priority", "")),
+                    dependencies=self._dependencies(entry, task_id, title, issues),
+                    creates=self._paths(entry, "creates"),
+                    modifies=self._paths(entry, "modifies"),
+                )
+            )
+
+        # A dependency may name a done task or a new one;
+        # anything else is the model's mistake, reported.
+        known = done_ids | {item.id for item in added}
+
+        for item in added:
+
+            for dependency in [d for d in item.dependencies if d not in known]:
+                issues.append(
+                    f"Task {item.id} '{item.title}' depended on task "
+                    f"{dependency}, which neither is done nor is planned. "
+                    "That dependency was dropped."
+                )
+
+            item.dependencies = [d for d in item.dependencies if d in known]
+
+        if not added:
+            issues.append(
+                "The planner found nothing left to do for this requirement."
+            )
+
+        tasks = done + order_tasks(added)
+
+        issues.extend(PlanValidator.check(added, set(found.files)))
+
+        return tasks, issues
 
     @staticmethod
     def _entries(raw: str) -> list[dict]:

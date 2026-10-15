@@ -1026,6 +1026,89 @@ check(
 
 print()
 print("=" * 80)
+print("A PLAN CAN BE CONTINUED: WHAT IS DONE STAYS, THE REST IS PLANNED AGAIN")
+print("=" * 80)
+
+unfinished = Plan(
+    epic="Password policy toolkit",
+    tasks=[
+        TaskBreakdown(id=1, title="Blocklist rule", creates=["src/blocklist-rule.ts"]),
+        TaskBreakdown(id=2, title="Policies", dependencies=[1]),
+    ],
+)
+
+unfinished.record(TaskExecution(task_id=1, status=ExecutionStatus.COMPLETED))
+unfinished.record(TaskExecution(task_id=2, status=ExecutionStatus.FAILED, error="boom"))
+
+SEEN.clear()
+
+factory.LLMFactory.create = classmethod(
+    lambda cls, role="": Watching(
+        json.dumps(
+            {
+                "files": [
+                    {
+                        "path": "3",
+                        "content": "Define the PasswordPolicy type",
+                        "dependencies": [1],
+                        "creates": ["src/password-policy.ts"],
+                    },
+                    {
+                        "path": "4",
+                        "content": "Add the predefined policies",
+                        "dependencies": [3, 99],
+                        "creates": ["src/policies.ts"],
+                    },
+                ]
+            }
+        )
+    )
+)
+
+tasks_after, problems_after = PlannerAgent().extend(unfinished, repository_root)
+
+check(
+    "the done task stays first, the failed one is replaced",
+    [item.id for item in tasks_after],
+    [1, 3, 4],
+)
+
+check(
+    "the planner is told what is done, and where to number from",
+    ("- 1. Blocklist rule (created src/blocklist-rule.ts)" in SEEN[-1], "Number the new tasks from\n3" in SEEN[-1] or "from 3" in SEEN[-1]),
+    (True, True),
+)
+
+check(
+    "a new task may depend on a done one",
+    tasks_after[1].dependencies,
+    [1],
+)
+
+check(
+    "a dependency on nothing is dropped and reported",
+    (tasks_after[2].dependencies, any("task 99" in issue for issue in problems_after)),
+    ([3], True),
+)
+
+unfinished.tasks = tasks_after
+
+unfinished.issues = problems_after
+
+kept.save(unfinished)
+
+kept.replace_tasks(unfinished)
+
+reloaded = kept.get_by_id(unfinished.id)
+
+check(
+    "stored: the new task list, and only executions of tasks still planned",
+    ([item.id for item in reloaded.tasks], sorted(e.task_id for e in reloaded.executions)),
+    ([1, 3, 4], [1]),
+)
+
+print()
+print("=" * 80)
 
 if failures:
     print(f"FAILED: {len(failures)}")

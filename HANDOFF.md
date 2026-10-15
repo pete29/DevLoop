@@ -177,8 +177,6 @@ its own.
 3. **Output tokens are the bill.** Prompt caching is in (6.7% saved on two real tasks); the
    Architect's review is now three findings of two sentences (-32% per review, effort kept
    high). Plans show their total and stop at `PLAN_COST_LIMIT` (`services/costs.py`).
-5. **A second plan for an issue** is now warned about what exists, but has no "continue from
-   where the last plan stopped" mode; it replans from the requirement.
 7. **The structural filter on Architect claims is text-based**; new phrasings can slip through
    as noise.
 8. **`google.generativeai` is deprecated** (switch to `google.genai` if Gemini is ever used).

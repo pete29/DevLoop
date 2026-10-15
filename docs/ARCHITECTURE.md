@@ -89,6 +89,11 @@ Problems are reported on the plan, never repaired: a plan built on a false
 assumption is shown to a human, not papered over. The file lists reach the
 Developer through the task's prompt (`Create: …`, `Modify: …`).
 
+`PlannerAgent.extend(plan)` continues a plan: the done tasks are listed in
+the prompt and kept, new ones are numbered on from them and may depend on
+them, unfinished tasks and their executions are replaced
+(`PlanRepository.replace_tasks`).
+
 A task may not depend on itself, on a task that does not exist, or sit in a
 cycle without being reported: each of those is recorded on the plan and
 shown, rather than quietly repaired. A truncated answer keeps the tasks the

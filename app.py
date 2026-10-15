@@ -1059,6 +1059,55 @@ def split_panel(requirement, remote_url: str) -> None:
     st.rerun()
 
 
+def continue_plan(plan) -> None:
+    """Plans what a plan still needs, on its own branch.
+
+    The branch is entered first, so the planner reads the
+    code the plan has already committed rather than
+    whatever another branch holds.
+    """
+
+    path = repository_path_now()
+
+    spent = usage_ledger.mark()
+
+    try:
+
+        if path and GitService(path).is_repository():
+            plan_branch.enter(path, plan_branch.of(plan))
+
+        with st.spinner(t("plan.continue_spinner")):
+            tasks, issues = PlannerAgent().extend(plan, path)
+
+    except Exception as error:
+
+        st.session_state.git_message = (
+            "warning",
+            t("plan.continue_failed", reason=error),
+        )
+
+        st.rerun()
+
+    kept = sum(1 for item in tasks if plan.is_done(item.id))
+
+    plan.tasks = tasks
+
+    plan.issues = issues
+
+    plan.planning_cost += usage_ledger.dollars(usage_ledger.since(spent))
+
+    plan_store.replace_tasks(plan)
+
+    st.session_state.plan = plan
+
+    st.session_state.git_message = (
+        "success",
+        t("plan.continued", added=len(tasks) - kept, kept=kept),
+    )
+
+    st.rerun()
+
+
 def revise_task(task, feedback: str):
     """Sends a task back with a human's notes, saved.
 
@@ -1981,6 +2030,19 @@ if st.session_state.requirement:
                     st.session_state.plan = linked
 
                     st.rerun()
+
+                if st.button(
+                    t("plan.continue"),
+                    key=f"continue-plan-{linked.id}",
+                    help=t("plan.continue_help"),
+                    use_container_width=True,
+                    disabled=not st.session_state.repository_id
+                    or (
+                        run_store.latest(linked.id) is not None
+                        and run_store.latest(linked.id).status.active
+                    ),
+                ):
+                    continue_plan(linked)
 
         # One branch per issue: a new plan joins the old
         # one's branch and pull request, which is worth

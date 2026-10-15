@@ -175,6 +175,40 @@ class PlanRepository:
 
         self.connection.commit()
 
+    def replace_tasks(self, plan: Plan) -> None:
+        """Saves a plan's new task list, its problems and costs.
+
+        Executions of tasks no longer in the plan go with
+        them, so the dashboard counts only what is planned.
+        """
+
+        kept = {item.id for item in plan.tasks}
+
+        plan.executions = [
+            execution
+            for execution in plan.executions
+            if execution.task_id in kept
+        ]
+
+        self.connection.execute(
+            """
+            UPDATE plans
+            SET tasks = ?, issues = ?, executions = ?, completed = ?,
+                planning_cost = ?
+            WHERE id = ?
+            """,
+            (
+                self._tasks_json(plan),
+                json.dumps(plan.issues),
+                self._executions_json(plan),
+                json.dumps(plan.completed),
+                plan.planning_cost,
+                plan.id,
+            ),
+        )
+
+        self.connection.commit()
+
     def mark_acted(self, plan_id: str, keys: list[str]) -> list[str]:
         """Records review comments as sent back; returns them all."""
 

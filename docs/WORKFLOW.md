@@ -184,6 +184,14 @@ The file checks are `PlanValidator`'s, in code, against the folder and the
 dependency graph — the second plan for an issue no longer plans again what
 the first one built without anyone being told.
 
+**➕ Finish / extend the plan** (on the requirement, per plan) continues a
+plan instead of planning again: the plan's branch is entered first, the
+planner is given the requirement, the code on that branch and the list of
+tasks already done, and plans only what is missing, numbering on from the
+done tasks and free to depend on them. Done tasks stay; unfinished and
+failed ones are replaced; `PlanValidator` checks the new tasks; the branch
+and the pull request stay the same.
+
 **A plan shows where its work is in git**: its branch, whether that exists
 locally and on GitHub (with a link), the DevLoop commits already on it,
 and — for an issue planned before — that it continues an earlier plan's

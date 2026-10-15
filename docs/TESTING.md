@@ -56,6 +56,10 @@ nobody creates, one that modifies another task's file without depending on
 it, two creators of one file, a planned test file and a path that escapes
 the repository — while a task that waits for its file's creator passes.
 File claims survive storage, and reach the Developer in the task's prompt.
+Continuing a plan keeps the done task and replaces the failed one, tells the
+planner what is done and where to number from, accepts a dependency on a done
+task, drops and reports one on nothing, and stores only the executions of
+tasks still planned.
 
 One thing is not covered here: the **Stop after this task** button and the
 disabled per-task buttons are rendered only while a task is in flight, and

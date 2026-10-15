@@ -162,6 +162,14 @@ the plan — never repaired silently:
 
 A task whose dependencies have not finished is blocked.
 
+**➕ Finish / extend the plan** (on the requirement, per plan) continues a
+plan instead of planning again: the plan's branch is entered first, the
+planner is given the requirement, the code on that branch and the list of
+tasks already done, and plans only what is missing, numbering on from the
+done tasks and free to depend on them. Done tasks stay; unfinished and
+failed ones are replaced; `PlanValidator` checks the new tasks; the branch
+and the pull request stay the same.
+
 Every plan gets **one branch** (`feature/plan-<id8>-<slug>`), checked out
 before anything is generated. A plan made from a GitHub issue is named after
 the issue instead (`feature/issue-<number>-<slug>`), and a second plan for

@@ -1004,6 +1004,26 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "📄 tworzy: {creates} · ✏️ zmienia: {modifies}",
         "en": "📄 creates: {creates} · ✏️ modifies: {modifies}",
     },
+    "plan.continue": {
+        "pl": "➕ Dokończ / rozszerz plan",
+        "en": "➕ Finish / extend the plan",
+    },
+    "plan.continue_help": {
+        "pl": "Zrobione zadania zostają. Planner dostaje to, co zrobione, i kod na gałęzi planu, i planuje tylko brakującą resztę; niedokończone zadania są zastępowane.",
+        "en": "Done tasks stay. The planner is given what is done and the code on the plan's branch, and plans only what is missing; unfinished tasks are replaced.",
+    },
+    "plan.continue_spinner": {
+        "pl": "🧠 Planner planuje brakującą resztę ...",
+        "en": "🧠 The planner is planning what is missing ...",
+    },
+    "plan.continued": {
+        "pl": "Plan rozszerzony: {added} nowe zadanie(a), {kept} zrobionych zostaje.",
+        "en": "Plan extended: {added} new task(s), {kept} done task(s) kept.",
+    },
+    "plan.continue_failed": {
+        "pl": "Nie rozszerzono planu: {reason}",
+        "en": "The plan was not extended: {reason}",
+    },
     "plan.split_hint": {
         "pl": (
             "Ten plan ma {count} zadań, czyli jeden duży PR. Jeśli "
