@@ -100,6 +100,7 @@ from agents.pull_request_agent import (  # noqa: E402
     plan_description,
     plan_title,
 )
+from agents.git_agent import summary  # noqa: E402
 
 BRANCH = "feature/plan-abcdef12-walidator-hasel"
 
@@ -210,6 +211,18 @@ check(
     "warning about src/rule.ts" in body
     and "warning about src/rules.ts" not in body,
     True,
+)
+
+check(
+    "a finding is labelled like the checklist",
+    "- **1. Rule contract**: warning about src/rule.ts" in body,
+    True,
+)
+
+check(
+    "a commit subject reads only the title line",
+    summary("Utwórz regułę cyfry\n\nZaimplementuj klasę DigitRule."),
+    "utwórz regułę cyfry",
 )
 
 print()

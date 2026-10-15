@@ -117,6 +117,10 @@ def plan_description(plan: Plan, records: list[Task]) -> str:
 
     committed: list[Task] = []
 
+    # Findings and costs are labelled like the checklist,
+    # so a reader can find the task they belong to.
+    labels: dict[str, str] = {}
+
     for item in plan.tasks:
 
         execution = plan.execution(item.id)
@@ -147,6 +151,7 @@ def plan_description(plan: Plan, records: list[Task]) -> str:
 
         if done:
             committed.append(record)
+            labels[record.id] = f"{item.id}. {item.title}"
 
     files = sorted(
         {
@@ -159,13 +164,13 @@ def plan_description(plan: Plan, records: list[Task]) -> str:
     def findings(kind: str) -> list[str]:
 
         return [
-            f"{summary(record.description)}: {finding}"
+            f"**{labels[record.id]}**: {finding}"
             for record in committed
             for finding in getattr(record, kind)
         ]
 
     costs = [
-        f"{summary(record.description)}: {step.detail}"
+        f"**{labels[record.id]}**: {step.detail}"
         for record in committed
         for step in record.steps
         if step.name == "step.usage"

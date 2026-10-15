@@ -53,13 +53,22 @@ def summary(description: str) -> str:
     Letters in any alphabet: an ASCII-only pattern turned
     "Walidator haseł" into "walidator hase", in commit
     subjects and pull request titles alike.
+
+    From the first line only. A planned task's description
+    is its title, a blank line, then the body; reading on
+    into the body gave subjects such as "utwórz regułę
+    wielkiej litery zaimplementuj klasę".
     """
+
+    lines = description.strip().splitlines()
+
+    first = lines[0] if lines else ""
 
     words = [
         word
         for word in re.findall(
             r"[^\W_]+",
-            description.lower(),
+            first.lower(),
         )
         if word not in STOP_WORDS
     ]
