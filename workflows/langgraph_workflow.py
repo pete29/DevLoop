@@ -1,0 +1,151 @@
+from langgraph.graph import END, StateGraph
+
+from agents.architect_agent import ArchitectAgent
+from agents.developer_agent import DeveloperAgent
+from agents.qa_agent import QAAgent
+from config.settings import Settings
+from models.review_history import (
+    ReviewHistory,
+)
+from workflows.graph_state import (
+    GraphState,
+)
+from workflows.review_decision import (
+    ReviewDecision,
+)
+
+developer = DeveloperAgent()
+
+architect = ArchitectAgent()
+
+qa = QAAgent()
+
+
+def developer_node(
+    state: GraphState,
+) -> dict:
+
+    task_description = state["task_description"]
+
+    source_files = state["source_files"]
+
+    architecture_review = state["architecture_review"]
+
+    if not source_files or not architecture_review:
+
+        return {
+            "source_files": developer.execute(
+                task_description
+            ),
+        }
+
+    return {
+        "source_files": developer.improve(
+            task_description,
+            source_files,
+            architecture_review,
+        ),
+    }
+
+
+def architect_node(
+    state: GraphState,
+) -> dict:
+
+    review = architect.execute(
+        state["task_description"],
+        state["source_files"],
+        state["review_history"],
+    )
+
+    iteration = state["review_iterations"] + 1
+
+    return {
+        "architecture_review": review.review,
+        "architecture_score": review.score,
+        "recommendation": review.recommendation.value,
+        "blockers": review.blockers,
+        "warnings": review.warnings,
+        "suggestions": review.suggestions,
+        "review_iterations": iteration,
+        "review_history": [
+            ReviewHistory(
+                iteration=iteration,
+                score=review.score,
+                recommendation=review.recommendation,
+                review=review.review,
+                resolved=review.resolved,
+                blockers=review.blockers,
+                warnings=review.warnings,
+                suggestions=review.suggestions,
+            )
+        ],
+    }
+
+
+def qa_node(
+    state: GraphState,
+) -> dict:
+
+    tests = qa.execute(state["source_files"])
+
+    return {
+        "test_files": tests,
+    }
+
+
+def review_router(
+    state: GraphState,
+) -> str:
+
+    if state["recommendation"] == ReviewDecision.REJECT.value:
+        return "qa"
+
+    if (
+        state["blockers"]
+        and state["review_iterations"] < Settings.MAX_REVIEW_LOOPS
+    ):
+        return "developer"
+
+    return "qa"
+
+
+graph = StateGraph(GraphState)
+
+graph.add_node(
+    "developer",
+    developer_node,
+)
+
+graph.add_node(
+    "architect",
+    architect_node,
+)
+
+graph.add_node(
+    "qa",
+    qa_node,
+)
+
+graph.set_entry_point("developer")
+
+graph.add_edge(
+    "developer",
+    "architect",
+)
+
+graph.add_conditional_edges(
+    "architect",
+    review_router,
+    {
+        "developer": "developer",
+        "qa": "qa",
+    },
+)
+
+graph.add_edge(
+    "qa",
+    END,
+)
+
+workflow = graph.compile()

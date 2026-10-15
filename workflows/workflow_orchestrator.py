@@ -1,0 +1,795 @@
+import os
+from dataclasses import dataclass, field
+
+from agents.architect_agent import ArchitectAgent
+from agents.developer_agent import DeveloperAgent
+from agents.qa_agent import QAAgent
+from agents.test_execution_agent import TestExecutionAgent
+from config.settings import Settings
+from models.architecture_review import ArchitectureReview
+from models.compile_result import CompileResult
+from models.file_generation_result import (
+    FileGenerationResult,
+)
+from models.generated_file import GeneratedFile
+from models.pipeline_step import StepRecorder
+from models.review_history import (
+    ReviewHistory,
+)
+from models.structure_report import StructureReport
+from models.task import Task
+from models.task_status import TaskStatus
+from models.test_result import TestResult, TestStatus
+from services import type_checker, usage_ledger
+from services.bootstrap import bootstrap
+from services.file_parser import FileParser
+from services.file_writer import FileWriter
+from services.git_diff_service import GitDiffService
+from services.repository_context import describe
+from services.repository_survey import survey
+from services.structure_validator import StructureValidator
+from workflows.recommendation_policy import (
+    RecommendationPolicy,
+)
+from workflows.review_decision import (
+    ReviewDecision,
+)
+
+
+def describe_files(files: list[GeneratedFile]) -> str:
+    """How much came back, for the step record."""
+
+    return (
+        f"{len(files)} file(s), "
+        f"{sum(len(item.content) for item in files)} chars"
+    )
+
+
+def changed_paths(
+    before: list[GeneratedFile],
+    after: list[GeneratedFile],
+) -> set[str]:
+    """Paths that are new or whose content differs."""
+
+    previous = {item.path: item.content for item in before}
+
+    return {
+        item.path
+        for item in after
+        if previous.get(item.path) != item.content
+    }
+
+
+@dataclass
+class Gates:
+    """The checks that cost nothing, run before any that do.
+
+    The structural validator and the compiler answer in
+    milliseconds and for free. The architect is the most
+    expensive call in the run. Asking it to review a file
+    set that does not compile, or imports a file that does
+    not exist, paid for a review whose only possible
+    outcome was "send it back" -- which the free checks had
+    already decided.
+    """
+
+    report: StructureReport = field(
+        default_factory=StructureReport
+    )
+
+    compile_result: CompileResult = field(
+        default_factory=CompileResult
+    )
+
+    @property
+    def passed(self) -> bool:
+
+        return (
+            not self.report.blockers
+            and not self.compile_result.blocks_delivery
+        )
+
+    @property
+    def detail(self) -> str:
+
+        return (
+            f"{len(self.report.blockers)}S · "
+            f"tsc {self.compile_result.status.value}"
+        )
+
+    def brief(self) -> str:
+        """What the developer has to fix, facts first."""
+
+        parts: list[str] = []
+
+        if self.report.blockers:
+            parts.append(
+                "Repository problems found by a "
+                "compiler-style pass:\n"
+                + "\n".join(
+                    f"- {finding}"
+                    for finding in self.report.blockers
+                )
+            )
+
+        # A cycle told as prose went unfixed for three
+        # rounds running: the developer rewrites one file
+        # at a time and cannot see which import closes the
+        # loop. The validator can, so it says which one to
+        # remove instead of describing the route.
+        cuts = self.report.cuts()
+
+        if cuts:
+            parts.append(
+                "Do exactly this to break the cycles:\n"
+                + "\n".join(f"- {cut}" for cut in cuts)
+            )
+
+        if self.compile_result.blocks_delivery:
+            parts.append(self.compile_result.brief())
+
+        return "\n\n".join(parts)
+
+
+@dataclass
+class RunFiles:
+    """What this run has put on disk.
+
+    Files are written before review now, so the compiler
+    can see them, which means a file the developer drops in
+    a later round would otherwise stay behind: compiled,
+    surveyed, imported by the next task, and never
+    committed. Only a file this run created is ever
+    removed -- one that existed before is somebody's.
+    """
+
+    written: set[str] = field(default_factory=set)
+
+    created: set[str] = field(default_factory=set)
+
+
+class WorkflowOrchestrator:
+    def __init__(
+        self,
+    ) -> None:
+
+        self.developer = DeveloperAgent()
+
+        self.architect = ArchitectAgent()
+
+        self.qa = QAAgent()
+
+    def execute(
+        self,
+        task_description: str,
+        repository_id: str = "",
+        repository_path: str = "",
+    ) -> Task:
+
+        spent = usage_ledger.mark()
+
+        review_iterations = 0
+
+        review_history: list[ReviewHistory] = []
+
+        steps = StepRecorder()
+
+        on_disk = RunFiles()
+
+        created = self.prepare(repository_path)
+
+        if created:
+            steps.record(
+                "step.bootstrap",
+                ", ".join(created),
+            )
+
+        source_files = self.developer.execute(
+            task_description,
+            repository_path,
+        )
+
+        steps.record(
+            "step.developer",
+            describe_files(source_files),
+        )
+
+        if not source_files:
+
+            raise RuntimeError("DeveloperAgent returned no files.")
+
+        architecture_review: ArchitectureReview | None = None
+
+        gates = Gates()
+
+        rounds = 0
+
+        fixes = 0
+
+        # Two budgets, not one. The free checks get a few
+        # fixes per round; the architect gets its rounds.
+        # Sharing one counter let two compile errors use up
+        # the rounds an architect's blockers needed, and the
+        # blockers were never fixed. The loop only ends on
+        # code the free checks have just passed -- or have
+        # just failed, out of fixes -- so a review never
+        # vouches for files changed after it.
+        while True:
+
+            rounds += 1
+
+            self.write_files(
+                repository_path,
+                source_files,
+                on_disk,
+            )
+
+            gates = self.gates(
+                task_description,
+                source_files,
+                repository_path,
+            )
+
+            steps.record(
+                "step.gates",
+                f"#{rounds} · {gates.detail}",
+                ok=gates.passed,
+            )
+
+            if not gates.passed:
+
+                if fixes >= Settings.MAX_GATE_FIXES:
+                    break
+
+                fixes += 1
+
+                source_files = self.developer.improve(
+                    task_description,
+                    source_files,
+                    gates.brief(),
+                    repository_path,
+                )
+
+                steps.record(
+                    "step.improve",
+                    describe_files(source_files),
+                )
+
+                continue
+
+            architecture_review = self.architect.execute(
+                task_description,
+                source_files,
+                review_history,
+                repository_path,
+            )
+
+            review_iterations += 1
+
+            steps.record(
+                "step.architect",
+                f"#{review_iterations} · "
+                f"{architecture_review.score}/100 · "
+                f"{architecture_review.recommendation.value}"
+                f" · {len(architecture_review.blockers)}B",
+                ok=not architecture_review.blockers,
+            )
+
+            review_history.append(
+                self.history_entry(
+                    review_iterations,
+                    architecture_review,
+                )
+            )
+
+            # Warnings and suggestions are recorded and
+            # shipped; only blockers send the files back.
+            if not architecture_review.blockers:
+                break
+
+            if architecture_review.recommendation == ReviewDecision.REJECT:
+                break
+
+            if review_iterations >= Settings.MAX_REVIEW_LOOPS:
+                break
+
+            # A fresh fix budget for the revised files.
+            fixes = 0
+
+            source_files = self.developer.improve(
+                task_description,
+                source_files,
+                self.fix_brief(architecture_review),
+                repository_path,
+            )
+
+            steps.record(
+                "step.improve",
+                describe_files(source_files),
+            )
+
+        if architecture_review is None:
+            architecture_review = self.unreviewed(
+                gates,
+                rounds,
+            )
+
+        test_files = self.qa.execute(source_files)
+
+        steps.record(
+            "step.qa",
+            describe_files(test_files),
+        )
+
+        generated_files = self.write_files(
+            repository_path,
+            source_files + test_files,
+            on_disk,
+        )
+
+        steps.record(
+            "step.written",
+            f"{len(generated_files)}",
+        )
+
+        # Again now that the tests exist: a suite that does
+        # not compile fails to load, and the runner then
+        # reports nothing passing out of nothing -- which
+        # reads like nothing happened rather than like the
+        # code is broken.
+        compile_result = type_checker.check(repository_path)
+
+        steps.record(
+            "step.types",
+            f"{compile_result.status.value} · "
+            f"{compile_result.summary}",
+            ok=not compile_result.blocks_delivery,
+        )
+
+        test_result = self.run_tests(
+            repository_path,
+            compile_result,
+        )
+
+        if not compile_result.blocks_delivery:
+            steps.record(
+                "step.tests",
+                f"{test_result.status.value} · "
+                f"{test_result.summary}",
+                ok=not test_result.blocks_delivery,
+            )
+
+        attempts = 0
+
+        while (
+            (
+                compile_result.blocks_delivery
+                or test_result.blocks_delivery
+            )
+            and attempts < Settings.MAX_TEST_LOOPS
+        ):
+
+            attempts += 1
+
+            # The compiler names a file and a line, so when
+            # it has something to say it is a better brief
+            # than a failing assertion.
+            failure = (
+                compile_result.brief()
+                if compile_result.blocks_delivery
+                else TestExecutionAgent.fix_brief(
+                    test_result,
+                    source_files,
+                    test_files,
+                )
+            )
+
+            before = source_files
+
+            source_files = self.developer.improve(
+                task_description,
+                source_files,
+                failure,
+                repository_path,
+            )
+
+            steps.record(
+                "step.improve",
+                describe_files(source_files),
+            )
+
+            # No second architecture review: a fix for a
+            # failing test does not change the design, and
+            # the structural checks below catch the one
+            # thing it could break for free.
+            stale = self.stale_suites(
+                before,
+                source_files,
+                compile_result.output
+                if compile_result.blocks_delivery
+                else test_result.output,
+            )
+
+            refreshed = self.qa.execute(
+                source_files,
+                only=stale,
+            )
+
+            test_files = self.merge_suites(
+                test_files,
+                refreshed,
+                source_files,
+            )
+
+            steps.record(
+                "step.qa_refresh",
+                f"#{attempts} · {len(refreshed)}/"
+                f"{len(stale)} suite(s)",
+            )
+
+            generated_files = self.write_files(
+                repository_path,
+                source_files + test_files,
+                on_disk,
+            )
+
+            gates = self.gates(
+                task_description,
+                source_files,
+                repository_path,
+            )
+
+            compile_result = gates.compile_result
+
+            steps.record(
+                "step.types_retry",
+                f"#{attempts} · {gates.detail} · "
+                f"{compile_result.summary}",
+                ok=gates.passed,
+            )
+
+            test_result = self.run_tests(
+                repository_path,
+                compile_result,
+            )
+
+            if not compile_result.blocks_delivery:
+                steps.record(
+                    "step.tests_retry",
+                    f"#{attempts} · "
+                    f"{test_result.status.value} · "
+                    f"{test_result.summary}",
+                    ok=not test_result.blocks_delivery,
+                )
+
+        # The structural findings are the last checked
+        # ones, not the ones the architect saw: a fix after
+        # the review can introduce a problem, and the
+        # review would then vouch for files it never read.
+        structural = gates.report.blockers
+
+        recommendation = RecommendationPolicy.decide(
+            architecture_review.blockers,
+            structural,
+            architecture_review.recommendation,
+        )
+
+        # Code that does not compile, or fails its tests,
+        # is not approvable whatever the review said. The
+        # gates are facts; the review is an opinion about
+        # an earlier version of the files. Nor is code the
+        # architect never saw, however clean it turned out.
+        if recommendation == ReviewDecision.APPROVE and (
+            compile_result.blocks_delivery
+            or test_result.blocks_delivery
+            or not review_iterations
+        ):
+            recommendation = ReviewDecision.REQUEST_CHANGES
+
+        cost = usage_ledger.describe(
+            usage_ledger.since(spent)
+        )
+
+        if cost:
+            steps.record("step.usage", cost)
+
+        # What a reviewer will be asked to approve. Read
+        # only: the files are already on disk, so this
+        # compares them with what git has recorded.
+        diffs = GitDiffService.compare(
+            repository_path,
+            [item.path for item in generated_files],
+        )
+
+        return Task(
+            repository_id=repository_id,
+            repository_path=repository_path,
+            description=task_description,
+            architecture_review=architecture_review.review,
+            architecture_score=architecture_review.score,
+            recommendation=recommendation,
+            blockers=architecture_review.blockers,
+            warnings=architecture_review.warnings,
+            suggestions=architecture_review.suggestions,
+            structural=structural,
+            review_iterations=review_iterations,
+            review_history=review_history,
+            generated_files=generated_files,
+            test_result=test_result,
+            compile_result=compile_result,
+            diffs=diffs,
+            environment=created,
+            created_files=sorted(on_disk.created),
+            steps=steps.steps,
+            status=TaskStatus.WAITING_FOR_APPROVAL,
+        )
+
+    @staticmethod
+    def gates(
+        task_description: str,
+        source_files: list[GeneratedFile],
+        repository_path: str,
+    ) -> Gates:
+        """The free checks, against what is on disk now."""
+
+        return Gates(
+            report=StructureValidator.validate(
+                source_files,
+                task_description,
+                survey(repository_path),
+            ),
+            compile_result=type_checker.check(
+                repository_path
+            ),
+        )
+
+    @staticmethod
+    def run_tests(
+        repository_path: str,
+        compile_result: CompileResult,
+    ) -> TestResult:
+
+        if compile_result.blocks_delivery:
+            return TestResult(
+                status=TestStatus.NOT_RUN,
+                output="Skipped: the code does not compile.",
+            )
+
+        return TestExecutionAgent.execute(repository_path)
+
+    @staticmethod
+    def unreviewed(
+        gates: Gates,
+        rounds: int,
+    ) -> ArchitectureReview:
+        """The review of a file set the free checks rejected.
+
+        Written here rather than asked for: the architect
+        would only have been told to repeat what the checks
+        found, and it is the most expensive call in the
+        run.
+        """
+
+        return ArchitectureReview(
+            score=0,
+            recommendation=ReviewDecision.REQUEST_CHANGES,
+            review=(
+                "Not reviewed. After "
+                f"{rounds} round(s) the code still fails "
+                "the structural checks or does not "
+                "compile, so it never reached the "
+                "architect.\n\n" + gates.brief()
+            ),
+            structural=gates.report.blockers,
+            structure_report=gates.report,
+        )
+
+    @staticmethod
+    def history_entry(
+        iteration: int,
+        review: ArchitectureReview,
+    ) -> ReviewHistory:
+
+        return ReviewHistory(
+            iteration=iteration,
+            score=review.score,
+            recommendation=review.recommendation,
+            review=review.review,
+            resolved=review.resolved,
+            blockers=review.blockers,
+            warnings=review.warnings,
+            suggestions=review.suggestions,
+            structural=review.structural,
+        )
+
+    @staticmethod
+    def stale_suites(
+        before: list[GeneratedFile],
+        after: list[GeneratedFile],
+        output: str,
+    ) -> set[str]:
+        """Source files whose suite has to be written again.
+
+        Those that changed, and those whose suite the
+        failure names: a wrong test fails against correct
+        code, and leaving it alone would fail the same way
+        next time.
+
+        `output` is the compiler's or the runner's own
+        output, not the brief built from it: the brief
+        lists every file in the task, and reading paths
+        out of it named every suite as failing.
+        """
+
+        stale = changed_paths(before, after)
+
+        named = set(FileParser.paths_in(output))
+
+        for item in after:
+
+            if (
+                item.path in named
+                or QAAgent.test_path(item.path) in named
+            ):
+                stale.add(item.path)
+
+        return stale
+
+    @staticmethod
+    def merge_suites(
+        current: list[GeneratedFile],
+        refreshed: list[GeneratedFile],
+        source_files: list[GeneratedFile],
+    ) -> list[GeneratedFile]:
+        """The old suites, with the rewritten ones swapped in.
+
+        A suite whose source file is gone goes with it.
+        """
+
+        wanted = {
+            QAAgent.test_path(item.path)
+            for item in source_files
+        }
+
+        merged = {
+            item.path: item
+            for item in current
+            if item.path in wanted
+        }
+
+        for item in refreshed:
+            merged[item.path] = item
+
+        return list(merged.values())
+
+    @staticmethod
+    def prepare(repository_path: str) -> list[str]:
+        """Scaffolding, before a single task is written.
+
+        Deterministic on purpose. The alternative was a
+        planned task per config file, and one of those
+        took twenty-three minutes of model time to produce
+        a package.json.
+        """
+
+        if not Settings.AUTO_BOOTSTRAP:
+            return []
+
+        created = bootstrap(
+            repository_path,
+            describe(repository_path),
+        )
+
+        if created:
+            print(
+                "BOOTSTRAP: created "
+                + ", ".join(created)
+            )
+
+        return created
+
+    @staticmethod
+    def fix_brief(review: ArchitectureReview) -> str:
+        """What the developer has to act on after a review."""
+
+        return review.review
+
+    def write_files(
+        self,
+        repository_path: str,
+        files: list[GeneratedFile],
+        on_disk: RunFiles | None = None,
+    ) -> list[GeneratedFile]:
+        """Writes the run's files into the repository.
+
+        Nothing is written when no repository folder was
+        given, so the workflow still runs standalone. A
+        file whose path is unsafe is skipped rather than
+        failing the whole run.
+        """
+
+        if not repository_path:
+            return files
+
+        on_disk = on_disk if on_disk is not None else RunFiles()
+
+        written: list[GeneratedFile] = []
+
+        for item in files:
+
+            try:
+                target = FileWriter.resolve(
+                    repository_path,
+                    item.path,
+                )
+
+                if (
+                    item.path not in on_disk.written
+                    and not os.path.exists(target)
+                ):
+                    on_disk.created.add(item.path)
+
+                written.append(
+                    FileWriter.write(
+                        repository_path,
+                        FileGenerationResult(
+                            relative_path=item.path,
+                            content=item.content,
+                            file_type=item.file_type,
+                        ),
+                    )
+                )
+
+            except ValueError as error:
+                print(f"SKIPPED {item.path}: {error}")
+
+        if not written:
+            raise RuntimeError(
+                "No generated file could be written to "
+                f"{repository_path}."
+            )
+
+        current = {item.path for item in files}
+
+        self.remove_dropped(
+            repository_path,
+            on_disk,
+            current,
+        )
+
+        on_disk.written |= current
+
+        return written
+
+    @staticmethod
+    def remove_dropped(
+        repository_path: str,
+        on_disk: RunFiles,
+        current: set[str],
+    ) -> None:
+        """Deletes files this run created and has since dropped.
+
+        Every write is the run's whole file set: sources
+        alone before QA has written anything, sources and
+        suites after. So a path missing from a write is a
+        path the run no longer has.
+        """
+
+        for path in sorted(on_disk.written - current):
+
+            if path not in on_disk.created:
+                continue
+
+            try:
+                os.remove(
+                    FileWriter.resolve(repository_path, path)
+                )
+
+                print(f"REMOVED {path}: dropped by this run")
+
+            except (OSError, ValueError) as error:
+                print(f"could not remove {path}: {error}")
+
+            on_disk.written.discard(path)
+
+            on_disk.created.discard(path)
