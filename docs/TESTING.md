@@ -34,6 +34,15 @@ task 1 stored as `RUNNING` while it ran and as `COMPLETED` before task 2
 began. That is the property the UI depends on, and it cannot be faked by
 checking the plan afterwards.
 
+The planner seeing the code is covered against a real folder: the prompt
+carries the file listing with exports and, in full, the file whose symbol
+the epic names; file paths come back spelled one way; and `PlanValidator`
+reports a task that creates an existing file, one that modifies a file
+nobody creates, one that modifies another task's file without depending on
+it, two creators of one file, a planned test file and a path that escapes
+the repository — while a task that waits for its file's creator passes.
+File claims survive storage, and reach the Developer in the task's prompt.
+
 One thing is not covered here: the **Stop after this task** button and the
 disabled per-task buttons are rendered only while a task is in flight, and
 Streamlit's `AppTest` follows every `st.rerun()` to completion, so no
@@ -47,6 +56,14 @@ An issue's title and body stay out of reach: a `PATCH` carrying anything but
 `labels` or `state` is refused. Closing is possible but never happens while
 reporting. An issue becomes a requirement, and re-importing updates rather
 than duplicates. Lifecycles are derived, so they cannot drift.
+
+Filing goes the other way: a new issue sends its title and body and nothing
+else, and needs a title. A child is linked under its parent by id, and a
+link that would take a child from another parent is refused. The issue list
+becomes a tree — children after their parent, in number order, a child
+whose parent is absent at the top — and a parent reports its progress. A
+proposed split drops untitled and duplicate stories, refuses a "split" of
+one, and the parent/child texts are pinned.
 
 ### `tests.severity_test`
 
@@ -121,7 +138,8 @@ delete flag refused; a push to `main`, `master` or `develop` refused by
 the service rather than merely unused. Staging takes the generated file
 and leaves the user's alone. Merging, deleting, editing and approving a
 pull request are all outside the allow list, as are deployments and
-writing repository contents.
+writing repository contents. Filing an issue is allowed, but never with
+assignees or labels, and never without a title.
 
 And the subtle one: closing a pull request through the issues endpoint is
 refused, with nothing written while it is established. A governance
@@ -255,6 +273,37 @@ authentication, rate limit, missing repository, unreachable — each recorded
 without undoing the approval or the push.
 
 ---
+
+### The pipeline and the plan's branch
+
+`tests.orchestrator_test` — every agent, the compiler and the test runner
+are faked. The free checks run before the Architect; a fix after failing
+tests rewrites only the suites it must; a dropped file is removed; each run
+reports its cost. And a human's revision: the Developer edits the existing
+files rather than starting over, every line of the notes arrives as a
+blocker, the files are named when the notes name none, the notes become
+part of the task, the checks and review run again with the history carried
+on, and what the first attempt created still counts as created.
+
+`tests.plan_branch_test` — one branch per plan, or per issue
+(`feature/issue-<n>-<slug>`), checked out before generation; tasks commit
+in run order; rejecting deletes created files and restores tracked ones,
+is refused on another branch, and is refused for a task already committed.
+
+`tests.plan_pull_request_test` — one pull request per plan: the description
+covers the whole plan, labels findings and costs like its checklist, lists
+an earlier plan's commits on a shared issue branch, and is rewritten on
+every push. A merged request makes the requirement `DELIVERED`.
+
+`tests.fetch_test` — `git fetch` in its one allowed shape, and the base a
+new branch starts from: never one that loses work.
+
+`tests.context_files_test` — existing files whose symbols a task names
+reach the Developer and the Architect in full, within a budget, tests
+excluded.
+
+`tests.environment_test` — Step 0: scaffolding from templates, the install
+button, and the scaffolding commit.
 
 ## Suites that call a real model
 

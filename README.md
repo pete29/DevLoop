@@ -8,7 +8,9 @@ pull request, and a human merges it.
 
 ```text
 Requirement (typed by hand, or imported from a GitHub issue)
-  → Planner (Opus)              tasks + dependencies, validated in code
+  → too large? split into issues (sub-issues, one PR each)
+  → Planner (Opus)              sees the code; tasks + files they touch,
+                                checked in code against the repository
   → Step 0: environment         scaffolding, npm install, scaffolding commit
   → per task, on the plan's branch:
       Developer (Sonnet)        one call per file
@@ -16,8 +18,10 @@ Requirement (typed by hand, or imported from a GitHub issue)
       Architect (Opus)          reviews only code that passed the free checks
       QA (Sonnet)               one Vitest suite per source file
       Compile + tests           real tsc, real Vitest
-  → Human: accept / reject      accept = commit on the plan's branch
-                                reject = the task's files are undone
+  → Human: accept / send back / reject
+                                accept    = commit on the plan's branch
+                                send back = your notes, the Developer revises
+                                reject    = the task's files are undone
   → Push → pull request         one PR per plan, description rebuilt on every push
   → Human merges on GitHub → "Check the PR" → requirement DELIVERED
 ```
@@ -112,24 +116,42 @@ written here as an issue, so its plan gets the issue's branch and its pull
 request closes the loop on GitHub. **✂️ Split into issues** is for a
 requirement too large for one pull request: the Planner proposes user
 stories, you edit and pick them, and each becomes its own issue, and later
-its own plan, branch and pull request. The parent issue gets a task list of
-its children. A small requirement needs none of this: one branch, one pull
-request, a commit per task. A plan with more than `SPLIT_HINT_TASKS` tasks
-suggests the split.
+its own plan, branch and pull request. The children are linked under the
+parent as GitHub **sub-issues**, so the parent shows their progress. A
+small requirement needs none of this: one branch, one pull request, a
+commit per task. A plan with more than `SPLIT_HINT_TASKS` tasks suggests
+the split.
+
+The sidebar lists issues as a tree: sub-issues under their parent, the
+parent with its progress (`#3 Password policy toolkit · 1/4`).
 
 ### 3. Plan it
 
 The Planner turns a requirement into tasks with priorities and
-dependencies. The ordering, the dependency checks and cycle detection are
-computed in code; problems are reported above the plan, never repaired
-silently. A task whose dependencies have not finished is blocked.
+dependencies. It **sees the code**: the repository's files with what each
+exports, and in full the files whose symbols the requirement names. Every
+task says which source files it **creates** and which it **modifies**, and
+the plan shows them.
+
+What can be checked is checked in code (`PlanValidator`), and reported above
+the plan — never repaired silently:
+
+- dependency problems: a task depending on itself or on a missing task, cycles;
+- a task creating a file that already exists — that part is probably done;
+- a task modifying a file that neither exists nor comes from a task it
+  depends on, or another task's file without depending on that task;
+- two tasks creating one file, planned test files, paths outside the repo.
+
+A task whose dependencies have not finished is blocked.
 
 Every plan gets **one branch** (`feature/plan-<id8>-<slug>`), checked out
 before anything is generated. A plan made from a GitHub issue is named after
 the issue instead (`feature/issue-<number>-<slug>`), and a second plan for
-the same issue continues on that branch and in its pull request. Its base is the freshest point that loses
-nothing: local `main` if it already contains `origin/main`, otherwise
-`origin/main`.
+the same issue continues on that branch and in its pull request. Its base is
+the freshest point that loses nothing: local `main` if it already contains
+`origin/main`, otherwise `origin/main`. The plan shows its branch, whether it
+exists locally and on GitHub, the DevLoop commits already on it, and when it
+continues an earlier plan's branch.
 
 ### 4. Step 0: the environment
 
@@ -163,12 +185,19 @@ Each task goes through the pipeline above:
 Each task shows its tokens and cost per agent; the plan shows the cost of
 planning.
 
-### 6. Accept or reject
+### 6. Accept, send back, or reject
 
-**✅ Accept** commits the task's files on the plan's branch, in run order.
-**❌ Reject** deletes the files the task created, restores the tracked files
-it changed, and reopens the task in the plan so it can run again; tasks that
-depend on it wait.
+**🔍 Open the task** shows it in a window over the page: code, review,
+tests, diff and git. Three answers:
+
+- **✅ Accept** commits the task's files on the plan's branch, in run order.
+- **🔁 Send back for revision**: pick Architect findings and/or write your
+  own notes. The Developer edits the existing files with them as blockers,
+  and the free checks, the Architect, QA and the tests run again. Your notes
+  become part of the task. The old version reads `REVISED`.
+- **❌ Reject** deletes the files the task created, restores the tracked
+  files it changed, and reopens the task in the plan so it can run again;
+  tasks that depend on it wait. A committed task cannot be rejected.
 
 ### 7. Push, pull request, delivery
 
@@ -205,8 +234,10 @@ force, delete, mirror or push tags, and never targets `main`, `master`,
 file name, never `git add .`.
 
 **GitHub** is limited to a fixed set of calls matched on method and path.
-A new issue may carry only `title` and `body`. A `PATCH` on a pull request
-may carry only `title` and `body`; on an issue only `labels` and `state`. Merging, closing and deleting are not reachable.
+A new issue may carry only `title` and `body`; linking a sub-issue only the
+child's id. A `PATCH` on a pull request may carry only `title` and `body`; on
+an issue only `labels` and `state`. Merging, closing and deleting are not
+reachable.
 
 **Credentials** come from the environment, are never stored in the
 database, and are stripped from error text.
@@ -236,7 +267,8 @@ MAX_TEST_LOOPS = 1      # how often failing tests may send work back
 
 `CLAUDE_PRICES` drives the cost report. `AUTO_BOOTSTRAP` and
 `ENABLE_PACKAGE_INSTALLATION` control Step 0; the second removes the
-`npm install` button entirely.
+`npm install` button entirely. `SPLIT_HINT_TASKS` (6) is the plan size above
+which a split into issues is suggested.
 
 ---
 
@@ -259,10 +291,12 @@ skipped in routine runs: `architect_test`, `workflow_test`,
 ## Project structure
 
 ```text
-agents/        planner, developer, architect, QA, test execution, git, pull request, issue
+agents/        planner, story splitter, developer, architect, QA, test execution,
+               git, pull request, issue
 workflows/     the orchestrator, the recommendation policy, a LangGraph variant
-services/      LLM providers, usage ledger, repository survey, validation,
-               tsc, Vitest, git, GitHub, plan branches, rollback, translations
+services/      LLM providers, usage ledger, repository survey, plan validator,
+               validation, tsc, Vitest, git, GitHub, plan branches, rollback,
+               translations
 models/        the data the pipeline passes around
 database/      SQLite persistence: repositories, requirements, plans, tasks
 tests/         see above
@@ -289,12 +323,13 @@ app.py         the Streamlit UI (every visible string in Polish and English)
 
 ## Known limitations
 
-- **The planner is blind to code.** It sees counts, folders and tooling
-  state, not files or exports.
-- **Pull request review comments don't flow back** to the Developer.
+- **Review comments left on GitHub don't flow back** to the Developer. In
+  the app, a task can be sent back with notes; a comment on the pull request
+  cannot yet.
 - **No prompt caching yet.** Prompts put the variable part first.
 - **Running a whole plan blocks the UI**; there is no worker or queue.
 - **A single task outside a plan** is generated on whatever branch is
   checked out.
-- **Push, PR creation and merge feedback** have not yet been verified in a
-  live end-to-end run.
+- **The planner's file claims are checked, its judgement is not.** A plan
+  can still split work badly; what it cannot do any more is quietly plan a
+  file that exists, or one nothing creates.

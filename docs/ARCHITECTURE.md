@@ -41,12 +41,53 @@ It never closes an issue. The service can, and there is a button for it,
 but nothing in the pipeline calls it: deciding that work is finished is a
 human's judgement.
 
+It also files issues the other way, on a human's click: a requirement
+written in the app becomes an issue (title and body only), so its plan gets
+the issue's branch.
+
 Owns: the link between a backlog and this platform.
+
+### StorySplitter — `agents/story_splitter.py`
+
+Proposes how to split a requirement too large for one pull request into
+user stories: vertical slices, each with acceptance criteria, in the
+requirement's language. It runs on the planner's model.
+
+It only proposes. A human edits, unticks and confirms the stories in the
+app, and only then is each filed as an issue, imported as its own
+requirement, and linked under the parent as a GitHub **sub-issue**. Where
+sub-issues are not available, the parent gets a task list in a comment
+instead. What is checked in code: at least two stories, each titled, no two
+the same.
+
+Owns: the shape of a split. Does not own: whether to split, which is a
+human's call prompted by `SPLIT_HINT_TASKS`.
 
 ### PlannerAgent — `agents/planner_agent.py`
 
 Turns an epic into a list of tasks. The model proposes the breakdown; the
 ordering, the dependency checks and the cycle detection happen in code.
+
+It sees the code. Besides what the repository *is* (`repository_context`),
+it gets the file listing with each file's exports, and in full the existing
+files whose symbols the requirement names (`repository_survey`). Before
+this it knew the folder held seven source files and not which, and a second
+plan for an issue planned again what the first had built.
+
+Every task declares the source files it **creates** and the existing files
+it **modifies**. `services/plan_validator.py` checks those claims against
+the folder and the dependency graph, in code:
+
+- a created file must not exist yet — if it does, that part is probably
+  done;
+- a modified file must exist, or be created by a task it depends on;
+- modifying a file another task creates means depending on that task;
+- no two tasks create the same file; no test files; no paths outside the
+  repository.
+
+Problems are reported on the plan, never repaired: a plan built on a false
+assumption is shown to a human, not papered over. The file lists reach the
+Developer through the task's prompt (`Create: …`, `Modify: …`).
 
 A task may not depend on itself, on a task that does not exist, or sit in a
 cycle without being reported: each of those is recorded on the plan and
@@ -250,6 +291,14 @@ plan still scaffolds on its own, and its commit includes what it wrote.
 7. The diff against git HEAD is computed as review evidence, and the run
    records what it cost (`step.usage`, from `services/usage_ledger.py`).
 
+`WorkflowOrchestrator.revise(task, feedback)` is the same run started from
+a task's own files instead of a first draft. A human picks Architect
+findings and/or writes notes; the Developer edits the files on disk with
+them as blockers, and steps 2–7 follow. The notes are appended to the
+task's description ("Human review notes:"), so every later round sees
+them, and the review history carries on. The revision is a new task
+record; the old one becomes `REVISED`, and the plan points at the new one.
+
 The order is the point. The checks that cost nothing run before the call
 that costs most, so the Architect never reviews code a compiler would have
 rejected. Code that does not compile, fails its tests, or never reached
@@ -288,7 +337,11 @@ its own test.
 | `git_service` | local and remote git, behind an allow list |
 | `git_diff_service` | what the generated files would change |
 | `github_service` | the GitHub calls, behind an allow list |
-| `github_issue_service` | issues: read, comment, label, close |
+| `github_issue_service` | issues: read, create, link sub-issues, comment, label, close; the parent/child tree |
+| `plan_validator` | a plan's file claims against the folder and the dependency graph |
+| `plan_branch` | one branch per plan, or per issue: `feature/issue-<n>-<slug>` |
+| `task_rollback` | undoes a rejected task's files; refuses a committed one |
+| `usage_ledger` | tokens and dollars per agent, per run |
 | `review_history_formatter` | previous rounds, for the Architect |
 | `code_cleaner` | strips fences and reasoning blocks |
 | `llm_factory` | picks Claude (per role), Ollama or Gemini |
@@ -332,8 +385,10 @@ Requirement → Requirement → Planner → Developer → Architect ⇄ Validato
                                                      ↓
                                               Diff Review
                                                      ↓
-                                            HUMAN APPROVAL
-                                                     ↓
+                                  HUMAN: accept / send back / reject
+                                         ↓            ↓
+                                         ↓     revise(notes) → back to the Developer
+                                         ↓
                                         Commit → Push → Pull Request
 ```
 

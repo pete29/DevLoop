@@ -44,6 +44,25 @@ one rather than grow its own path into the pipeline.
 Importing the same issue twice updates the requirement it produced instead
 of making a second one.
 
+It works the other way too, always on a click:
+
+- **Create a GitHub issue** files a requirement written here as an issue,
+  with its title and body and nothing else.
+- **Split into issues** is for a requirement too large for one pull
+  request. The planner's model proposes two to six user stories, each a
+  vertical slice with acceptance criteria; you edit, untick and confirm
+  them; each is filed as an issue, imported as its own requirement, and
+  linked under the parent as a GitHub sub-issue (a task list in a comment
+  where sub-issues are unavailable). Each child then gets its own plan,
+  branch and pull request.
+
+A small requirement needs neither: one plan, one branch, one pull request,
+a commit per task. A plan with more than `SPLIT_HINT_TASKS` tasks says so
+and suggests the split; it never splits by itself.
+
+The sidebar lists open issues as a tree, sub-issues under their parent and
+the parent with its progress (`2/4`).
+
 A requirement's status is derived from the plans it produced, never stored:
 
 | Status | Meaning |
@@ -52,6 +71,7 @@ A requirement's status is derived from the plans it produced, never stored:
 | `PLANNED` | a plan exists, nothing has run |
 | `EXECUTING` | some tasks have run, some remain |
 | `COMPLETED` | every planned task has run |
+| `DELIVERED` | its pull request was merged on GitHub |
 
 Once a pull request exists, the issue a task came from gets a comment with
 the architecture score, the recommendation, the test result and the pull
@@ -139,14 +159,34 @@ and a dependency list each. The ordering is computed in code: dependencies
 first, then priority, then id. A task whose dependencies have not run is
 shown as blocked and cannot be started.
 
-The breakdown the model proposes is validated before it is shown. Three
-things are reported rather than quietly repaired:
+**The planner sees the code.** It is given the repository's file listing
+with each file's exports, and in full the existing files whose symbols the
+requirement names. Every task it plans declares the source files it
+**creates** and the existing ones it **modifies**, and those lists reach
+the Developer with the task.
+
+The breakdown the model proposes is validated before it is shown. These
+are reported rather than quietly repaired:
 
 | Problem | What happens |
 |---|---|
 | a task depends on itself | the dependency is dropped, and said so |
 | a task depends on an id the plan does not contain | the same |
 | two or more tasks form a cycle | they are named, and listed last |
+| a task creates a file that already exists | reported: that part is probably done |
+| a task modifies a file that does not exist and no task creates | reported |
+| a task modifies a file another task creates, without depending on it | reported |
+| two tasks create the same file | reported |
+| a task plans a test file, or a path outside the repository | reported |
+
+The file checks are `PlanValidator`'s, in code, against the folder and the
+dependency graph — the second plan for an issue no longer plans again what
+the first one built without anyone being told.
+
+**A plan shows where its work is in git**: its branch, whether that exists
+locally and on GitHub (with a link), the DevLoop commits already on it,
+and — for an issue planned before — that it continues an earlier plan's
+branch and pull request.
 
 The plan stays usable in every case — the point of reporting is that you
 see what the model got wrong, instead of a graph that was silently edited
@@ -467,7 +507,17 @@ By the time you are asked, you can see:
 - every review round and what it resolved
 - the branch name and the commit message that would be used
 
-**Approve** commits. **Reject** does nothing to git.
+The task opens in a window over the page, and offers three answers:
+
+- **Approve** commits it on the plan's branch.
+- **Send back for revision**: pick Architect findings and/or write your
+  own notes. The Developer edits the files on disk with them as blockers,
+  and the run goes through the free checks, the Architect (with its
+  history), QA and the tests again. Your notes become part of the task's
+  description. The revision is a new record; the old one reads `REVISED`.
+- **Reject** deletes the files the task created, restores the tracked ones
+  it changed, and reopens the task in its plan. A task that is already
+  committed cannot be rejected: that would leave its commit on the branch.
 
 Approval never fails because of git: if the folder is not a repository, or
 the commit cannot be made, the task is still approved and you are told why

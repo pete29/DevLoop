@@ -57,6 +57,18 @@ What has been built, in the order it was built, and what the next step is.
 | — | **One call per file** — the Developer plans the file list, then writes each file in its own call; a review round rewrites only what it names |
 | 10 | **GitHub issues** — a backlog becomes requirements, and a pull request reports back to the issue it came from |
 
+### The factory (DevLoop)
+
+| Sprint | What it added |
+|---|---|
+| 11 | **Claude per agent** — Opus where judgement is scarce (planner, architect), Sonnet where volume is (developer, QA); free checks before the paid review; every run says what it cost |
+| 11.1 | **Step 0 and one branch per plan** — scaffolding, `npm install` and its commit before any task; a plan's tasks commit in order on one branch; a rejected task's files are undone |
+| 11.2 | **One pull request per plan** — its description rebuilt on every push; a merge read back moves the requirement to `DELIVERED` |
+| 11.3 | **First live end-to-end run** — push, PR, merge and delivery verified against GitHub; the bugs it found fixed (below) |
+| 12 | **The human can say more than yes or no** — a task opens in a window, and can be sent back with chosen findings and the human's own notes |
+| 12.1 | **Issues both ways** — a requirement filed as an issue; a large one split into user stories, filed as sub-issues; the issue list as a tree; plans for an issue share `feature/issue-<n>-<slug>` |
+| 12.2 | **The planner sees the code** — file listing and exports, referenced files in full; tasks declare what they create and modify; `PlanValidator` checks the claims |
+
 ---
 
 ## What each sprint actually taught
@@ -129,6 +141,22 @@ codepage cannot decode, so the captured output came back empty for exactly
 the runs that matter. Found by running a real failing suite, not by reading
 the code.
 
+**11.3** — the first live run against GitHub found what no offline suite
+had: a task could be rejected after it was committed, which left its
+commit, junk test file included, on the branch for the pull request; the
+Architect ended a finding with a colon and listed its cases as bullets of
+their own, so one warning reached the PR as four; a Polish requirement got
+a Polish review, which the English-only finding filter cannot read; and a
+commit subject read on from the task's title into its body. Each fix is a
+test now.
+
+**12.2** — the second plan for an issue rebuilt what the first had built,
+and the only signal was a reviewer noticing. The planner had been given
+counts ("seven source files"), never names. Giving it the names was half
+the fix; the other half was making it commit to which files each task
+touches, so a false assumption is a fact the code can check instead of a
+sentence nobody re-reads.
+
 **Across all of them** — the offline test suites caught none of these. Each
 came from a real run against a real model.
 
@@ -139,9 +167,11 @@ came from a real run against a real model.
 ### Sprint 10 and beyond, unbuilt
 
 ```text
-Azure Boards            a second backlog, normalising into Requirement
+PR review feedback      comments left on the pull request on GitHub feeding a revision
+Prompt caching          a stable prompt prefix (rules, listing, referenced files) with cache_control
+Background runs         "run the whole plan" off the request thread, so the UI stays usable
 Multi-repository plans  one requirement spanning several repositories
-Review feedback         the human's comments feeding the next round
+Azure Boards            on hold, by decision: GitHub only for now
 ```
 
 ### Known gaps

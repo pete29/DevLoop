@@ -2,8 +2,7 @@
 
 Read this before you touch the code. It covers what the project is, what changed in the
 session of 14–15 October 2026, what is decided, what is still open, and the traps already found.
-`docs/ARCHITECTURE.md`, `docs/SECURITY.md` and `docs/CONFIGURATION.md` are current and go
-deeper. This file is the map.
+`README.md` and everything under `docs/` are current and go deeper. This file is the map.
 
 ---
 
@@ -67,83 +66,58 @@ polluting the real DB, set `Settings.DATABASE_NAME` to a temp file **before** im
 
 ---
 
-## 3. What was done in this session
+## 3. History
 
-### Repository move (15 October 2026)
+### Before 15 October 2026 (old repository, `C:\Projects\HumanInTheLoop`, branch `master`)
 
-The project moved from `C:\Projects\HumanInTheLoop` (branch `master`) to
-**`C:\Projects\DevLoop`**, remote `https://github.com/pete29/DevLoop.git`, branch **`main`**.
-The old history did not come along: everything below, committed and uncommitted alike, landed
-here as one commit, `587c0c2` (*feat: bring the human-in-the-loop factory into this
-repository*), on top of the GitHub-created initial commits. Not pushed yet. The commit hashes
-in the table below refer to the old repository.
+Claude per agent with streaming, effort and server-side refusal fallback; free checks before
+the paid review and a usage ledger; Step 0 (scaffolding, npm install, scaffolding commit); one
+branch per plan with tasks committed in run order and rejected files undone; restricted
+`git fetch` and a start point that loses nothing; one PR per plan rebuilt on every push;
+`DELIVERED` on merge; referenced files given in full to Developer and Architect; tests are
+QA's (`is_test_path`); separate budgets (`MAX_GATE_FIXES`, `MAX_REVIEW_LOOPS`).
 
-### Committed in the old repository (`master`)
+The project then moved to **`C:\Projects\DevLoop`**, remote `https://github.com/pete29/DevLoop.git`,
+branch **`main`**. The old history did not come along: it all landed as one commit, `587c0c2`.
+
+### 15 October 2026 (this repository, all on `main`, **not pushed**)
 
 | Commit | What |
 |---|---|
-| `0538f7e` feat: talk to Claude, with a model chosen per agent | `services/claude_service.py`: streaming, `output_config.effort`, server-side refusal fallback (`fallbacks="default"`, beta `server-side-fallback-2026-07-01`), raises on refusal, truncation or empty answer. `LLMFactory.create(role)`. Per-role models: planner + architect = `claude-opus-5-5`, developer + QA = `claude-sonnet-5-5`. Default provider switched to Claude. |
-| `a2f444f` feat: run the free checks before the expensive review, and say what a run cost | Orchestrator reordered: write → structural validator + tsc → only then Architect. QA rewrites only the suites of changed or failing files after a test fix. Code that doesn't compile, fails tests, or never reached the Architect is never recommended. `services/usage_ledger.py` records role, tokens and $ per call; step `step.usage` per task; planning cost shown under the plan. Files a run created and then dropped are removed. |
-| `16c358c` feat: make the environment step 0 of every plan | `services/environment_step.py` plus a UI panel: write scaffolding from templates → npm install (human button) → commit scaffolding on the base branch. Tasks stay disabled until Step 0 is done (explicit override checkbox). A task outside a plan commits the scaffolding it wrote. |
-| `6964103` feat: give a plan one branch, and undo a rejected task's files | `services/plan_branch.py`: one branch per plan (`feature/plan-<id8>-<slug>`), checked out **before** generation. Tasks commit in run order (`GitAgent.unresolved_before`). `services/task_rollback.py`: reject deletes created files and restores tracked ones (`git checkout -- <paths>`). `Task.branch` and `Task.created_files` added, with a DB migration. |
-
-### Uncommitted in the old repository (now part of `587c0c2`)
-
-1. **`git fetch` allowed in one shape:** `fetch --quiet <remote>`, no refspec, so it only
-   touches `origin/*`. Also `merge-base --is-ancestor` (read-only). `GitService.start_point()`
-   picks the freshest base that loses nothing: local `main` if it contains `origin/main`,
-   otherwise `origin/main` (behind or diverged), local `main` with a note if there's no remote
-   or no connection. The note becomes the task's first step, `step.branch`.
-2. **A plan has one PR describing the whole plan** (`plan_description` in
-   `agents/pull_request_agent.py`): requirement, task checklist with state, score, compile and
-   tests per task, files, findings and cost of committed tasks. **Every push of the plan's
-   branch rewrites it** (`PullRequestAgent.sync`). GitHub allow-list gained
-   `PATCH /pulls/{n}` restricted to `title` and `body`; `state` and `base` are refused.
-3. **Delivery feedback:** the plan view shows the plan's PR and a "🔄 Check the PR" button.
-   A merged PR moves the requirement to the new lifecycle state `DELIVERED`.
-4. **Code context for agents (from the first real E2E run):** `RepositorySurvey.referenced()`
-   / `render_referenced()`. Existing files whose exported symbols are named in the task (or
-   review) text are given **in full** to the Developer and the Architect (whole-word match,
-   12k-char budget, tests excluded). Before this, the Developer knew only the *name*
-   `PasswordRule`, guessed ten method names and called whichever existed.
-5. **Tests are QA's:** `is_test_path()`. Test files are dropped from the Developer's plan and
-   output, and QA no longer writes a suite for a suite (`x.test.test.ts`).
-6. **Separate budgets:** `MAX_GATE_FIXES = 2` fixes per round for the free checks,
-   `MAX_REVIEW_LOOPS = 3` Architect reviews. Previously compile errors used up the Architect's
-   rounds and its blockers were never fixed. A review now always describes the final code,
-   unless the free checks failed after it.
-7. **Rejecting a plan task reopens it:** its plan execution becomes `FAILED` ("rejected in
-   review"), so the plan offers "run again" and dependents wait.
-8. **Each plan task shows its review state** (waiting / committed / rejected) and a
-   "🔍 Open the task" button. Before, reaching a task's Accept/Reject was only possible from
-   the sidebar history.
-9. **Bug fixes:** `summary()` dropped non-ASCII letters ("Walidator haseł" became "walidator
-   hase") in commit and PR titles; `TaskExecution.duration` crashed the page on mixed
-   naive/aware timestamps.
-10. New tests: `fetch_test`, `plan_pull_request_test`, `context_files_test`. `governance_test`
-    updated to the new fetch and PR-edit rules (still strict). Docs updated: `SECURITY.md`,
-    `README.md`, `ARCHITECTURE.md`.
+| `587c0c2` | the factory imported from the old repository |
+| `70ed432` `11af323` | docs brought up to date; the app renamed **DevLoop** (title, commit/PR footers, issue labels `devloop:*`). The DB file keeps its name `human_in_the_loop.db` so existing tasks are not orphaned. |
+| `9f31cc5` | **fix:** a committed task can no longer be rejected (`roll_back` refuses; the button is disabled). Found live: task 3 was accepted, then rejected, and its commit with a junk `*.test.test.ts` stayed on the branch. |
+| `802a162` | **fix:** a finding ending in a colon keeps the bullets after it (one warning reached the PR as four); the Architect must answer in English (a Polish requirement got a Polish review the filter cannot read). |
+| `693d987` | **fix:** commit subjects use the task's title line only; PR findings and costs carry the checklist label ("3. …"). |
+| `7865452` | the task opens in a **large dialog** (`st.dialog`) instead of below the plan; run-all no longer opens it; the "Check the PR" button is no longer cut off. |
+| `4d9859b` | plans made from an issue use **`feature/issue-<n>-<slug>`**; every plan for that issue shares the branch and PR (decision, §7). Plan lookup by branch prefers the plan whose run produced the task; the PR lists an earlier plan's commits. |
+| `10c26fa` | **Send back for revision:** a third answer beside accept/reject. Chosen Architect findings and/or human notes go to the Developer as blockers; `WorkflowOrchestrator.revise()` edits the files on disk and reruns checks, review (history carried on), QA and tests. Notes are appended to the task description. The old record becomes `TaskStatus.REVISED`; the plan points at the new one. |
+| `f9af41a` | **Issues both ways:** "Create a GitHub issue" from a requirement; "Split into issues" (`agents/story_splitter.py`, planner model, 2–6 stories, human edits and confirms). Allow list: `POST /issues` with `title`/`body` only. Plans with more than `SPLIT_HINT_TASKS` (6) tasks suggest the split. |
+| `5d1855e` | split children linked as real GitHub **sub-issues** (`POST /issues/{n}/sub_issues`, `sub_issue_id` only); the sidebar shows issues as a tree with parent progress; the plan shows its branch (local / on GitHub / link), DevLoop commits on it, and when it continues an earlier plan. |
+| `637da3d` | **The planner sees the code:** file listing with exports plus referenced files in full; tasks declare `creates` / `modifies`; `services/plan_validator.py` reports false assumptions (creates an existing file, modifies a missing one, file dependency without task dependency, two creators, test files, unsafe paths). File lists reach the Developer in the task prompt (`Create: …`, `Modify: …`). |
 
 ---
 
-## 4. The end-to-end test in progress
+## 4. Live end-to-end state (sandbox)
 
 - **Sandbox repo:** `https://github.com/pete29/hitl-sandbox.git` (private), cloned at
-  `C:\Projects\hitl-sandbox`, `main` at `2fb89bb`. Local git identity is set there.
-- **Requirement used:** "Walidator haseł": a `PasswordRule` interface with
-  `check(password): string | null`, four rule classes, and `PasswordValidator` taking rules in
-  its constructor, with the open/closed principle as a stated constraint.
-- **First run** (before fixes 4–7 above): 6 tasks, about **$0.59** total.
-  - Tasks 1–2: 95 and 80, APPROVE.
-  - Tasks 3–5: 86–91, APPROVE, but they contain junk `*.test.test.ts`.
-  - Task 6 (`PasswordValidator`): 45/100 with 5 legitimate blockers (the guessed-method-names
-    hack).
-  - All 6 were still `WAITING_FOR_APPROVAL` when this was written.
-- **Planned next steps for the user:** restart the app, accept 1 then 2, reject 6, 5, 4, 3 (in
-  that order), rerun 3–6, then push → open PR → push again (description should update) →
-  merge on GitHub → "Check the PR" → `DELIVERED`.
-- **Not yet verified live:** push, PR creation, PR description update, merge feedback. Write
-  access of the PAT is untested until the first PR is opened.
+  `C:\Projects\hitl-sandbox`. Local git identity is set there.
+- **"Walidator haseł" (first plan): delivered.** PR #1 merged (merge commit), requirement
+  `DELIVERED`. Verified live: push, PR creation (PAT has write), merge read-back. Rerun of tasks
+  3–6 cost $0.19 (≈$0.05/task) against $0.59 for 6 tasks before the fixes; task 6
+  (`PasswordValidator`) used the real `PasswordRule` and scored 92 instead of 45.
+- **Issue #2** "Lowercase rule and password strength": imported, planned on
+  `feature/issue-2-lowercase-rule-and-password`, not pushed yet. The user was reviewing the
+  `LowercaseRule` task (a good case for "Send back for revision": the rule uses `/[a-z]/`).
+- **Issue #3** "Password policy toolkit": split live into #4 blocklist, #5 policies,
+  #6 explanations, #7 generator. #4–#7 are linked as sub-issues of #3 (linked by hand with the
+  new service method after the feature landed; verified on GitHub).
+- **Still not verified live:** the PR description rewriting itself on a *later* push (PR #1 was
+  opened after the last push), "Send back for revision" against a real model, the planner's
+  `creates`/`modifies` with a real model, and the split's sub-issue linking from the button
+  (the method itself worked live).
+- **Next live test:** plan #4 (smallest) → run task 1 → accept → push → open PR → run task 2 →
+  accept → push → the PR description must update → merge → 🔄 → `DELIVERED`.
 
 ---
 
@@ -151,15 +125,16 @@ in the table below refer to the old repository.
 
 | Area | Where | Notes |
 |---|---|---|
-| Orchestration | `workflows/workflow_orchestrator.py` | `Gates`, `RunFiles`, loop with two budgets, test loop, recommendation override. |
+| Orchestration | `workflows/workflow_orchestrator.py` | `execute()` and `revise()` share `finish()`: two budgets, test loop, recommendation override. |
+| Planning | `agents/planner_agent.py`, `services/plan_validator.py`, `agents/story_splitter.py` | Planner sees `survey().render()` + referenced files; validator reports, never repairs. |
 | LLM | `services/llm_factory.py`, `claude_service.py`, `ollama_service.py`, `gemini_service.py` | Role-based; all record usage. |
 | Cost | `services/usage_ledger.py`, `Settings.CLAUDE_PRICES` | ASCII only in output (see §8). |
 | Repo facts | `services/repository_survey.py`, `repository_context.py`, `environment_step.py` | Derived, never stored. |
 | Validation | `services/structure_validator.py`, `type_checker.py`, `test_runner.py` | Deterministic. |
-| Git | `services/git_service.py` (allow-list), `agents/git_agent.py`, `services/plan_branch.py`, `task_rollback.py` | Stage by name, never `git add .`. |
-| GitHub | `services/github_service.py` (allow-list + PATCH field limits), `agents/pull_request_agent.py`, `issue_agent.py` | No merge, close or delete is reachable. |
-| Persistence | `database/*.py`, SQLite | `task_repository` columns are **positional**: append new ones at the end of `COLUMNS` and add them to `ADDED_COLUMNS`. `save()` is a plain INSERT, so a task cannot be saved twice. |
-| UI | `app.py` (about 3,000 lines), `services/translations.py` | Every visible string goes through `t()`, in Polish and English. `translation_test` enforces it. |
+| Git | `services/git_service.py` (allow-list), `agents/git_agent.py`, `services/plan_branch.py`, `task_rollback.py` | Stage by name, never `git add .`. `plan_branch.of(plan)` is the one way to get a plan's branch. |
+| GitHub | `services/github_service.py` (allow-list + per-call field limits), `github_issue_service.py`, `agents/pull_request_agent.py`, `issue_agent.py` | No merge, close or delete is reachable. |
+| Persistence | `database/*.py`, SQLite | `task_repository` columns are **positional**: append new ones at the end of `COLUMNS` and add them to `ADDED_COLUMNS`. `save()` is a plain INSERT, so a task cannot be saved twice. Plan tasks are JSON; new fields need a default in `_parse_tasks`. |
+| UI | `app.py` (about 3,500 lines), `services/translations.py` | Every visible string goes through `t()`, in Polish and English. `translation_test` enforces it. The task view is `task_view()` shown via `st.dialog(width="large")`. |
 
 **Git safety model (current):**
 - **Allowed:** `add`, `branch`, `checkout`, `commit`, `diff`, `fetch` (one shape), `ls-files`,
@@ -168,24 +143,27 @@ in the table below refer to the old repository.
   `symbolic-ref`.
 - **Refused:** `pull`, `clone`, `merge`, `rebase`, `reset`, `tag`, `cherry-pick`, `submodule`.
 
-**Human gates:** commit, push, PR creation, npm install, scaffolding commit, merge (on GitHub)
-are all explicit human actions. Nothing installs, commits or pushes on its own.
+**GitHub writes (all on a human's click):** create PR; PATCH PR `title`/`body`; create issue
+(`title`/`body`); link sub-issue (`sub_issue_id`); comment on an issue; PATCH issue
+`labels`/`state`.
+
+**Human gates:** commit, push, PR creation, npm install, scaffolding commit, filing issues,
+merge (on GitHub) are all explicit human actions. Nothing installs, commits, files or pushes on
+its own.
 
 ---
 
 ## 6. Known gaps and the backlog (in priority order)
 
-1. **Finish the live E2E** (§4) and fix what it finds. The first run found four real bugs; expect
-   more in push and PR.
-2. **The planner is still blind to code.** It gets only counts, folders and tooling state, not
-   files or exports. Plan: give it `survey().render()` plus referenced files; make tasks declare
-   `creates` / `modifies`; add a deterministic `PlanValidator` (modifies ⊆ existing ∪ created by
-   dependencies; creates ∉ existing; file dependencies imply task dependencies). Report
-   problems, never repair them silently.
-3. **PR review comments don't flow back** to the Developer (roadmap: "Review feedback").
-4. **Prompt caching:** prompts are single strings with the variable part first. Restructure as a
+1. **Finish the live checks** in §4 (PR description update on a later push; revision, planner
+   file claims and split linking against the real model) and fix what they find.
+2. **PR review comments don't flow back** from GitHub. The in-app revision exists; the next
+   step is reading PR review comments into the same `revise()` path.
+3. **Prompt caching:** prompts are single strings with the variable part first. Restructure as a
    stable prefix (rules, repo listing, referenced files) plus `cache_control`.
-5. **Run-all blocks the UI** (synchronous in the Streamlit request; no worker or queue).
+4. **Run-all blocks the UI** (synchronous in the Streamlit request; no worker or queue).
+5. **A second plan for an issue** is now warned about what exists, but has no "continue from
+   where the last plan stopped" mode; it replans from the requirement.
 6. **Single tasks outside a plan** are generated on whatever branch is checked out (only planned
    tasks enter a branch first).
 7. **The structural filter on Architect claims is text-based**; new phrasings can slip through
@@ -213,6 +191,14 @@ are all explicit human actions. Nothing installs, commits or pushes on its own.
   surrounding file.
 - The user prefers least-privilege credentials (chose a fine-grained PAT over reusing the Git
   Credential Manager token).
+- **The app is called DevLoop** (decided 2026-10-15). The old working name is gone.
+- **One branch per issue** (decided 2026-10-15): a plan made from an issue uses
+  `feature/issue-<n>-<slug>`, and a second plan for the same issue continues on it and in its PR.
+- **Large requirements are split into issues** (like Azure user stories), linked as GitHub
+  sub-issues; small ones stay one branch with a commit per task. The split is proposed by the
+  model and confirmed by a human; nothing is filed automatically.
+- **Merge PRs with "Create a merge commit"**, so one commit per task survives on `main`.
+- **Keep the `.md` files current** with every change, README included.
 
 ---
 
@@ -225,7 +211,10 @@ are all explicit human actions. Nothing installs, commits or pushes on its own.
   kills the run. Keep console output ASCII (the usage ledger does). Use
   `PYTHONIOENCODING=utf-8` for test scripts. `launch.json` sets `PYTHONUTF8=1`.
 - **Heredocs:** bash heredocs with Python containing `'`, `\n` or regex escapes broke several
-  times. Write a script file and run it instead.
+  times (in this session `\\n` arrived as a real newline). Write the script with the Write tool
+  and run it instead.
+- **`runOnSave`:** saving `app.py` while the app runs reruns the page, which interrupts a task
+  being generated. Don't edit `app.py` while the user has a plan running.
 - **PowerShell's PATH can be stale** after installing Node. The bash tool and new terminals see
   it; old processes don't.
 - **Streamlit `AppTest`** needs an absolute script path when the test script lives elsewhere.

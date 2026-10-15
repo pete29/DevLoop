@@ -77,21 +77,35 @@ gate still works.
 
 ## 4. Committing
 
-Approval creates `feature/task-<first 8 characters of the task id>` and
-commits.
+**A plan has one branch**, checked out before its first task is generated:
+`feature/plan-<id8>-<slug>`, or `feature/issue-<number>-<slug>` for a plan
+made from a GitHub issue. Every plan for the same issue shares that branch.
+The second task is written next to the first task's files and committed on
+top of them, so a plan is a chain of commits, one per task, in run order.
 
-**The branch is cut from the base branch** (`main`, else `master`), not
-from whatever was checked out. Without that, the second task would branch
-off the first, and its pull request would carry the first task's commits.
-If there is no base branch yet, the current HEAD is used.
+**The branch starts from the freshest base that loses nothing.** After a
+`git fetch` of `origin` (the one fetch the allow list permits): local
+`main` if it already contains `origin/main`, otherwise `origin/main` — so a
+merged pull request is the starting point of the next plan. With no remote
+or no connection, local `main`, and the task says so.
+
+Approval commits on that branch. A task outside a plan is committed on a
+`feature/task-<id8>` branch of its own.
 
 **Only the files this task generated are staged.** Not `git add .`. Work
 in progress elsewhere in your repository is left alone, and a test proves
 it by keeping an unrelated file in the repository and asserting it never
 reaches the commit.
 
-The commit message carries the task, the architecture score, the
-recommendation and the file list.
+The commit subject is the task's title (`feat: utwórz regułę cyfry`); the
+body carries the task, the architecture score, the recommendation and the
+file list.
+
+**Rejecting** deletes the files the task created and restores the tracked
+files it changed (`git checkout -- <paths>`). A task that is already
+committed cannot be rejected: that would leave its commit on the branch.
+Fix it with another task, or send a task back for revision before
+accepting it.
 
 ---
 
@@ -99,14 +113,14 @@ recommendation and the file list.
 
 A separate click. It validates first:
 
-- the task is approved
 - a local commit exists
 - the folder is a git repository
 - a remote named `origin` is configured
 
 The push sends one branch, fully qualified
 (`refs/heads/x:refs/heads/x`), so it can only create or fast-forward. Force,
-delete, mirror, tags and `--all` are refused.
+delete, mirror, tags and `--all` are refused, and so is any push to `main`,
+`master`, `develop`, `release` or `trunk`.
 
 A failure records why and changes nothing else: the approval stands, the
 local commit stands, and you can retry.
@@ -117,13 +131,21 @@ local commit stands, and you can retry.
 
 Another separate click, needing `GITHUB_PAT` in `.env`.
 
-The base is the repository's default branch, read from the GitHub API
-rather than assumed. If a pull request already exists for the branch, it is
-reused rather than duplicated.
+**One pull request per plan** (per issue, when plans share its branch). The
+base is the repository's default branch, read from the GitHub API rather
+than assumed. If a pull request already exists for the branch, it is reused
+rather than duplicated.
 
-The description is built from the run: summary, architecture score,
-recommendation, review iterations, generated files, generated tests,
-structural findings, blockers, warnings and suggestions.
+The description covers the whole plan: the requirement, a checklist of its
+tasks with their state and commit, score, compile and test results, the
+files, findings and cost of committed tasks — and what an earlier plan
+committed on a shared issue branch. **Every later push rewrites it**, so it
+never describes one task of five.
+
+You merge on GitHub — a merge commit keeps one commit per task. **🔄 Check
+the PR** reads the merge back and moves the requirement to `DELIVERED`.
+When the work came from an issue, the issue gets a comment with the pull
+request; it is never closed automatically.
 
 A failure records why — authentication, rate limit, missing repository,
 network — and leaves the push and the approval untouched.
@@ -132,14 +154,18 @@ network — and leaves the push and the approval untouched.
 
 ## What this looks like in a repository
 
-After three tasks against a repository with `main`:
+A plan of three tasks for issue #4, and a small plan without an issue:
 
 ```text
 main
- ├── feature/task-a1b2c3d4   one commit, this task's files only
- ├── feature/task-e5f6a7b8   one commit, this task's files only
- └── feature/task-9c0d1e2f   one commit, this task's files only
+ ├── feature/issue-4-reject-common-passwords
+ │     ├── feat: create the blocklist rule        task 1
+ │     ├── feat: add the built-in password list   task 2
+ │     └── feat: export the blocklist             task 3
+ └── feature/plan-e64d93f0-walidator-hasel
+       └── ... one commit per task
 ```
 
-Not a chain. Each branch is independent, and each pull request shows only
-its own work.
+One branch and one pull request per plan, a commit per task. A requirement
+too large for one pull request is split into issues first, and each issue
+gets its own branch.

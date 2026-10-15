@@ -135,6 +135,7 @@ exist, and no others:
 | `GET /repos/{owner}/{repo}/issues` | list open issues |
 | `GET /repos/{owner}/{repo}/issues/{n}` | read one issue |
 | `POST /repos/{owner}/{repo}/issues` | file an issue: `title` and `body` only, on a human's click |
+| `POST /repos/{owner}/{repo}/issues/{n}/sub_issues` | link a split's child under its parent: `sub_issue_id` only, never `replace_parent` |
 | `POST /repos/{owner}/{repo}/issues/{n}/comments` | report progress |
 | `PATCH /repos/{owner}/{repo}/issues/{n}` | labels and state only |
 | `PATCH /repos/{owner}/{repo}/pulls/{n}` | title and body only |

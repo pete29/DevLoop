@@ -68,6 +68,7 @@ ENABLE_ARCHITECT = True
 ENABLE_QA = True
 MAX_REVIEW_LOOPS = 3
 MAX_GATE_FIXES = 2
+SPLIT_HINT_TASKS = 6
 
 PAGE_TITLE = "👑 DevLoop"
 ```
@@ -284,6 +285,11 @@ model smarter.
 and `tsc`) may ask for before each review. A separate budget on purpose:
 when the two shared one, compile errors used up the rounds the Architect's
 blockers needed, and those blockers were never fixed.
+
+**`SPLIT_HINT_TASKS`** — above this many tasks, a plan suggests splitting
+its requirement into issues, so each part gets its own pull request. Only a
+hint: nothing is split without a human confirming the stories, and a small
+requirement stays one branch with a commit per task.
 
 **`OLLAMA_THINKING`** — leave `False`. With thinking on, some models answer
 in the reasoning field and return an empty response; the error message says
