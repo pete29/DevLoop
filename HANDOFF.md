@@ -94,6 +94,7 @@ branch **`main`**. The old history did not come along: it all landed as one comm
 | `10c26fa` | **Send back for revision:** a third answer beside accept/reject. Chosen Architect findings and/or human notes go to the Developer as blockers; `WorkflowOrchestrator.revise()` edits the files on disk and reruns checks, review (history carried on), QA and tests. Notes are appended to the task description. The old record becomes `TaskStatus.REVISED`; the plan points at the new one. |
 | `f9af41a` | **Issues both ways:** "Create a GitHub issue" from a requirement; "Split into issues" (`agents/story_splitter.py`, planner model, 2–6 stories, human edits and confirms). Allow list: `POST /issues` with `title`/`body` only. Plans with more than `SPLIT_HINT_TASKS` (6) tasks suggest the split. |
 | `5d1855e` | split children linked as real GitHub **sub-issues** (`POST /issues/{n}/sub_issues`, `sub_issue_id` only); the sidebar shows issues as a tree with parent progress; the plan shows its branch (local / on GitHub / link), DevLoop commits on it, and when it continues an earlier plan. |
+| PR for #1 | **fix:** a `REVISED` record held up the commit of its own revision (`GitAgent.unresolved_before`), and an approved task whose commit failed could not be accepted again. Found live on hitl-sandbox issue #2. From here on, every step is an issue and a PR (§7). |
 | `2dfa3ff` | **Repositories from the file system:** "Choose a folder…" (tkinter `askdirectory`, the app runs locally) fills path and name; "New repository" (`services/repository_setup.py`) creates a GitHub repo with `auto_init` first, then `init` → `remote add origin` → `fetch` → checkout `main` tracking `origin/main`. Git allow list: `init` (one shape), `remote add origin` (once, no credentials). GitHub: `POST /user/repos` (name, private, description, auto_init). Token: `GITHUB_ADMIN_PAT` if set, else `GITHUB_PAT`. Not tried live: the current PAT is scoped to hitl-sandbox and cannot create repositories. |
 | `637da3d` | **The planner sees the code:** file listing with exports plus referenced files in full; tasks declare `creates` / `modifies`; `services/plan_validator.py` reports false assumptions (creates an existing file, modifies a missing one, file dependency without task dependency, two creators, test files, unsafe paths). File lists reach the Developer in the task prompt (`Create: …`, `Modify: …`). |
 
@@ -186,9 +187,13 @@ its own.
 - **Goal set by the user:** a tool that meets requirements *without errors* and *without wasting
   tokens*. Cheap deterministic checks before expensive model calls; measure cost before
   optimising.
-- **This repo (the factory itself, now DevLoop): commit straight to `main`**, no feature branches.
-  **Push only when asked.** The repos the *factory* manages are the opposite: branches and PRs
-  are the product.
+- **This repo (DevLoop itself): one issue, one branch and one pull request per step**
+  (decided 2026-10-15, replacing "commit straight to `main`"). The plan lives as issues in
+  `pete29/DevLoop` (#1–#7 at the time of writing). Branches are `fix/<n>-<slug>`,
+  `feat/<n>-<slug>`, `docs/…`, `chore/…`, cut from an up-to-date `main` (or from the previous
+  step's branch while that PR waits). The PR says `Closes #<n>`, and carries the `.md` updates
+  with the code. **Claude opens the PR; the user reviews and merges** (merge commit). Never
+  push to `main` directly. `GITHUB_PAT` covers this repository.
 - **Commit messages:** `feat:` / `fix:` plus a lowercase, behaviour-describing subject, and a body
   explaining why. Code style: vertical spacing, comments that explain *why*, matching the
   surrounding file.

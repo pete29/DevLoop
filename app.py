@@ -3581,9 +3581,12 @@ def task_view() -> None:
 
     with col1:
 
+        # Approval never fails because of git, so an approved
+        # task can still lack its commit; pressing again
+        # retries it. Only a commit that exists ends it.
         if st.button(
             t("task.approve"),
-            disabled=task.status == TaskStatus.APPROVED,
+            disabled=task.git_operation.committed,
         ):
 
             task.status = TaskStatus.APPROVED
