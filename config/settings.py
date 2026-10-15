@@ -147,6 +147,12 @@ class Settings:
     # it is not given a limit for.
     MAX_FILES_PER_TASK = 12
 
+    # Above this many tasks, a plan suggests splitting its
+    # requirement into issues: one pull request per part
+    # rather than one for everything. Only a hint; a small
+    # requirement stays one branch with a commit per task.
+    SPLIT_HINT_TASKS = 6
+
     # How many files one call writes.
     #
     # Batching looks like it should cut the time and does

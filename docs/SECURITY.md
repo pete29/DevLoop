@@ -134,9 +134,15 @@ exist, and no others:
 | `GET /repos/{owner}/{repo}` | read the default branch |
 | `GET /repos/{owner}/{repo}/issues` | list open issues |
 | `GET /repos/{owner}/{repo}/issues/{n}` | read one issue |
+| `POST /repos/{owner}/{repo}/issues` | file an issue: `title` and `body` only, on a human's click |
 | `POST /repos/{owner}/{repo}/issues/{n}/comments` | report progress |
 | `PATCH /repos/{owner}/{repo}/issues/{n}` | labels and state only |
 | `PATCH /repos/{owner}/{repo}/pulls/{n}` | title and body only |
+
+Filing an issue has the same kind of limit: a new issue carries a `title`
+and a `body`, never assignees, labels or a milestone set on someone's
+behalf. It happens only when a human presses "Create a GitHub issue" or
+confirms a split; the planner proposes stories and never files them.
 
 The two `PATCH` calls need a second limit, because each could change more
 than it is for. On an issue only `labels` and `state` may be sent; on a

@@ -4,9 +4,15 @@ import streamlit as st
 from dotenv import load_dotenv
 
 from agents.git_agent import GitAgent
-from agents.issue_agent import IssueAgent
+from agents.issue_agent import IssueAgent, to_link
 from agents.planner_agent import PlannerAgent
 from agents.pull_request_agent import PullRequestAgent
+from agents.story_splitter import (
+    Story,
+    StorySplitter,
+    child_body,
+    children_comment,
+)
 from config.settings import Settings
 from database.plan_repository import PlanRepository
 from database.repository_repository import (
@@ -24,7 +30,7 @@ from models.pipeline_step import PipelineStep
 from models.pull_request_info import PullRequestState
 from models.repository import Repository
 from models.repository_context import TestFramework
-from models.requirement import Requirement, now
+from models.requirement import Requirement, RequirementSource, now
 from models.task import Task
 from models.task_execution import (
     ExecutionStatus,
@@ -364,6 +370,149 @@ def pull_request_panel(plan) -> None:
             )
 
             st.rerun()
+
+
+def remote_of(repository_id: str) -> str:
+    """The repository's remote URL, or "" without one."""
+
+    known = repositories_by_id.get(repository_id)
+
+    if known is None or not GitService(known.path).is_repository():
+        return ""
+
+    try:
+        return GitService(known.path).remote_url()
+
+    except GitError:
+        return ""
+
+
+def split_panel(requirement, remote_url: str) -> None:
+    """The planner's proposed split, for a human to edit.
+
+    Nothing is filed until the button: the model only
+    proposes, and a wrong issue on someone's board is
+    worse than none.
+    """
+
+    proposal = st.session_state.get("split")
+
+    if not proposal or proposal[0] != requirement.id:
+        return
+
+    stories: list[Story] = proposal[1]
+
+    st.markdown(f"**{t('split.heading')}**")
+
+    st.caption(t("split.caption"))
+
+    chosen: list[Story] = []
+
+    for index, story in enumerate(stories):
+
+        with st.container(border=True):
+
+            keep = st.checkbox(
+                t("split.include"),
+                value=True,
+                key=f"split-keep-{requirement.id}-{index}",
+            )
+
+            title = st.text_input(
+                t("split.title"),
+                value=story.title,
+                key=f"split-title-{requirement.id}-{index}",
+            )
+
+            body = st.text_area(
+                t("split.body"),
+                value=story.body,
+                height=160,
+                key=f"split-body-{requirement.id}-{index}",
+            )
+
+            if keep and title.strip():
+                chosen.append(Story(title=title, body=body))
+
+    create_col, cancel_col = st.columns(2)
+
+    with cancel_col:
+
+        if st.button(
+            t("split.cancel"),
+            key=f"split-cancel-{requirement.id}",
+            use_container_width=True,
+        ):
+            st.session_state.split = None
+
+            st.rerun()
+
+    with create_col:
+
+        if not st.button(
+            t("split.create", count=len(chosen)),
+            key=f"split-create-{requirement.id}",
+            disabled=not chosen or not remote_url,
+            use_container_width=True,
+            type="primary",
+        ):
+            return
+
+    parent = requirement.issue.number
+
+    created: list[tuple[int, str]] = []
+
+    try:
+
+        for story in chosen:
+
+            issue = IssueAgent.create(
+                remote_url,
+                story.title,
+                child_body(story, parent),
+            )
+
+            requirement_store.save(
+                IssueAgent.to_requirement(
+                    issue,
+                    requirement.repository_id,
+                )
+            )
+
+            created.append((issue.number, issue.title))
+
+        # The parent keeps track of its children on GitHub,
+        # where people look, rather than in a table here.
+        if parent > 0 and created:
+            IssueAgent.service(remote_url).add_comment(
+                parent,
+                children_comment(created),
+            )
+
+    except Exception as error:
+
+        st.session_state.git_message = (
+            "warning",
+            t("split.partial", count=len(created), reason=error),
+        )
+
+    else:
+
+        st.session_state.git_message = (
+            "success",
+            t(
+                "split.created",
+                count=len(created),
+                labels=", ".join(f"#{number}" for number, _ in created),
+            ),
+        )
+
+    st.session_state.split = None
+
+    # The sidebar's issue list was read before these existed.
+    st.session_state.issues_from = None
+
+    st.rerun()
 
 
 def revise_task(task, feedback: str):
@@ -1486,6 +1635,99 @@ if st.session_state.requirement:
 
             st.rerun()
 
+    requirement_remote = remote_of(requirement.repository_id)
+
+    issue_col, split_col = st.columns(2)
+
+    with issue_col:
+
+        # Only for a requirement written here: an imported
+        # one already is an issue.
+        if not requirement.issue.exists and st.button(
+            t("requirement.create_issue"),
+            use_container_width=True,
+            disabled=not requirement_remote
+            or not new_title.strip(),
+        ):
+
+            requirement.title = new_title
+
+            requirement.content = new_content
+
+            try:
+
+                issue = IssueAgent.create(
+                    requirement_remote,
+                    new_title,
+                    new_content,
+                )
+
+            except Exception as error:
+
+                st.session_state.git_message = (
+                    "warning",
+                    t("requirement.issue_failed", reason=error),
+                )
+
+            else:
+
+                requirement.issue = to_link(issue)
+
+                requirement.source = RequirementSource.GITHUB_ISSUE
+
+                requirement.updated_at = now()
+
+                requirement_store.save(requirement)
+
+                st.session_state.requirement = requirement
+
+                st.session_state.issues_from = None
+
+                st.session_state.git_message = (
+                    "success",
+                    t(
+                        "requirement.issue_created",
+                        label=requirement.issue.label,
+                    ),
+                )
+
+            st.rerun()
+
+    with split_col:
+
+        if st.button(
+            t("split.button"),
+            use_container_width=True,
+            disabled=not requirement_remote
+            or not new_content.strip(),
+        ):
+
+            with st.spinner(t("split.spinner")):
+
+                try:
+
+                    stories = StorySplitter().execute(
+                        f"{new_title}\n\n{new_content}"
+                    )
+
+                except Exception as error:
+
+                    st.session_state.git_message = (
+                        "warning",
+                        t("split.failed", reason=error),
+                    )
+
+                else:
+
+                    st.session_state.split = (requirement.id, stories)
+
+            st.rerun()
+
+    if not requirement_remote:
+        st.caption(t("requirement.needs_remote"))
+
+    split_panel(requirement, requirement_remote)
+
     st.divider()
 
 if st.session_state.plan:
@@ -1495,6 +1737,11 @@ if st.session_state.plan:
     st.subheader(t("plan.planned_tasks"))
 
     st.caption(plan.epic)
+
+    # A count, not a judgement: the human decides whether
+    # the parts can ship apart.
+    if len(plan.tasks) > Settings.SPLIT_HINT_TASKS:
+        st.info(t("plan.split_hint", count=len(plan.tasks)))
 
     usage = st.session_state.get("plan_usage")
 

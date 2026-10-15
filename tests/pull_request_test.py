@@ -177,7 +177,10 @@ for method, path in (
     ("DELETE", "/repos/o/r"),
     ("GET", "/user"),
     ("DELETE", "/repos/o/r/issues/1"),
-    ("POST", "/repos/o/r/issues"),
+    # Filing an issue became allowed, with a title and a
+    # body only; locking or transferring one never did.
+    ("PUT", "/repos/o/r/issues/1/lock"),
+    ("POST", "/repos/o/r/issues/1/transfer"),
 ):
     refuses(
         f"{method} {path}",

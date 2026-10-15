@@ -28,9 +28,24 @@ class GitHubIssueService(GitHubService):
     """Reads issues and reports progress back to them.
 
     It shares the parent's allow list, so it inherits the
-    same limits: it may read, comment, and change labels or
-    state, and it may not rewrite an issue's title or body.
+    same limits: it may read, create with a title and a
+    body, comment, and change labels or state, and it may
+    not rewrite an issue's title or body.
     """
+
+    def create_issue(self, title: str, body: str) -> GitHubIssue:
+        """Files a new issue. Only ever on a human's click."""
+
+        if not title.strip():
+            raise GitHubError("An issue needs a title.")
+
+        data = self._request(
+            "POST",
+            self.issues_path(),
+            payload={"title": title.strip(), "body": body},
+        )
+
+        return to_issue(data)
 
     def issues_path(self) -> str:
 

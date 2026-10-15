@@ -788,6 +788,90 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "Developer poprawił kod według uwag człowieka",
         "en": "Developer revised the code from a human's notes",
     },
+    "requirement.create_issue": {
+        "pl": "📤 Załóż issue na GitHubie",
+        "en": "📤 Create a GitHub issue",
+    },
+    "requirement.issue_created": {
+        "pl": "Założono {label}. Plan z tego wymagania dostanie gałąź issue.",
+        "en": "Created {label}. A plan from this requirement gets the issue's branch.",
+    },
+    "requirement.issue_failed": {
+        "pl": "Nie założono issue: {reason}",
+        "en": "The issue was not created: {reason}",
+    },
+    "requirement.needs_remote": {
+        "pl": "Issues wymagają repozytorium z remote na GitHubie i GITHUB_PAT.",
+        "en": "Issues need a repository with a GitHub remote and GITHUB_PAT.",
+    },
+    "split.button": {
+        "pl": "✂️ Rozbij na issues",
+        "en": "✂️ Split into issues",
+    },
+    "split.spinner": {
+        "pl": "🤖 Planner dzieli wymaganie na historyjki ...",
+        "en": "🤖 The planner is splitting the requirement into stories ...",
+    },
+    "split.failed": {
+        "pl": "Nie udało się rozbić: {reason}",
+        "en": "The split failed: {reason}",
+    },
+    "split.heading": {
+        "pl": "✂️ Proponowany podział",
+        "en": "✂️ Proposed split",
+    },
+    "split.caption": {
+        "pl": (
+            "Każda zaznaczona historyjka stanie się osobnym issue, "
+            "a potem osobnym planem, gałęzią i PR. Popraw tytuły i "
+            "treść przed założeniem."
+        ),
+        "en": (
+            "Each ticked story becomes its own issue, and then its "
+            "own plan, branch and pull request. Edit the titles and "
+            "bodies before creating them."
+        ),
+    },
+    "split.include": {
+        "pl": "Załóż",
+        "en": "Create",
+    },
+    "split.title": {
+        "pl": "Tytuł",
+        "en": "Title",
+    },
+    "split.body": {
+        "pl": "Treść",
+        "en": "Body",
+    },
+    "split.create": {
+        "pl": "📤 Załóż {count} issue(s)",
+        "en": "📤 Create {count} issue(s)",
+    },
+    "split.cancel": {
+        "pl": "Anuluj",
+        "en": "Cancel",
+    },
+    "split.created": {
+        "pl": "Założono {count} issue(s): {labels}. Są na liście wymagań.",
+        "en": "Created {count} issue(s): {labels}. They are in the requirements list.",
+    },
+    "split.partial": {
+        "pl": "Założono {count} issue(s), potem błąd: {reason}",
+        "en": "Created {count} issue(s), then it failed: {reason}",
+    },
+    "plan.split_hint": {
+        "pl": (
+            "Ten plan ma {count} zadań, czyli jeden duży PR. Jeśli "
+            "części dają się oddać osobno, rozważ ✂️ Rozbij na issues "
+            "przy wymaganiu."
+        ),
+        "en": (
+            "This plan has {count} tasks, which is one large pull "
+            "request. If parts can ship separately, consider ✂️ "
+            "Split into issues on the requirement."
+        ),
+    },
     "revise.heading": {
         "pl": "🔁 Odeślij do poprawki",
         "en": "🔁 Send back for revision",

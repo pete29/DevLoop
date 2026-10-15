@@ -255,6 +255,31 @@ for method, path, what in (
 
 
 check(
+    "an issue can be filed, on a human's click",
+    allowed("POST", "/repos/o/r/issues"),
+    True,
+)
+
+for payload, what in (
+    ({"title": "x", "assignees": ["someone"]}, "assigning someone"),
+    ({"title": "x", "labels": ["urgent"]}, "labelling it"),
+    ({"body": "no title"}, "an issue without a title"),
+):
+
+    try:
+        github.GitHubService("o", "r", token="tok")._request(
+            "POST",
+            "/repos/o/r/issues",
+            payload,
+        )
+
+        check(f"{what} on a new issue is refused", "sent", "refused")
+
+    except github.GitHubError:
+        check(f"{what} on a new issue is refused", "refused", "refused")
+
+
+check(
     "a pull request's title and body can be rewritten",
     allowed("PATCH", "/repos/o/r/pulls/17"),
     True,

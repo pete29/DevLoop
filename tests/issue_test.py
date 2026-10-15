@@ -565,6 +565,77 @@ check("the other survives", len(store.get_all()), 1)
 
 print()
 print("=" * 80)
+print("A REQUIREMENT CAN BE FILED, AND A LARGE ONE SPLIT")
+print("=" * 80)
+
+CALLS.clear()
+
+filed = service.create_issue("  Lowercase rule  ", "Body.")
+
+check(
+    "a new issue sends its title and body, nothing else",
+    CALLS[-1],
+    ("POST", "/repos/o/r/issues", {"title": "Lowercase rule", "body": "Body."}),
+)
+
+refuses(
+    "an issue needs a title",
+    lambda: service.create_issue("   ", "Body."),
+)
+
+from agents.story_splitter import (  # noqa: E402
+    Story,
+    StorySplitter,
+    child_body,
+    children_comment,
+)
+
+stories = StorySplitter.parse(
+    'Sure:\n```json\n{"stories": ['
+    '{"title": "Lowercase rule", "body": "A."},'
+    '{"title": "  lowercase   RULE ", "body": "dup"},'
+    '{"title": "", "body": "no title"},'
+    '{"title": "Password strength", "body": "B."}'
+    "]}\n```"
+)
+
+check(
+    "duplicates and untitled stories are dropped",
+    [story.title for story in stories],
+    ["Lowercase rule", "Password strength"],
+)
+
+refuses_split = False
+
+try:
+    StorySplitter.parse('{"stories": [{"title": "Only one", "body": ""}]}')
+
+except RuntimeError:
+    refuses_split = True
+
+check("one story is not a split", refuses_split, True)
+
+check(
+    "a child points back at its parent",
+    child_body(Story("T", "Body."), 7),
+    "Body.\n\nPart of #7.",
+)
+
+check(
+    "and needs no parent",
+    child_body(Story("T", "Body."), 0),
+    "Body.",
+)
+
+check(
+    "the parent tracks its children as a task list",
+    children_comment([(12, "Lowercase rule"), (13, "Password strength")]),
+    "Split by DevLoop into:\n\n- [ ] #12 Lowercase rule\n"
+    "- [ ] #13 Password strength",
+)
+
+print()
+print("=" * 80)
 
 if failures:
     print(f"FAILED: {len(failures)}")

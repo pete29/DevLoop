@@ -107,6 +107,16 @@ files whose paths collide, which shows up afterwards in the diff as
 constraints, acceptance criteria. **📥 GitHub Issues** turns an open issue of
 the repository's remote into a requirement; importing it again updates it.
 
+The other way works too. **📤 Create a GitHub issue** files a requirement
+written here as an issue, so its plan gets the issue's branch and its pull
+request closes the loop on GitHub. **✂️ Split into issues** is for a
+requirement too large for one pull request: the Planner proposes user
+stories, you edit and pick them, and each becomes its own issue, and later
+its own plan, branch and pull request. The parent issue gets a task list of
+its children. A small requirement needs none of this: one branch, one pull
+request, a commit per task. A plan with more than `SPLIT_HINT_TASKS` tasks
+suggests the split.
+
 ### 3. Plan it
 
 The Planner turns a requirement into tasks with priorities and
@@ -195,8 +205,8 @@ force, delete, mirror or push tags, and never targets `main`, `master`,
 file name, never `git add .`.
 
 **GitHub** is limited to a fixed set of calls matched on method and path.
-A `PATCH` on a pull request may carry only `title` and `body`; on an issue
-only `labels` and `state`. Merging, closing and deleting are not reachable.
+A new issue may carry only `title` and `body`. A `PATCH` on a pull request
+may carry only `title` and `body`; on an issue only `labels` and `state`. Merging, closing and deleting are not reachable.
 
 **Credentials** come from the environment, are never stored in the
 database, and are stripped from error text.

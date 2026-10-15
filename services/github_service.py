@@ -24,6 +24,10 @@ ALLOWED_CALLS = (
     ("GET", re.compile(r"^/repos/[^/]+/[^/]+$")),
     # Read issues.
     ("GET", re.compile(r"^/repos/[^/]+/[^/]+/issues$")),
+    # Create an issue, with a title and a body only: a
+    # human writes a requirement here, or splits a large
+    # one, and presses the button that files it.
+    ("POST", re.compile(r"^/repos/[^/]+/[^/]+/issues$")),
     (
         "GET",
         re.compile(r"^/repos/[^/]+/[^/]+/issues/\d+$"),
@@ -59,6 +63,14 @@ PATCH_FIELDS = {
     # Never "state", which would close it, nor "base".
     "pull": frozenset({"title", "body"}),
 }
+
+# A new issue may carry its text and nothing else: no
+# assignees, labels or milestone set on someone's behalf.
+CREATE_ISSUE_FIELDS = frozenset({"title", "body"})
+
+ISSUES_PATH = re.compile(
+    r"^/repos/[^/]+/[^/]+/issues$"
+)
 
 ISSUE_PATH = re.compile(
     r"^/repos/[^/]+/[^/]+/issues/\d+$"
@@ -207,6 +219,16 @@ class GitHubService:
                     f"{kind or 'resource'} may only have its "
                     f"{sorted(allowed)} changed; "
                     f"got {sorted(sent)}."
+                )
+
+        if method == "POST" and ISSUES_PATH.match(path):
+
+            sent = set((payload or {}).keys())
+
+            if "title" not in sent or not sent <= CREATE_ISSUE_FIELDS:
+                raise GitHubError(
+                    "A new issue may only have a title and a "
+                    f"body; got {sorted(sent)}."
                 )
 
         if not self.token:

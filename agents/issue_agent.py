@@ -91,6 +91,24 @@ class IssueAgent:
             return [], str(error)
 
     @staticmethod
+    def create(
+        remote_url: str,
+        title: str,
+        body: str,
+    ) -> GitHubIssue:
+        """Files a requirement written here as an issue."""
+
+        allowed, reason = IssueAgent.can_read(remote_url)
+
+        if not allowed:
+            raise GitHubError(reason)
+
+        return IssueAgent.service(remote_url).create_issue(
+            title,
+            body,
+        )
+
+    @staticmethod
     def to_requirement(
         issue: GitHubIssue,
         repository_id: str = "",
