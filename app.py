@@ -312,7 +312,8 @@ def pull_request_panel(plan) -> None:
 
     info = holder.pull_request
 
-    left, right = st.columns([4, 1])
+    # A fifth of the width cut "Check the PR" to "Sprawdź sta…".
+    left, right = st.columns([2, 1])
 
     with left:
         st.markdown(
@@ -672,11 +673,15 @@ def repository_label(task_like) -> str:
 
 st.title(Settings.PAGE_TITLE)
 
-# The outcome of the last action, kept across the rerun
-# that follows it. Rendered here rather than beside the
-# button, because the section that held it is not always
-# on screen.
-if st.session_state.git_message:
+def show_message() -> None:
+    """The outcome of the last action, kept across the rerun
+    that follows it. Rendered at the top rather than beside
+    the button, because the section that held it is not
+    always on screen; inside the task's window when one is
+    open, since the page behind it is covered."""
+
+    if not st.session_state.git_message:
+        return
 
     level, text = st.session_state.git_message
 
@@ -686,6 +691,10 @@ if st.session_state.git_message:
         st.success(text)
     else:
         st.warning(text)
+
+
+if st.session_state.task is None:
+    show_message()
 
 with st.sidebar:
 
@@ -1787,10 +1796,6 @@ if st.session_state.plan:
                 ),
             )
 
-        else:
-
-            st.session_state.task = generated
-
         st.rerun()
 
     st.divider()
@@ -1836,11 +1841,23 @@ if st.button(
 
         st.rerun()
 
-if st.session_state.task:
+def close_task() -> None:
+
+    st.session_state.task = None
+
+
+def task_view() -> None:
+    """One task, in a window over the page.
+
+    Drawn inline it made the page several screens long
+    below the plan. Every action inside reruns the app,
+    and the window opens again while the task is selected;
+    closing it deselects the task.
+    """
 
     task: Task = st.session_state.task
 
-    st.subheader(t("task.details"))
+    show_message()
 
     st.write(t("task.created", when=task.created_at))
 
@@ -2943,3 +2960,16 @@ if st.session_state.task:
             )
 
             st.rerun()
+
+
+if st.session_state.task:
+
+    lines = st.session_state.task.description.strip().splitlines()
+
+    heading = lines[0][:80] if lines else t("task.details")
+
+    st.dialog(
+        heading,
+        width="large",
+        on_dismiss=close_task,
+    )(task_view)()
