@@ -162,7 +162,27 @@ class DeveloperAgent:
 
         if Settings.GENERATE_FILE_BY_FILE:
 
-            targets = self._targets(files, review)
+            named = self._targets(files, review)
+
+            # Never the developer's to write, so never paid for:
+            # every test file a compiler error named was
+            # rewritten here and then dropped -- 58 calls in
+            # one day's runs. QA rewrites those suites next.
+            targets = [
+                path
+                for path in named
+                if not is_test_path(path)
+                and not (found.typescript and is_javascript_source(path))
+            ]
+
+            if named and not targets:
+
+                print(
+                    "DEVELOPER: nothing to change; the problems are in "
+                    + ", ".join(named)
+                )
+
+                return files
 
             if targets:
                 return self._rewrite(

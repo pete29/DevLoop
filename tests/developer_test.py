@@ -594,6 +594,24 @@ check(
 
 print()
 print("=" * 80)
+print("A FAILURE ONLY IN TESTS COSTS THE DEVELOPER NOTHING")
+print("=" * 80)
+
+llm = FakeLLM()
+
+unchanged = developer(llm).improve(
+    "Build a notifier.",
+    EXISTING,
+    "- tests/dispatcher.test.ts(3,5): error TS2322: nope\n"
+    "- tests/email.provider.test.ts(1,1): error TS1005: ';' expected",
+)
+
+check("no call is made", llm.prompts, [])
+
+check("and the files come back as they were", unchanged, EXISTING)
+
+print()
+print("=" * 80)
 print("A REVIEW THAT NAMES NOTHING STILL CHANGES SOMETHING")
 print("=" * 80)
 

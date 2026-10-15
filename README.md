@@ -217,6 +217,8 @@ Each task goes through the pipeline above:
   builds on real interfaces instead of guessing method names. It writes one
   file per call; test files are QA's and never the Developer's, and in a
   TypeScript project it writes no JavaScript (a tool's `*.config.js` aside).
+  A failure only in test files is not sent to it at all: QA rewrites
+  those suites.
 - The **free checks** — structural validator and `tsc` — run before the
   Architect sees anything, with their own budget (`MAX_GATE_FIXES`). `tsc`
   runs once before the task too: an error already there is not the task's,
