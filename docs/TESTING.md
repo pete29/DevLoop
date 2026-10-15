@@ -340,6 +340,15 @@ the sign-in form until the right password, signing out closes it again,
 and five failures lock it. The other page tests set the variable empty, so
 a password in your own `.env` does not stop them at the form.
 
+`tests.replay_test` — the datepicker run that failed, replayed against a
+real compiler: the model's answers scripted as they came (an import of
+`./types.js`, a sentence above a suite, a suite an earlier task left
+broken), the orchestrator, QA's clean-up and `tsc` real. The task must
+compile, be approvable, and cost no fix round. The compiler is borrowed
+from a project with TypeScript and Vitest installed
+(`DEVLOOP_TYPESCRIPT_HOME`, or a sibling folder that has both) through a
+junction; without one, as in CI, it says SKIPPED and passes.
+
 `tests.reject_plan_test` — the real page, headless, on a real repository:
 **🗑 Reject the whole plan** rejects every waiting task after a
 confirmation, deletes the files they created, restores the file git knows,

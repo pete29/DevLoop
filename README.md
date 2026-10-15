@@ -439,7 +439,7 @@ CI. Run it before and after changing a prompt, a model or an effort. The
 baseline: 6/6 passed, $0.2454; the package case asked for `@types/node`, and
 the plan case planned 3 tasks with no plan problems.
 
-There are 42 test files. 39 run offline, against fake transports and
+There are 43 test files. 40 run offline, against fake transports and
 throwaway repositories; `compile_test`, `install_test` and
 `test_execution_test` need Node on `PATH`. Three call a real model and are
 skipped in routine runs: `architect_test`, `workflow_test`,
