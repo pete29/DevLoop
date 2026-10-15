@@ -18,6 +18,7 @@ from agents.git_agent import GitAgent
 from database.task_repository import TaskRepository
 from models.file_type import FileType
 from models.generated_file import GeneratedFile
+from models.git_operation import GitOperation
 from models.task import Task
 from models.task_status import TaskStatus
 from services import plan_branch
@@ -322,6 +323,21 @@ try:
         lambda: roll_back(third),
         ValueError,
     )
+
+    git(root, "checkout", branch)
+
+    # Accepted, then rejected: the first live run did this.
+    # The rollback restored the files from the commit, so
+    # nothing changed and the commit stayed on the branch.
+    third.git_operation = GitOperation(commit_hash="1fa1d36959e1")
+
+    refused(
+        "rejecting a committed task is refused",
+        lambda: roll_back(third),
+        ValueError,
+    )
+
+    third.git_operation = GitOperation()
 
     print()
     print("=" * 80)

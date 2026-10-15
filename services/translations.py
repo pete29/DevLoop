@@ -972,6 +972,16 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "❌ Odrzuć",
         "en": "❌ Reject",
     },
+    "task.reject_committed": {
+        "pl": (
+            "Scommitowane jako `{hash}` — odrzucenie nie "
+            "cofnie commita. Popraw to kolejnym zadaniem."
+        ),
+        "en": (
+            "Committed as `{hash}` — rejecting would not "
+            "undo the commit. Fix it with another task."
+        ),
+    },
     "task.score": {
         "pl": "Ocena architektury",
         "en": "Architecture Score",

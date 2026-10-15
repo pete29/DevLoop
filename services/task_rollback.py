@@ -41,6 +41,19 @@ def roll_back(task: Task) -> Rollback:
     if not root or not os.path.isdir(root):
         return result
 
+    # A committed task cannot be undone from the files:
+    # git restores them from HEAD, which is the commit, so
+    # nothing changes while the task is marked rejected and
+    # its commit stays on the branch. Undoing a commit takes
+    # reset or revert, which this tool does not do.
+    if task.git_operation.committed:
+        raise ValueError(
+            f"The task is already committed as "
+            f"{task.git_operation.short_hash}; rejecting it "
+            "would not remove the commit. Fix it with a new "
+            "task instead."
+        )
+
     service = GitService(root)
 
     # Restoring a plan task's files on another branch

@@ -2862,7 +2862,21 @@ if st.session_state.task:
 
     with col2:
 
-        if st.button(t("task.reject")):
+        # Once committed, rejecting cannot take the commit
+        # back; roll_back refuses it too, this just says so
+        # before the click.
+        committed = task.git_operation.committed
+
+        if committed:
+
+            st.caption(
+                t(
+                    "task.reject_committed",
+                    hash=task.git_operation.short_hash,
+                )
+            )
+
+        if st.button(t("task.reject"), disabled=committed):
 
             # Files first: a rejection that leaves the code
             # on disk hands it to the next task as if it
