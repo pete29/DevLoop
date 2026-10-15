@@ -17,7 +17,7 @@ python -m tests.severity_test
 **CI** (`.github/workflows/tests.yml`) runs `tests/run_offline.py` on every
 pull request and on every push to `main`, on Windows with Python 3.13 and
 Node 24. It has no secrets: the suites fake every model and GitHub call,
-and the ones that need a token set a fake one. The four that call a real
+and the ones that need a token set a fake one. The three that call a real
 model are not run there.
 
 ---
@@ -119,7 +119,8 @@ Every key exists in both languages, the two agree about their
 placeholders, an unknown key shows itself in brackets rather than
 rendering blank, and an unknown language falls back instead of failing.
 
-Then the part that does the real work: it parses `app.py` and fails if
+Then the part that does the real work: it parses `app.py` and every module
+in `ui/`, and fails if
 any prose is still written literally into a widget. Without it, the next
 feature adds an English string nobody notices until a Polish user does.
 
@@ -389,7 +390,6 @@ provider (Claude by default), so they are skipped in routine runs:
 ```powershell
 python -m tests.architect_test     # a stateful review with history
 python -m tests.workflow_test      # the whole pipeline, one task
-python -m tests.langgraph_test     # the same agents wired through LangGraph
 python -m tests.ollama_test        # the connection and the model; needs a local Ollama
 ```
 

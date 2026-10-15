@@ -33,7 +33,7 @@ mechanically (does a file exist, does an import resolve, does it compile, is a b
 origin, which file exports a symbol) is decided in code and never asked of a model. Every
 pipeline stage is either deterministic or AI, never both.
 
-**Stack of the tool:** Python 3.13, Streamlit UI (`app.py`), SQLite (`human_in_the_loop.db`),
+**Stack of the tool:** Python 3.13, Streamlit UI (`app.py` + `ui/`), SQLite (`human_in_the_loop.db`),
 Anthropic SDK. **Stack it generates:** TypeScript + Vitest only (by decision, see §7).
 
 ---
@@ -42,11 +42,11 @@ Anthropic SDK. **Stack it generates:** TypeScript + Vitest only (by decision, se
 
 | Thing | State |
 |---|---|
-| Python | **3.13.16** via `py install 3.13`. The machine default is 3.15, where `zstandard` (pulled in by `langgraph`) has no wheel. `.venv` is built on 3.13. |
-| venv | `.venv/` with the full `requirements.txt` (`streamlit`, `google-generativeai`, `python-dotenv`, `requests`, `langgraph`, `anthropic` 1.14). |
+| Python | **3.13.16** via `py install 3.13`; the machine default is 3.15. `.venv` is built on 3.13, the version CI runs. |
+| venv | `.venv/` with `requirements.txt` (`streamlit`, `python-dotenv`, `requests`, `anthropic` 1.14); `pyflakes` installed locally as a check, not a requirement. |
 | Node | **24.20.0 LTS**, npm 11.19 at `C:\Program Files\nodejs`. Needed for tsc, Vitest and npm install inside generated projects. |
 | Run | `run.bat`, or **F5** in VS Code (`.vscode/launch.json`, "DevLoop (Streamlit)": runs from `.venv`, adds Node to PATH, `runOnSave`). `.vscode/` is gitignored, so it stays local. |
-| `.env` | `ANTHROPIC_API_KEY` (works), `GITHUB_PAT` (fine-grained, scoped to `pete29/hitl-sandbox`: Contents, Pull requests, Issues read/write; works), `GEMINI_API_KEY` (empty). Gitignored. Never print or commit it. |
+| `.env` | `ANTHROPIC_API_KEY` (works), `GITHUB_PAT` (fine-grained, scoped to `pete29/hitl-sandbox` and `pete29/DevLoop`: Contents, Pull requests, Issues read/write; works), `GITHUB_ADMIN_PAT` (creating repositories). Gitignored. Never print or commit it. |
 | Git identity | Not set globally. Set locally per repo: `Piotr Tomaszewski <piotr.tomaszewski29@gmail.com>`. |
 
 **Running the tests.** Each test is a plain script, not pytest. All offline ones:
@@ -63,8 +63,8 @@ PYTHONIOENCODING=utf-8 PYTHONPATH=. .venv/Scripts/python tests/<name>_test.py
 
 CI (`.github/workflows/tests.yml`, Windows) runs the offline suites on every PR and on `main`.
 
-There are 36 test files. **32 run offline** and all pass. Four call a real model and are skipped
-in routine runs: `architect_test`, `workflow_test`, `langgraph_test`, `ollama_test` (needs a
+There are 35 test files. **32 run offline** and all pass. Three call a real model and are skipped
+in routine runs: `architect_test`, `workflow_test`, `ollama_test` (needs a
 local Ollama). Node must be on PATH for `compile_test`, `install_test` and
 `test_execution_test`.
 
@@ -138,14 +138,14 @@ branch **`main`**. The old history did not come along: it all landed as one comm
 | Orchestration | `workflows/workflow_orchestrator.py` | `execute()` and `revise()` share `finish()`: two budgets, test loop, recommendation override. |
 | Background runs | `services/plan_runner.py`, `database/run_repository.py`, `models/plan_run.py` | Worker process per run (`python -m services.plan_runner <id>`); the page reads `plan_runs` and a 3 s fragment. Worker writes only its own columns. `DEVLOOP_DATABASE` overrides the DB file. |
 | Planning | `agents/planner_agent.py`, `services/plan_validator.py`, `agents/story_splitter.py` | Planner sees `survey().render()` + referenced files; validator reports, never repairs. |
-| LLM | `services/llm_factory.py`, `claude_service.py`, `ollama_service.py`, `gemini_service.py`, `prompt_cache.py` | Role-based; all record usage. Agents call `ask(llm, cached, prompt)`: cached blocks must be byte-identical across the calls that should share them (`tests/prompt_cache_test.py`). |
+| LLM | `services/llm_factory.py`, `claude_service.py`, `ollama_service.py`, `prompt_cache.py` | Role-based; all record usage. Agents call `ask(llm, cached, prompt)`: cached blocks must be byte-identical across the calls that should share them (`tests/prompt_cache_test.py`). |
 | Cost | `services/usage_ledger.py`, `Settings.CLAUDE_PRICES` | ASCII only in output (see §8). |
 | Repo facts | `services/repository_survey.py`, `repository_context.py`, `environment_step.py` | Derived, never stored. |
 | Validation | `services/structure_validator.py`, `type_checker.py`, `test_runner.py` | Deterministic. |
 | Git | `services/git_service.py` (allow-list), `agents/git_agent.py`, `services/plan_branch.py`, `task_rollback.py` | Stage by name, never `git add .`. `plan_branch.of(plan)` is the one way to get a plan's branch. |
 | GitHub | `services/github_service.py` (allow-list + per-call field limits), `github_issue_service.py`, `agents/pull_request_agent.py`, `issue_agent.py` | No merge, close or delete is reachable. |
 | Persistence | `database/*.py`, SQLite | `task_repository` columns are **positional**: append new ones at the end of `COLUMNS` and add them to `ADDED_COLUMNS`. `save()` is a plain INSERT, so a task cannot be saved twice. Plan tasks are JSON; new fields need a default in `_parse_tasks`. |
-| UI | `app.py` (about 3,500 lines), `services/translations.py` | Every visible string goes through `t()`, in Polish and English. `translation_test` enforces it. The task view is `task_view()` shown via `st.dialog(width="large")`. |
+| UI | `app.py` (the page, ~160 lines), `ui/*.py` (its parts), `services/translations.py` | Every visible string goes through `t()`, in Polish and English. `translation_test` enforces it. The task view is `task_view()` shown via `st.dialog(width="large")`. |
 
 **Git safety model (current):**
 - **Allowed:** `add`, `branch`, `checkout`, `commit`, `diff`, `fetch` (one shape), `init`
@@ -180,7 +180,6 @@ its own.
 7. **The structural filter on Architect claims is text-based**; new phrasings can slip through
    as noise. The review itself is structured JSON on Claude (`REVIEW_SCHEMA`); the text
    format and its parser remain only for providers without structured outputs.
-8. **`google.generativeai` is deprecated** (switch to `google.genai` if Gemini is ever used).
 
 ---
 

@@ -8,6 +8,7 @@ stops it:
 """
 
 import ast
+import glob
 import re
 
 from services.translations import (
@@ -133,10 +134,14 @@ print("=" * 80)
 print("THE INTERFACE SAYS NOTHING THE DICTIONARY HAS NOT GOT")
 print("=" * 80)
 
-with open("app.py", encoding="utf-8") as handle:
-    source = handle.read()
+# The page and every module it was split into.
+SOURCES = ["app.py", *sorted(glob.glob("ui/*.py"))]
 
-tree = ast.parse(source)
+tree = ast.Module(body=[], type_ignores=[])
+
+for path in SOURCES:
+    with open(path, encoding="utf-8") as handle:
+        tree.body.extend(ast.parse(handle.read()).body)
 
 # Argument positions that are a label on the page rather
 # than a widget key, a language code or a format string
@@ -249,7 +254,7 @@ for node in ast.walk(tree):
         )
 
 check(
-    "no literal prose left in app.py",
+    "no literal prose left in the interface",
     untranslated,
     [],
 )

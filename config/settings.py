@@ -13,8 +13,6 @@ class Settings:
 
     LLM_PROVIDER = LLMProvider.CLAUDE
 
-    GEMINI_MODEL = "gemini-3.8-flash"
-
     # The key comes from ANTHROPIC_API_KEY in .env, never
     # from here.
     CLAUDE_MODEL = "claude-opus-5-5"

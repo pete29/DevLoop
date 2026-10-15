@@ -14,8 +14,7 @@ py -3.13 -m venv .venv
 pip install -r requirements.txt
 ```
 
-**Python 3.13.** Newer versions fail on `zstandard` (pulled in by
-`langgraph`), which has no wheel for them yet.
+**Python 3.13.** The version the suites and CI run on.
 
 **Node.js 24 LTS** on `PATH`: `tsc`, Vitest and `npm install` run inside
 the generated projects. A terminal opened before Node was installed may
@@ -26,8 +25,9 @@ still have the old `PATH`.
 ## Providers
 
 The default provider is **Claude**, with a model chosen per agent; see
-**Claude (the default)** below. Ollama and Gemini remain as alternatives:
-the agents talk to whatever `LLMFactory` returns.
+**Claude (the default)** below. A local Ollama remains as an alternative:
+the agents talk to whatever `LLMFactory` returns. (Gemini was removed: its
+library, `google.generativeai`, is deprecated, and nothing used it.)
 
 To run on a local Ollama instead:
 
@@ -44,7 +44,7 @@ and set `LLM_PROVIDER = LLMProvider.OLLAMA`. The app expects it on
 ## `config/settings.py`
 
 ```python
-LLM_PROVIDER = LLMProvider.CLAUDE   # or OLLAMA, GEMINI
+LLM_PROVIDER = LLMProvider.CLAUDE   # or OLLAMA
 
 CLAUDE_MODEL = "claude-opus-5-5"    # for a role missing from CLAUDE_MODELS
 CLAUDE_EFFORT = "high"
@@ -60,7 +60,6 @@ OLLAMA_NUM_CTX = 16384
 OLLAMA_TIMEOUT = 600
 OLLAMA_THINKING = False
 
-GEMINI_MODEL = "gemini-3.8-flash"
 
 DATABASE_NAME = "human_in_the_loop.db"
 
@@ -200,7 +199,7 @@ than by its English text, so rewording the English cannot silently orphan
 the Polish. `tests.translation_test` refuses to pass while a key is
 missing a language, while the two languages disagree about their
 placeholders, or while any prose is still written literally into
-`app.py` — a half-translated interface being the normal end state of
+`app.py` or `ui/` — a half-translated interface being the normal end state of
 this kind of work.
 
 **The agents are deliberately not translated**, and that is a decision
@@ -357,13 +356,7 @@ the number of tasks in a plan. The cost line of every task counts cache
 reads and writes at their own prices.
 
 Nothing to configure: the blocks are chosen in the agents. A provider that
-cannot cache (Ollama, Gemini) receives the same text as one string.
-
-### Switching to Gemini
-
-Set `LLM_PROVIDER = LLMProvider.GEMINI` and put `GEMINI_API_KEY` in `.env`.
-Everything downstream is unchanged — the agents talk to whatever
-`LLMFactory` returns.
+cannot cache (Ollama) receives the same text as one string.
 
 ---
 
@@ -378,9 +371,6 @@ GITHUB_PAT=your_token
 
 # Only for "New repository" on GitHub
 GITHUB_ADMIN_PAT=
-
-# Only when LLM_PROVIDER = GEMINI
-GEMINI_API_KEY=
 ```
 
 Only `ANTHROPIC_API_KEY` is needed to generate, review and commit code.

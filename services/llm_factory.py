@@ -4,9 +4,6 @@ from config.settings import (
 from services.claude_service import (
     ClaudeService,
 )
-from services.gemini_service import (
-    GeminiService,
-)
 from services.llm_provider import (
     LLMProvider,
 )
@@ -38,9 +35,6 @@ class LLMFactory:
                 ),
                 role=role,
             )
-
-        if Settings.LLM_PROVIDER == LLMProvider.GEMINI:
-            return GeminiService()
 
         return OllamaService(
             model=Settings.OLLAMA_MODEL,

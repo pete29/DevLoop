@@ -22,7 +22,6 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LIVE = frozenset(
     {
         "architect_test",
-        "langgraph_test",
         "ollama_test",
         "workflow_test",
     }

@@ -44,14 +44,14 @@ code it generates is **TypeScript with Vitest**, and only that.
 
 | What | Notes |
 |---|---|
-| Python 3.13 | `langgraph` pulls in `zstandard`, which has no wheel for newer versions yet |
+| Python 3.13 | the version the suites and CI run on |
 | Node.js 24 LTS | `tsc`, Vitest and `npm install` run inside the generated projects |
 | git | branches, commits and pushes in the target repository |
 | An Anthropic API key | the default provider |
 | A GitHub fine-grained token | optional; issues, push feedback and pull requests |
 | A second token with `Administration: write` | optional; only for creating GitHub repositories (`GITHUB_ADMIN_PAT`) |
 
-Ollama and Gemini remain as alternative providers; see
+A local Ollama remains as an alternative provider; see
 [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
 
 ---
@@ -78,9 +78,6 @@ GITHUB_PAT=your_token
 
 # Only for "New repository" on GitHub (Administration: write)
 GITHUB_ADMIN_PAT=
-
-# Only when LLM_PROVIDER = GEMINI
-GEMINI_API_KEY=
 ```
 
 Use a **fine-grained** GitHub token scoped to the target repositories only,
@@ -366,11 +363,11 @@ CI runs the offline suites on every pull request and on `main`
 ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)): Windows,
 Python 3.13, Node 24, no secrets.
 
-There are 36 test files. 32 run offline, against fake transports and
+There are 35 test files. 32 run offline, against fake transports and
 throwaway repositories; `compile_test`, `install_test` and
-`test_execution_test` need Node on `PATH`. Four call a real model and are
+`test_execution_test` need Node on `PATH`. Three call a real model and are
 skipped in routine runs: `architect_test`, `workflow_test`,
-`langgraph_test` and `ollama_test` (which needs a local Ollama).
+and `ollama_test` (which needs a local Ollama).
 
 ---
 
@@ -379,7 +376,7 @@ skipped in routine runs: `architect_test`, `workflow_test`,
 ```text
 agents/        planner, story splitter, developer, architect, QA, test execution,
                git, pull request, issue
-workflows/     the orchestrator, the recommendation policy, a LangGraph variant
+workflows/     the orchestrator and the recommendation policy
 services/      LLM providers, usage ledger, repository survey, plan validator,
                validation, tsc, Vitest, git, GitHub, plan branches, rollback,
                translations
@@ -387,7 +384,11 @@ models/        the data the pipeline passes around
 database/      SQLite persistence: repositories, requirements, plans, tasks
 tests/         see above
 docs/          architecture, workflow, security, configuration, testing, roadmap
-app.py         the Streamlit UI (every visible string in Polish and English)
+app.py         the Streamlit page: session state, then the parts below, in order
+ui/            the page's parts: shared (stores, language), actions (runs,
+               revisions, plans continued), sidebar, repositories,
+               requirements, plans, tasks (the task window); every visible
+               string in Polish and English
 ```
 
 ---

@@ -169,7 +169,7 @@ a score, a recommendation, the resolved findings, and findings each with a
 severity, the file it is about and the text. Nothing is parsed out of
 prose; a finding about a file names it, so the next round rewrites that
 file; the review text in the history and the PR is rendered from the
-fields as before. A provider without structured outputs (Ollama, Gemini)
+fields as before. A provider without structured outputs (Ollama)
 still answers in the text format, parsed by `review_parser`. The filter on
 structural claims (`finding_filter`) stays on both paths, by phrasing.
 
@@ -337,9 +337,13 @@ stop the page asked for in the meantime. A dead worker is recognised by its
 process (`process_alive`, which on Windows asks rather than signals:
 `os.kill(pid, 0)` there terminates the process).
 
-`workflows/langgraph_workflow.py` is an alternative wiring of the same
-agents. The Streamlit app uses the orchestrator; LangGraph is exercised by
-its own test.
+The page is `app.py`, which sets up the session and then calls the parts
+in `ui/`: `shared` (the stores, created once per process; the language;
+small helpers; the repository list, read again on every run as
+`shared.repositories`), `actions` (runs, revisions, continuing a plan —
+nothing that draws), `sidebar`, `repositories`, `requirements`, `plans` and
+`tasks` (the task window). A LangGraph wiring of the same agents existed
+and was removed: only its own test used it.
 
 ---
 
@@ -377,7 +381,7 @@ its own test.
 | `prompt_cache` | `ask(llm, cached, prompt)`: repeated blocks first, cached by Claude, concatenated for other providers |
 | `review_history_formatter` | previous rounds, for the Architect |
 | `code_cleaner` | strips fences and reasoning blocks |
-| `llm_factory` | picks Claude (per role), Ollama or Gemini |
+| `llm_factory` | picks Claude (per role) or Ollama |
 
 ---
 
