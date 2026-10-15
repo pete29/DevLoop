@@ -63,7 +63,7 @@ PYTHONIOENCODING=utf-8 PYTHONPATH=. .venv/Scripts/python tests/<name>_test.py
 
 CI (`.github/workflows/tests.yml`, Windows) runs the offline suites on every PR and on `main`.
 
-There are 30 test files. **26 run offline** and all pass. Four call a real model and are skipped
+There are 31 test files. **27 run offline** and all pass. Four call a real model and are skipped
 in routine runs: `architect_test`, `workflow_test`, `langgraph_test`, `ollama_test` (needs a
 local Ollama). Node must be on PATH for `compile_test`, `install_test` and
 `test_execution_test`.
@@ -197,13 +197,11 @@ its own.
 - **Goal set by the user:** a tool that meets requirements *without errors* and *without wasting
   tokens*. Cheap deterministic checks before expensive model calls; measure cost before
   optimising.
-- **This repo (DevLoop itself): one issue, one branch and one pull request per step**
-  (decided 2026-10-15, replacing "commit straight to `main`"). The plan lives as issues in
-  `pete29/DevLoop` (#1–#7 at the time of writing). Branches are `fix/<n>-<slug>`,
-  `feat/<n>-<slug>`, `docs/…`, `chore/…`, cut from an up-to-date `main` (or from the previous
-  step's branch while that PR waits). The PR says `Closes #<n>`, and carries the `.md` updates
-  with the code. **Claude opens the PR; the user reviews and merges** (merge commit). Never
-  push to `main` directly. `GITHUB_PAT` covers this repository.
+- **This repo (DevLoop itself): commit straight to `main` when a stage of work is finished,
+  and push.** No feature branches, no pull requests (tried for two steps on 2026-10-15, then
+  dropped by the user). The plan lives as issues in `pete29/DevLoop`; a stage's commit says
+  `Closes #<n>`, which closes its issue on push. Docs (`.md`) go in the same commit as the code.
+  CI runs the offline suites on every push to `main`.
 - **Commit messages:** `feat:` / `fix:` plus a lowercase, behaviour-describing subject, and a body
   explaining why. Code style: vertical spacing, comments that explain *why*, matching the
   surrounding file.

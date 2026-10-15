@@ -319,7 +319,7 @@ CI runs the offline suites on every pull request and on `main`
 ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)): Windows,
 Python 3.13, Node 24, no secrets.
 
-There are 30 test files. 26 run offline, against fake transports and
+There are 31 test files. 27 run offline, against fake transports and
 throwaway repositories; `compile_test`, `install_test` and
 `test_execution_test` need Node on `PATH`. Four call a real model and are
 skipped in routine runs: `architect_test`, `workflow_test`,
