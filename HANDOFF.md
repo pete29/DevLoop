@@ -67,7 +67,7 @@ CI (`.github/workflows/tests.yml`, Windows) runs the offline suites on every PR 
 `evals/fixture` and writes a report; `evals/compare.py` compares two. Baseline 2026-10-15: 4/4,
 $0.1163. Run it around any prompt, model or effort change.
 
-There are 37 test files. **34 run offline** and all pass. Three call a real model and are skipped
+There are 38 test files. **35 run offline** and all pass. Three call a real model and are skipped
 in routine runs: `architect_test`, `workflow_test`, `ollama_test` (needs a
 local Ollama). Node must be on PATH for `compile_test`, `install_test` and
 `test_execution_test`.
@@ -159,7 +159,9 @@ branch **`main`**. The old history did not come along: it all landed as one comm
   `symbolic-ref`.
 - **Refused:** `pull`, `clone`, `merge`, `rebase`, `reset`, `tag`, `cherry-pick`, `submodule`.
 
-**GitHub reads added for review feedback:** a PR's inline comments, reviews and conversation.
+**GitHub reads added for review feedback and CI:** a PR's inline comments, reviews and
+conversation; a commit's check runs; a failed Actions job's log. The last two need `Checks: read`
+and `Actions: read` on `GITHUB_PAT` (403 on the private sandbox until added).
 
 **GitHub writes (all on a human's click):** create PR; PATCH PR `title`/`body`; create issue
 (`title`/`body`); link sub-issue (`sub_issue_id`); comment on an issue; PATCH issue

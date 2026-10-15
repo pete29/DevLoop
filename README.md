@@ -81,7 +81,8 @@ GITHUB_ADMIN_PAT=
 ```
 
 Use a **fine-grained** GitHub token scoped to the target repositories only,
-with `Contents`, `Pull requests` and `Issues` set to read and write. Without
+with `Contents`, `Pull requests` and `Issues` set to read and write, and
+`Checks` and `Actions` set to read (for the PR's CI). Without
 it the GitHub buttons are disabled and say so; nothing else breaks.
 
 ---
@@ -255,6 +256,13 @@ open **one pull request for the whole plan**: the requirement, a task
 checklist with states, scores, compile and test results, files, findings
 and cost. Every later push rewrites that description.
 
+**CI on the pull request.** **🧪 Check the PR's CI** reads the check runs
+of the request's latest commit (✅ / ❌ / ⏳). For a failed GitHub Actions
+job it shows the end of the job's log, and **Send this failure back for
+revision** gives it to the task you choose as revision notes; after you
+accept and push, CI runs again. Read only: nothing is re-run or changed.
+The token needs `Checks: read` and `Actions: read` for this.
+
 **Review on GitHub comes back.** While the plan's pull request is open,
 **💬 Load the PR's review comments** reads what reviewers wrote: comments on
 lines of the diff, the text of reviews, and the conversation (bare approvals
@@ -388,7 +396,7 @@ It calls the real model (about $0.12 for the four cases) and never runs in
 CI. Run it before and after changing a prompt, a model or an effort. The
 baseline: 4/4 passed, scores 93-96, one review round each, $0.1163.
 
-There are 37 test files. 34 run offline, against fake transports and
+There are 38 test files. 35 run offline, against fake transports and
 throwaway repositories; `compile_test`, `install_test` and
 `test_execution_test` need Node on `PATH`. Three call a real model and are
 skipped in routine runs: `architect_test`, `workflow_test`,

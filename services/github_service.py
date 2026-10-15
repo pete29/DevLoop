@@ -35,6 +35,16 @@ ALLOWED_CALLS = (
         "GET",
         re.compile(r"^/repos/[^/]+/[^/]+/issues/\d+/comments$"),
     ),
+    # Read the CI checks of a commit, and a failed GitHub
+    # Actions job's log. Read only: nothing is re-run.
+    (
+        "GET",
+        re.compile(r"^/repos/[^/]+/[^/]+/commits/[0-9a-f]{7,40}/check-runs$"),
+    ),
+    (
+        "GET",
+        re.compile(r"^/repos/[^/]+/[^/]+/actions/jobs/\d+/logs$"),
+    ),
     # Read the repository, to learn its default branch.
     ("GET", re.compile(r"^/repos/[^/]+/[^/]+$")),
     # Read issues.
@@ -226,7 +236,8 @@ class GitHubService:
         path: str,
         payload: dict | None = None,
         params: dict | None = None,
-    ) -> dict | list:
+        raw: bool = False,
+    ) -> dict | list | str:
 
         if not any(
             method == allowed_method
@@ -323,6 +334,9 @@ class GitHubService:
             raise GitHubError(
                 self.describe_failure(response)
             )
+
+        if raw:
+            return response.text
 
         if not response.content:
             return {}
@@ -460,6 +474,34 @@ class GitHubService:
         data = self._request("GET", path, params={"per_page": 100})
 
         return [item for item in data if isinstance(item, dict)] if isinstance(data, list) else []
+
+    def list_check_runs(self, sha: str) -> list[dict]:
+        """The check runs on one commit."""
+
+        data = self._request(
+            "GET",
+            f"/repos/{self.owner}/{self.repository}/commits/{sha}/check-runs",
+            params={"per_page": 100},
+        )
+
+        return [
+            item
+            for item in (data.get("check_runs") or [])
+            if isinstance(item, dict)
+        ] if isinstance(data, dict) else []
+
+    def job_log(self, job_id: int) -> str:
+        """A GitHub Actions job's log, as text.
+
+        GitHub answers with a redirect to a signed download;
+        the token is not sent on to it.
+        """
+
+        return self._request(
+            "GET",
+            f"/repos/{self.owner}/{self.repository}/actions/jobs/{int(job_id)}/logs",
+            raw=True,
+        )
 
     def list_review_comments(self, number: int) -> list[dict]:
         """Comments on lines of the diff."""

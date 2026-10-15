@@ -1124,6 +1124,34 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "🔀 PR planu: [{label}]({url}) · **{state}**",
         "en": "🔀 The plan's PR: [{label}]({url}) · **{state}**",
     },
+    "ci.load": {
+        "pl": "🧪 Sprawdź CI w PR",
+        "en": "🧪 Check the PR's CI",
+    },
+    "ci.none": {
+        "pl": "Brak checków CI na ostatnim commicie PR.",
+        "en": "No CI checks on the PR's latest commit.",
+    },
+    "ci.failed_to_read": {
+        "pl": "Nie odczytano CI: {reason}. Token potrzebuje uprawnień Checks: read i Actions: read dla tego repozytorium.",
+        "en": "CI could not be read: {reason}. The token needs Checks: read and Actions: read on this repository.",
+    },
+    "ci.heading": {
+        "pl": "🧪 CI na {sha}: {passed} ok, {failed} nie, {pending} w toku",
+        "en": "🧪 CI on {sha}: {passed} passed, {failed} failed, {pending} running",
+    },
+    "ci.log": {
+        "pl": "Koniec logu: {name}",
+        "en": "End of the log: {name}",
+    },
+    "ci.send": {
+        "pl": "🔁 Odeślij tę porażkę do poprawki",
+        "en": "🔁 Send this failure back for revision",
+    },
+    "ci.sent": {
+        "pl": "Porażka „{name}” odesłana do {task}. Nowa wersja czeka na akceptację; po pushu CI uruchomi się ponownie.",
+        "en": "The failure of '{name}' was sent back to {task}. The new version waits for approval; CI runs again after the push.",
+    },
     "feedback.load": {
         "pl": "💬 Wczytaj uwagi z PR",
         "en": "💬 Load the PR's review comments",

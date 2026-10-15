@@ -389,7 +389,8 @@ is affected.
 
 **Scope:** prefer a **fine-grained** token limited to the repositories you
 will target, with `Contents`, `Pull requests` and `Issues` set to read and
-write. A classic token with `repo` also works, but reaches every repository
+write, and `Checks` and `Actions` set to read (the PR's CI; without them that
+panel says so and nothing else is affected). A classic token with `repo` also works, but reaches every repository
 you own. A fine-grained token is 93 characters; if GitHub answers 401,
 check the length in `.env` before anything else.
 

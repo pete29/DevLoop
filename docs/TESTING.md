@@ -295,6 +295,12 @@ without undoing the approval or the push.
 
 ### The pipeline and the plan's branch
 
+`tests.ci_checks_test` — the check runs of the request's head commit, failures
+first and each marked; a failed Actions job's log, its last 60 lines; a check
+from another app falls back to its summary; a failure becomes a note naming
+the check; only reads are sent, and re-running, re-requesting, cancelling or
+editing a check, or reading checks by branch name, is refused.
+
 `tests.packages_test` — imports are read in every form (static, dynamic,
 `require`, re-export), scoped packages by scope and name, local files left
 out; missing means neither declared nor installed, and a Node built-in

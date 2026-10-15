@@ -7,7 +7,7 @@ from models.plan_run import RunStatus
 from models.pull_request_info import PullRequestState
 from models.task_execution import ExecutionStatus
 from models.task_status import TaskStatus
-from services import costs, plan_branch, review_feedback
+from services import ci_checks, costs, plan_branch, review_feedback
 from services.environment_step import EnvironmentStep, assess, commit_scaffolding, write_scaffolding
 from services.git_service import GitError, GitService
 from services.github_service import GitHubError, parse_remote
@@ -234,6 +234,111 @@ def feedback_panel(plan, holder, records) -> None:
     st.rerun()
 
 
+def ci_panel(plan, holder, records) -> None:
+    """The PR's CI checks; a failure can be sent back to a task."""
+
+    key = f"ci-{plan.id}"
+
+    if st.button(t("ci.load"), key=f"{key}-load", use_container_width=True):
+
+        try:
+            st.session_state[key] = ci_checks.read(
+                PullRequestAgent.service(holder),
+                holder.pull_request.id,
+            )
+
+        except Exception as error:
+            st.session_state[key] = None
+            st.session_state.git_message = ("warning", t("ci.failed_to_read", reason=error))
+
+        st.rerun()
+
+    found = st.session_state.get(key)
+
+    if not found:
+        return
+
+    head, runs = found
+
+    if not runs:
+        st.caption(t("ci.none"))
+        return
+
+    st.markdown(
+        t(
+            "ci.heading",
+            sha=head[:7],
+            passed=sum(1 for run in runs if run.status == "completed" and not run.failed),
+            failed=sum(1 for run in runs if run.failed),
+            pending=sum(1 for run in runs if run.status != "completed"),
+        )
+    )
+
+    by_task = {}
+
+    for item in plan.tasks:
+        execution = plan.execution(item.id)
+        record = next((r for r in records if execution and r.id == execution.task_record_id), None)
+        if record is not None and record.generated_files:
+            by_task[record.id] = f"{item.id}. {item.title}"
+
+    for run in runs:
+
+        st.markdown(f"{run.mark} [{run.name}]({run.url})" if run.url else f"{run.mark} {run.name}")
+
+        if not run.failed or not by_task:
+            continue
+
+        with st.expander(t("ci.log", name=run.name)):
+
+            tail_key = f"{key}-tail-{run.id}"
+
+            if tail_key not in st.session_state:
+                st.session_state[tail_key] = ci_checks.log_tail(
+                    PullRequestAgent.service(holder),
+                    run,
+                )
+
+            st.code(st.session_state[tail_key] or run.summary or "-", language="text")
+
+            options = list(by_task)
+
+            target = st.selectbox(
+                t("feedback.task"),
+                options,
+                index=len(options) - 1,
+                format_func=lambda record_id: by_task[record_id],
+                key=f"{key}-task-{run.id}",
+            )
+
+            if st.button(t("ci.send"), key=f"{key}-send-{run.id}", type="primary"):
+
+                try:
+                    with st.spinner(t("feedback.spinner", task=by_task[target])):
+                        revised = revise_task(
+                            repository.get_by_id(target),
+                            ci_checks.as_note(run, st.session_state[tail_key]),
+                        )
+
+                except Exception as error:
+                    st.session_state.git_message = (
+                        "warning",
+                        t("feedback.partial", task=by_task[target], reason=error),
+                    )
+                    st.rerun()
+
+                st.session_state.pop(key, None)
+
+                st.session_state.task = revised
+
+                st.session_state.git_message = (
+                    "success",
+                    t("ci.sent", name=run.name, task=by_task[target]),
+                )
+
+                st.rerun()
+
+
 def pull_request_panel(plan) -> None:
     """The plan's pull request, and a way to ask GitHub.
 
@@ -295,6 +400,8 @@ def pull_request_panel(plan) -> None:
 
     # Feedback only matters while the request can change.
     if info.state == PullRequestState.OPEN:
+        ci_panel(plan, holder, records)
+
         feedback_panel(plan, holder, records)
 
 
