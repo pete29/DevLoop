@@ -37,10 +37,28 @@ class GitHubIssue:
 
     url: str = ""
 
+    # The parent issue's number when this is a sub-issue,
+    # 0 otherwise.
+    parent: int = 0
+
+    # Sub-issues: how many, and how many are closed.
+    children: int = 0
+
+    children_done: int = 0
+
     @property
     def label(self) -> str:
 
         return f"#{self.number} {self.title}".strip()
+
+    @property
+    def progress(self) -> str:
+        """"2/4" for a parent, "" for anything else."""
+
+        if not self.children:
+            return ""
+
+        return f"{self.children_done}/{self.children}"
 
     @property
     def epic(self) -> str:

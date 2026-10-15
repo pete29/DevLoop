@@ -6,7 +6,55 @@ MAX_ISSUES = 50
 CLOSED = "closed"
 
 
+def number_from_url(url: str) -> int:
+    """The trailing issue number of an API URL, or 0."""
+
+    tail = str(url or "").rstrip("/").rsplit("/", 1)[-1]
+
+    return int(tail) if tail.isdigit() else 0
+
+
+def tree(
+    issues: list[GitHubIssue],
+) -> list[tuple[GitHubIssue, int]]:
+    """The issues with each parent followed by its children.
+
+    Depth 0 for a top-level issue, 1 for its sub-issues,
+    and so on. A sub-issue whose parent is not in the list
+    -- closed, or past the page -- stands at the top rather
+    than vanishing. The order of the roots is kept.
+    """
+
+    present = {issue.number for issue in issues}
+
+    children: dict[int, list[GitHubIssue]] = {}
+
+    for issue in issues:
+        if issue.parent in present:
+            children.setdefault(issue.parent, []).append(issue)
+
+    ordered: list[tuple[GitHubIssue, int]] = []
+
+    def walk(issue: GitHubIssue, depth: int) -> None:
+
+        ordered.append((issue, depth))
+
+        for child in sorted(
+            children.get(issue.number, []),
+            key=lambda item: item.number,
+        ):
+            walk(child, depth + 1)
+
+    for issue in issues:
+        if issue.parent not in present:
+            walk(issue, 0)
+
+    return ordered
+
+
 def to_issue(data: dict) -> GitHubIssue:
+
+    summary = data.get("sub_issues_summary") or {}
 
     return GitHubIssue(
         id=int(data.get("id") or 0),
@@ -21,6 +69,9 @@ def to_issue(data: dict) -> GitHubIssue:
         ],
         state=str(data.get("state") or ""),
         url=str(data.get("html_url") or ""),
+        parent=number_from_url(data.get("parent_issue_url") or ""),
+        children=int(summary.get("total") or 0),
+        children_done=int(summary.get("completed") or 0),
     )
 
 
@@ -81,6 +132,19 @@ class GitHubIssueService(GitHubService):
             if isinstance(item, dict)
             and "pull_request" not in item
         ]
+
+    def add_sub_issue(self, parent: int, child_id: int) -> None:
+        """Links an existing issue under a parent.
+
+        By the child's id, not its number: that is what
+        GitHub's sub-issue API takes.
+        """
+
+        self._request(
+            "POST",
+            f"{self.issues_path()}/{int(parent)}/sub_issues",
+            payload={"sub_issue_id": int(child_id)},
+        )
 
     def get_issue(self, number: int) -> GitHubIssue:
 

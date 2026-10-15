@@ -32,6 +32,16 @@ ALLOWED_CALLS = (
         "GET",
         re.compile(r"^/repos/[^/]+/[^/]+/issues/\d+$"),
     ),
+    # Make one existing issue a sub-issue of another: the
+    # link a split leaves behind, so the parent shows its
+    # children and their progress. It moves nothing and
+    # creates nothing; the body is restricted below.
+    (
+        "POST",
+        re.compile(
+            r"^/repos/[^/]+/[^/]+/issues/\d+/sub_issues$"
+        ),
+    ),
     # Comment on an issue.
     (
         "POST",
@@ -67,6 +77,10 @@ PATCH_FIELDS = {
 # A new issue may carry its text and nothing else: no
 # assignees, labels or milestone set on someone's behalf.
 CREATE_ISSUE_FIELDS = frozenset({"title", "body"})
+
+SUB_ISSUES_PATH = re.compile(
+    r"^/repos/[^/]+/[^/]+/issues/\d+/sub_issues$"
+)
 
 ISSUES_PATH = re.compile(
     r"^/repos/[^/]+/[^/]+/issues$"
@@ -219,6 +233,18 @@ class GitHubService:
                     f"{kind or 'resource'} may only have its "
                     f"{sorted(allowed)} changed; "
                     f"got {sorted(sent)}."
+                )
+
+        if method == "POST" and SUB_ISSUES_PATH.match(path):
+
+            sent = set((payload or {}).keys())
+
+            # Never "replace_parent", which would take a
+            # child away from another parent.
+            if sent != {"sub_issue_id"}:
+                raise GitHubError(
+                    "Linking a sub-issue sends its id and "
+                    f"nothing else; got {sorted(sent)}."
                 )
 
         if method == "POST" and ISSUES_PATH.match(path):

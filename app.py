@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 
 from agents.git_agent import GitAgent
 from agents.issue_agent import IssueAgent, to_link
+from services.github_issue_service import tree as issue_tree
 from agents.planner_agent import PlannerAgent
 from agents.pull_request_agent import PullRequestAgent
 from agents.story_splitter import (
@@ -41,6 +42,7 @@ from models.test_result import TestStatus
 from services.file_writer import FileWriter
 from services.git_diff_service import GitDiffService
 from services.git_service import GitError, GitService
+from services.github_service import GitHubError, parse_remote
 from services.package_installer import blocked, install
 from services import plan_branch, usage_ledger
 from services.task_rollback import roll_back
@@ -312,6 +314,81 @@ def plan_pull_request(records):
     return known[-1] if known else None
 
 
+def branch_panel(plan, target_path: str) -> None:
+    """Where the plan's work is in git, before any task runs.
+
+    A plan for an issue that already had one continues on
+    the same branch, and nothing said so: the new plan
+    listed its tasks as never run while the branch beside
+    it held the commits and the pull request.
+    """
+
+    branch = plan_branch.of(plan)
+
+    service = GitService(target_path) if target_path else None
+
+    if service is None or not service.is_repository():
+        return
+
+    local = service.branch_exists(branch)
+
+    remote = service.ref_exists(f"refs/remotes/origin/{branch}")
+
+    link = ""
+
+    if remote:
+
+        try:
+            owner, name = parse_remote(service.remote_url())
+
+            link = " · " + t(
+                "branch.open_on_github",
+                url=f"https://github.com/{owner}/{name}/tree/{branch}",
+            )
+
+        except (GitError, GitHubError):
+            link = ""
+
+    st.markdown(
+        t(
+            "branch.line",
+            branch=branch,
+            local="✅" if local else "—",
+            remote="✅" if remote else "—",
+        )
+        + link
+    )
+
+    committed = [
+        record
+        for record in plan_records(plan)
+        if record.git_operation.commit_hash
+    ]
+
+    if committed:
+        st.caption(
+            t(
+                "branch.commits",
+                count=len(committed),
+                hashes=", ".join(
+                    record.git_operation.short_hash
+                    for record in committed
+                ),
+            )
+        )
+
+    earlier = [
+        other
+        for other in plan_store.get_all()
+        if other.id != plan.id
+        and other.created_at < plan.created_at
+        and plan_branch.of(other) == branch
+    ]
+
+    if earlier:
+        st.info(t("branch.continues", count=len(earlier)))
+
+
 def pull_request_panel(plan) -> None:
     """The plan's pull request, and a way to ask GitHub.
 
@@ -462,6 +539,10 @@ def split_panel(requirement, remote_url: str) -> None:
 
     created: list[tuple[int, str]] = []
 
+    child_ids: list[int] = []
+
+    linked = ""
+
     try:
 
         for story in chosen:
@@ -481,13 +562,37 @@ def split_panel(requirement, remote_url: str) -> None:
 
             created.append((issue.number, issue.title))
 
+            child_ids.append(issue.id)
+
         # The parent keeps track of its children on GitHub,
-        # where people look, rather than in a table here.
+        # where people look, rather than in a table here:
+        # as real sub-issues, and as a comment only where
+        # those are not available.
+        linked = ""
+
         if parent > 0 and created:
-            IssueAgent.service(remote_url).add_comment(
-                parent,
-                children_comment(created),
-            )
+
+            service = IssueAgent.service(remote_url)
+
+            try:
+
+                for child_id in child_ids:
+                    service.add_sub_issue(parent, child_id)
+
+                linked = t("split.linked", parent=parent)
+
+            except Exception as error:
+
+                service.add_comment(
+                    parent,
+                    children_comment(created),
+                )
+
+                linked = t(
+                    "split.not_linked",
+                    parent=parent,
+                    reason=error,
+                )
 
     except Exception as error:
 
@@ -504,7 +609,8 @@ def split_panel(requirement, remote_url: str) -> None:
                 "split.created",
                 count=len(created),
                 labels=", ".join(f"#{number}" for number, _ in created),
-            ),
+            )
+            + linked,
         )
 
     st.session_state.split = None
@@ -1323,13 +1429,30 @@ with st.sidebar:
             t("issue.needs_github_remote")
         )
 
-    for issue in st.session_state.issues or []:
+    # Sub-issues under their parent, so a split reads as
+    # the one piece of work it is.
+    for issue, depth in issue_tree(st.session_state.issues or []):
 
-        if st.button(
-            issue.label[:34],
-            key=f"issue-{issue.number}",
-            use_container_width=True,
-        ):
+        progress = f" · {issue.progress}" if issue.progress else ""
+
+        if depth:
+
+            _, holder = st.columns([depth, 10])
+
+        else:
+
+            holder = st.container()
+
+        with holder:
+
+            pressed = st.button(
+                ("↳ " if depth else "") + issue.label[: 34 - 4 * depth] + progress,
+                key=f"issue-{issue.number}",
+                use_container_width=True,
+                help=issue.label,
+            )
+
+        if pressed:
             existing = requirement_store.get_by_issue(
                 issue.number
             )
@@ -1525,6 +1648,20 @@ if st.session_state.requirement:
                     st.session_state.plan = linked
 
                     st.rerun()
+
+        # One branch per issue: a new plan joins the old
+        # one's branch and pull request, which is worth
+        # knowing before paying for it.
+        next_branch = plan_branch.name(
+            "", requirement.epic, requirement.issue.number
+        )
+
+        if requirement.issue.exists and any(
+            plan_branch.of(item) == next_branch for item in plans_for
+        ):
+            st.caption(
+                t("requirement.replan_note", branch=next_branch)
+            )
 
     else:
 
@@ -1771,6 +1908,8 @@ if st.session_state.plan:
 
     if environment is not None:
         environment_panel(target_path, environment, skip_key)
+
+    branch_panel(plan, target_path)
 
     pull_request_panel(plan)
 

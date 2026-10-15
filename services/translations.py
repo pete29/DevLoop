@@ -860,6 +860,34 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "Założono {count} issue(s), potem błąd: {reason}",
         "en": "Created {count} issue(s), then it failed: {reason}",
     },
+    "split.linked": {
+        "pl": " Powiązane jako sub-issues #{parent}.",
+        "en": " Linked as sub-issues of #{parent}.",
+    },
+    "split.not_linked": {
+        "pl": " Nie powiązano jako sub-issues ({reason}); #{parent} dostało listę w komentarzu.",
+        "en": " Not linked as sub-issues ({reason}); #{parent} got a list in a comment instead.",
+    },
+    "branch.line": {
+        "pl": "🌿 Gałąź planu: `{branch}` · lokalnie {local} · na GitHubie {remote}",
+        "en": "🌿 The plan's branch: `{branch}` · local {local} · on GitHub {remote}",
+    },
+    "branch.open_on_github": {
+        "pl": "[otwórz na GitHubie]({url})",
+        "en": "[open on GitHub]({url})",
+    },
+    "branch.commits": {
+        "pl": "Na tej gałęzi jest już {count} commit(ów) z DevLoop: {hashes}.",
+        "en": "This branch already holds {count} DevLoop commit(s): {hashes}.",
+    },
+    "branch.continues": {
+        "pl": "Plan kontynuuje gałąź {count} wcześniejszego planu(ów) dla tego issue; ich commity i PR są wspólne.",
+        "en": "This plan continues the branch of {count} earlier plan(s) for this issue; their commits and pull request are shared.",
+    },
+    "requirement.replan_note": {
+        "pl": "Nowy plan trafi na istniejącą gałąź `{branch}` i do jej PR.",
+        "en": "A new plan goes onto the existing branch `{branch}` and its pull request.",
+    },
     "plan.split_hint": {
         "pl": (
             "Ten plan ma {count} zadań, czyli jeden duży PR. Jeśli "

@@ -583,6 +583,61 @@ refuses(
     lambda: service.create_issue("   ", "Body."),
 )
 
+CALLS.clear()
+
+service.add_sub_issue(3, 9001)
+
+check(
+    "a child is linked under its parent by id, nothing else",
+    CALLS[-1],
+    ("POST", "/repos/o/r/issues/3/sub_issues", {"sub_issue_id": 9001}),
+)
+
+refuses(
+    "taking a child from another parent is refused",
+    lambda: service._request(
+        "POST",
+        "/repos/o/r/issues/3/sub_issues",
+        {"sub_issue_id": 9001, "replace_parent": True},
+    ),
+)
+
+from services.github_issue_service import to_issue, tree  # noqa: E402
+
+listed = [
+    to_issue(
+        {
+            "number": number,
+            "title": f"issue {number}",
+            "parent_issue_url": (
+                f"https://api.github.com/repos/o/r/issues/{parent}"
+                if parent
+                else None
+            ),
+            "sub_issues_summary": {"total": total, "completed": done},
+        }
+    )
+    for number, parent, total, done in (
+        (7, 3, 0, 0),
+        (5, 3, 0, 0),
+        (4, 99, 0, 0),
+        (3, 0, 2, 1),
+        (2, 0, 0, 0),
+    )
+]
+
+check(
+    "children follow their parent, in number order",
+    [(issue.number, depth) for issue, depth in tree(listed)],
+    [(4, 0), (3, 0), (5, 1), (7, 1), (2, 0)],
+)
+
+check(
+    "a parent says how far its children are",
+    (listed[3].progress, listed[4].progress),
+    ("1/2", ""),
+)
+
 from agents.story_splitter import (  # noqa: E402
     Story,
     StorySplitter,
