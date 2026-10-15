@@ -28,13 +28,14 @@ from database.task_repository import TaskRepository
 from models.compile_result import CompileStatus
 from models.file_type import FileType
 from models.git_push_operation import PushStatus
-from models.pipeline_step import PipelineStep
+from models.plan import Plan
 from models.plan_run import RunStatus
 from models.pull_request_info import PullRequestState
 from models.repository import Repository
 from models.repository_context import TestFramework
 from models.requirement import Requirement, RequirementSource, now
 from models.task import Task
+from models.task_breakdown import TaskBreakdown
 from models.task_execution import (
     ExecutionStatus,
     TaskExecution,
@@ -2622,27 +2623,30 @@ if st.button(
 
         st.stop()
 
-    with st.spinner(t("app.working")):
+    # A task on its own is a plan of one task: it gets a
+    # branch before anything is generated, a background run,
+    # a pull request and a cost, like any planned task. Run
+    # in the page it blocked the tab and landed on whatever
+    # branch was checked out.
+    lines = task_description.strip().splitlines()
 
-        try:
-
-            generated_task = orchestrator.execute(
-                task_description,
-                st.session_state.repository_id,
-                target_path,
+    single = Plan(
+        repository_id=st.session_state.repository_id,
+        epic=task_description.strip(),
+        tasks=[
+            TaskBreakdown(
+                id=1,
+                title=lines[0].strip()[:120],
+                description="\n".join(lines[1:]).strip(),
             )
+        ],
+    )
 
-        except Exception as error:
+    plan_store.save(single)
 
-            st.error(t("app.workflow_failed", reason=error))
+    st.session_state.plan = single
 
-            st.stop()
-
-        repository.save(generated_task)
-
-        st.session_state.task = generated_task
-
-        st.rerun()
+    start_run(single, target_path, 1)
 
 def close_task() -> None:
 

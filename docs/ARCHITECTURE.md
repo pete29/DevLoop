@@ -228,8 +228,9 @@ of the plan's branch rewrites it (title and body only). Opening it is a
 human's click; so is merging it, on GitHub — and "Check the PR" reads that
 back, which is what moves the requirement to `DELIVERED`.
 
-A task outside a plan gets a branch of its own, cut from the base branch
-(`main` or `master`), so such branches do not stack on one another.
+A task described on its own becomes a plan of one task, so it gets a
+plan's branch before generation, cut from the freshest base like any other,
+and runs in the background worker.
 
 **Rejecting a task undoes its files** (`services/task_rollback.py`): files
 it created are deleted, tracked files it changed are restored from git

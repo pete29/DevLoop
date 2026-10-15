@@ -290,6 +290,11 @@ without undoing the approval or the push.
 
 ### The pipeline and the plan's branch
 
+`tests.standalone_task_test` — the real page, headless, on a throwaway
+database: **Generate code** turns the description into a plan of one task
+(title and description split as typed) and hands it to a background worker
+instead of running it in the page.
+
 `tests.review_feedback_test` — inline comments, review text and the
 conversation are read, oldest first, with bare approvals and DevLoop's own
 comments left out, and only reads are sent; an inline comment knows its file

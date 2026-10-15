@@ -203,7 +203,8 @@ Each task goes through the pipeline above:
 Tasks run **in the background**, in a worker process: **Run task** and
 **⏩ Run the whole plan** start one, and the plan shows what it is on, how
 far it got and the last lines of its console, refreshed every few seconds.
-The tab can be closed and the page reloaded; the run carries on. **⏹ Stop
+The tab can be closed and the page reloaded; the run carries on.
+A task described on its own (**Generate code** at the bottom of the page) becomes a plan of one task: it gets its branch before anything is generated, runs in the background worker, and has a pull request and a cost like any planned task. **⏹ Stop
 after this task** stops it between tasks, and a worker that died is marked
 `INTERRUPTED` on the next page load.
 
@@ -355,7 +356,7 @@ CI runs the offline suites on every pull request and on `main`
 ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)): Windows,
 Python 3.13, Node 24, no secrets.
 
-There are 34 test files. 30 run offline, against fake transports and
+There are 35 test files. 31 run offline, against fake transports and
 throwaway repositories; `compile_test`, `install_test` and
 `test_execution_test` need Node on `PATH`. Four call a real model and are
 skipped in routine runs: `architect_test`, `workflow_test`,
@@ -398,10 +399,6 @@ app.py         the Streamlit UI (every visible string in Polish and English)
 
 ## Known limitations
 
-- **A task outside a plan** ("Generate code" at the bottom) still runs in
-  the page, synchronously; only planned tasks have a worker.
-- **A single task outside a plan** is generated on whatever branch is
-  checked out.
 - **The planner's file claims are checked, its judgement is not.** A plan
   can still split work badly; what it cannot do any more is quietly plan a
   file that exists, or one nothing creates.

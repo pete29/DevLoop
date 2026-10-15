@@ -152,7 +152,8 @@ would be a claim the test gate contradicts the moment it runs.
 ## Planning
 
 A plan is optional. You can describe one task and skip the Planner
-entirely.
+entirely: **Generate code** turns it into a plan of one task, with its own
+branch, a background run, a pull request and a cost.
 
 Given an epic, the Planner returns between 2 and 12 tasks with a priority
 and a dependency list each. The ordering is computed in code: dependencies

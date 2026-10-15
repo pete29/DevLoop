@@ -101,8 +101,8 @@ top of them, so a plan is a chain of commits, one per task, in run order.
 merged pull request is the starting point of the next plan. With no remote
 or no connection, local `main`, and the task says so.
 
-Approval commits on that branch. A task outside a plan is committed on a
-`feature/task-<id8>` branch of its own.
+Approval commits on that branch. A task described on its own is a plan of
+one task, with a plan branch of its own.
 
 **Only the files this task generated are staged.** Not `git add .`. Work
 in progress elsewhere in your repository is left alone, and a test proves

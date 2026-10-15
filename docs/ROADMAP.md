@@ -67,6 +67,7 @@ What has been built, in the order it was built, and what the next step is.
 | 11.3 | **First live end-to-end run** — push, PR, merge and delivery verified against GitHub; the bugs it found fixed (below) |
 | 12 | **The human can say more than yes or no** — a task opens in a window, and can be sent back with chosen findings and the human's own notes |
 | 12.1 | **Issues both ways** — a requirement filed as an issue; a large one split into user stories, filed as sub-issues; the issue list as a tree; plans for an issue share `feature/issue-<n>-<slug>` |
+| 12.10 | **A task on its own is a plan of one** — its own branch before generation, a background run, a pull request and a cost |
 | 12.9 | **A shorter review** — three findings of two sentences, suggestions only when worth a revision: 32% less per review, same main findings |
 | 12.8 | **Review feedback from GitHub** — a pull request's review comments, chosen by a human, go back through the same revision as notes typed in the app |
 | 12.7 | **Costs** — a task's dollars stored, a plan's total and a month's shown, and a per-plan limit that stops a run before the next task |

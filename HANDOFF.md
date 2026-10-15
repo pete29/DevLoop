@@ -63,7 +63,7 @@ PYTHONIOENCODING=utf-8 PYTHONPATH=. .venv/Scripts/python tests/<name>_test.py
 
 CI (`.github/workflows/tests.yml`, Windows) runs the offline suites on every PR and on `main`.
 
-There are 34 test files. **30 run offline** and all pass. Four call a real model and are skipped
+There are 35 test files. **31 run offline** and all pass. Four call a real model and are skipped
 in routine runs: `architect_test`, `workflow_test`, `langgraph_test`, `ollama_test` (needs a
 local Ollama). Node must be on PATH for `compile_test`, `install_test` and
 `test_execution_test`.
@@ -177,12 +177,8 @@ its own.
 3. **Output tokens are the bill.** Prompt caching is in (6.7% saved on two real tasks); the
    Architect's review is now three findings of two sentences (-32% per review, effort kept
    high). Plans show their total and stop at `PLAN_COST_LIMIT` (`services/costs.py`).
-4. **Tasks outside a plan** still run synchronously in the page; planned tasks run in the
-   background worker (`services/plan_runner.py`).
 5. **A second plan for an issue** is now warned about what exists, but has no "continue from
    where the last plan stopped" mode; it replans from the requirement.
-6. **Single tasks outside a plan** are generated on whatever branch is checked out (only planned
-   tasks enter a branch first).
 7. **The structural filter on Architect claims is text-based**; new phrasings can slip through
    as noise.
 8. **`google.generativeai` is deprecated** (switch to `google.genai` if Gemini is ever used).
@@ -234,8 +230,8 @@ its own.
 - **Heredocs:** bash heredocs with Python containing `'`, `\n` or regex escapes broke several
   times (in this session `\\n` arrived as a real newline). Write the script with the Write tool
   and run it instead.
-- **`runOnSave`:** saving `app.py` while the app runs reruns the page. Planned tasks run in a
-  detached worker now and are not affected; a task outside a plan, generated in the page, is.
+- **`runOnSave`:** saving `app.py` while the app runs reruns the page. Every task runs in a
+  detached worker now (a task on its own is a plan of one task), so none is affected.
 - **Windows `os.kill(pid, 0)` terminates the process** instead of testing it. Use
   `plan_runner.process_alive`.
 - **PowerShell's PATH can be stale** after installing Node. The bash tool and new terminals see
