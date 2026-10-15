@@ -31,3 +31,19 @@ def ask(llm, cached: list[str], prompt: str) -> str:
         return generate(blocks, prompt)
 
     return llm.generate_text("".join(blocks) + prompt)
+
+
+def ask_json(llm, cached: list[str], prompt: str, schema: dict) -> dict | None:
+    """The answer in `schema`'s shape, or None where unsupported.
+
+    None tells the caller to ask in text and parse instead:
+    a local model, or a test's fake, has no structured
+    outputs.
+    """
+
+    generate = getattr(llm, "generate_json", None)
+
+    if generate is None:
+        return None
+
+    return generate([block for block in cached if block.strip()], prompt, schema)

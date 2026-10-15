@@ -164,6 +164,15 @@ coverage or compilation is filtered out before it reaches the review.
 It is also **stateful**: every review sees the previous rounds and must
 classify each earlier finding as resolved or still open.
 
+It answers in a **schema** on Claude (structured outputs, `REVIEW_SCHEMA`):
+a score, a recommendation, the resolved findings, and findings each with a
+severity, the file it is about and the text. Nothing is parsed out of
+prose; a finding about a file names it, so the next round rewrites that
+file; the review text in the history and the PR is rendered from the
+fields as before. A provider without structured outputs (Ollama, Gemini)
+still answers in the text format, parsed by `review_parser`. The filter on
+structural claims (`finding_filter`) stays on both paths, by phrasing.
+
 Owns: whether the design is sound.
 Does not own: whether the code compiles.
 

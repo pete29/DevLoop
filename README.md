@@ -201,7 +201,9 @@ Each task goes through the pipeline above:
 - The **free checks** — structural validator and `tsc` — run before the
   Architect sees anything, with their own budget (`MAX_GATE_FIXES`).
 - The **Architect** reviews design only (coupling, abstractions, SOLID),
-  up to `MAX_REVIEW_LOOPS` times, in at most three findings of two sentences
+  up to `MAX_REVIEW_LOOPS` times, in at most three findings of two sentences,
+  answered as JSON in a schema (score, recommendation, findings with severity
+  and file) rather than prose to parse
   each. Claims about things a compiler decides are filtered out.
 - **QA** writes one Vitest suite per source file; after a fix only the
   suites of changed or failing files are rewritten.
@@ -364,7 +366,7 @@ CI runs the offline suites on every pull request and on `main`
 ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)): Windows,
 Python 3.13, Node 24, no secrets.
 
-There are 35 test files. 31 run offline, against fake transports and
+There are 36 test files. 32 run offline, against fake transports and
 throwaway repositories; `compile_test`, `install_test` and
 `test_execution_test` need Node on `PATH`. Four call a real model and are
 skipped in routine runs: `architect_test`, `workflow_test`,

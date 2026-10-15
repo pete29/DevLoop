@@ -1,3 +1,5 @@
+import json
+
 from models.architecture_review import (
     ArchitectureReview,
 )
@@ -10,7 +12,7 @@ from services.finding_filter import cap, drop_structural
 from services.llm_factory import (
     LLMFactory,
 )
-from services.prompt_cache import ask
+from services.prompt_cache import ask, ask_json
 from services.repository_survey import survey
 from services.review_history_formatter import (
     ReviewHistoryFormatter,
@@ -38,7 +40,7 @@ from workflows.review_decision import (
 # four real reviews this cut them from 3752 to 2291 (-32%
 # in dollars) with the same main findings. Lowering the
 # effort instead saved 5% and missed more, so it stays.
-RULES = """
+RULES_BODY = """
 You are a Senior Software Architect.
 
 Review the project structure as well as the
@@ -153,7 +155,11 @@ Rules:
   finding: write examples and cases as
   sentences, separated by semicolons.
 
-Return exactly in this format, with no
+"""
+
+# How to answer in text, for a provider without structured
+# outputs. Claude answers in the schema below instead.
+TEXT_FORMAT = """Return exactly in this format, with no
 extra commentary:
 
 SCORE: <0-100>
@@ -172,6 +178,93 @@ WARNINGS:
 SUGGESTIONS:
 - finding
 """
+
+RULES = RULES_BODY + TEXT_FORMAT
+
+JSON_FORMAT = """Answer with the JSON the schema describes:
+the score from 0 to 100; the recommendation;
+under resolved, the findings of the most recent
+previous review that the current code fixes;
+under findings, every open finding, each with
+its severity (BLOCKER, WARNING or SUGGESTION),
+the file it is about ("" when it is about no
+one file), and the finding itself. Empty lists
+where there is nothing.
+"""
+
+# The review's shape, enforced by the API: nothing to parse
+# out of prose, no list inside a finding to split, no
+# heading to miss.
+REVIEW_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "score": {"type": "integer"},
+        "recommendation": {
+            "type": "string",
+            "enum": ["APPROVE", "REQUEST_CHANGES", "REJECT"],
+        },
+        "resolved": {"type": "array", "items": {"type": "string"}},
+        "findings": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "severity": {
+                        "type": "string",
+                        "enum": ["BLOCKER", "WARNING", "SUGGESTION"],
+                    },
+                    "file": {"type": "string"},
+                    "finding": {"type": "string"},
+                },
+                "required": ["severity", "file", "finding"],
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": ["score", "recommendation", "resolved", "findings"],
+    "additionalProperties": False,
+}
+
+
+def from_json(answer: dict) -> tuple[int, str, list[str], list[str], list[str], list[str]]:
+    """Score, recommendation and the four lists from a JSON review.
+
+    A finding about a file says which, so the developer's
+    next round rewrites that file.
+    """
+
+    def text(item: dict) -> str:
+
+        finding = " ".join(str(item.get("finding") or "").split())
+
+        path = str(item.get("file") or "").strip()
+
+        return f"{path}: {finding}" if path and finding else finding
+
+    def of(severity: str) -> list[str]:
+
+        return [
+            text(item)
+            for item in answer.get("findings") or []
+            if item.get("severity") == severity and text(item)
+        ]
+
+    score = max(0, min(100, int(answer.get("score") or 0)))
+
+    resolved = [
+        " ".join(str(item).split())
+        for item in answer.get("resolved") or []
+        if str(item).strip()
+    ]
+
+    return (
+        score,
+        str(answer.get("recommendation") or ""),
+        resolved,
+        of("BLOCKER"),
+        of("WARNING"),
+        of("SUGGESTION"),
+    )
 
 
 def _as_lines(findings: list[str]) -> str:
@@ -270,25 +363,51 @@ Review it by the rules above, and answer in
 exactly the format they give.
 """
 
-        raw_review = ask(self.llm, [RULES], prompt)
-
-        score = ReviewParser.score(raw_review)
-
-        resolved = ReviewParser.section(
-            raw_review, "resolved"
+        answer = ask_json(
+            self.llm,
+            [RULES_BODY + JSON_FORMAT],
+            prompt,
+            REVIEW_SCHEMA,
         )
 
-        blockers = ReviewParser.section(
-            raw_review, "blockers"
-        )
+        if answer is not None:
 
-        warnings = ReviewParser.section(
-            raw_review, "warnings"
-        )
+            (
+                score,
+                stated,
+                resolved,
+                blockers,
+                warnings,
+                suggestions,
+            ) = from_json(answer)
 
-        suggestions = ReviewParser.section(
-            raw_review, "suggestions"
-        )
+            raw_review = json.dumps(answer, ensure_ascii=False, indent=2)
+
+        else:
+
+            raw_review = ask(self.llm, [RULES], prompt)
+
+            score = ReviewParser.score(raw_review)
+
+            resolved = ReviewParser.section(
+                raw_review, "resolved"
+            )
+
+            blockers = ReviewParser.section(
+                raw_review, "blockers"
+            )
+
+            warnings = ReviewParser.section(
+                raw_review, "warnings"
+            )
+
+            suggestions = ReviewParser.section(
+                raw_review, "suggestions"
+            )
+
+            stated = ReviewParser.stated_recommendation(
+                raw_review
+            )
 
         # Structural findings come from the validator
         # alone. Anything the model says about missing
@@ -322,10 +441,6 @@ exactly the format they give.
                 + structural,
             ),
             "resolved findings",
-        )
-
-        stated = ReviewParser.stated_recommendation(
-            raw_review
         )
 
         recommendation = RecommendationPolicy.decide(

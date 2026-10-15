@@ -1,3 +1,5 @@
+import json
+
 import anthropic
 
 from config.settings import Settings
@@ -53,26 +55,51 @@ class ClaudeService:
         folded into the last one rather than dropped.
         """
 
-        blocks = list(cached)
+        return self._call(self._blocks(cached, prompt))
+
+    def generate_json(
+        self,
+        cached: list[str],
+        prompt: str,
+        schema: dict,
+    ) -> dict:
+        """An answer constrained to `schema`, as a dict.
+
+        Structured outputs: the API guarantees valid JSON in
+        that shape, so nothing has to be parsed out of prose.
+        """
+
+        return json.loads(
+            self._call(
+                self._blocks(cached, prompt),
+                {"type": "json_schema", "schema": schema},
+            )
+        )
+
+    def _blocks(self, cached: list[str], prompt: str) -> list[dict]:
+
+        blocks = [block for block in cached if block.strip()]
 
         if len(blocks) > MAX_CACHED_BLOCKS:
             blocks = blocks[: MAX_CACHED_BLOCKS - 1] + [
                 "".join(blocks[MAX_CACHED_BLOCKS - 1 :])
             ]
 
-        return self._call(
-            [
-                {
-                    "type": "text",
-                    "text": block,
-                    "cache_control": {"type": "ephemeral"},
-                }
-                for block in blocks
-            ]
-            + [{"type": "text", "text": prompt}]
-        )
+        return [
+            {
+                "type": "text",
+                "text": block,
+                "cache_control": {"type": "ephemeral"},
+            }
+            for block in blocks
+        ] + [{"type": "text", "text": prompt}]
 
-    def _call(self, content) -> str:
+    def _call(self, content, output_format: dict | None = None) -> str:
+
+        output_config = {"effort": self.effort}
+
+        if output_format is not None:
+            output_config["format"] = output_format
 
         # Streamed, because one file of real code can run
         # long enough to hit the HTTP timeout of a single
@@ -80,7 +107,7 @@ class ClaudeService:
         with self.client.beta.messages.stream(
             model=self.model,
             max_tokens=Settings.CLAUDE_MAX_TOKENS,
-            output_config={"effort": self.effort},
+            output_config=output_config,
             betas=[FALLBACK_BETA],
             fallbacks="default",
             messages=[{"role": "user", "content": content}],

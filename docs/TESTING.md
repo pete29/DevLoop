@@ -294,6 +294,15 @@ without undoing the approval or the push.
 
 ### The pipeline and the plan's branch
 
+`tests.structured_review_test` — on a provider with structured outputs
+the Architect sends `REVIEW_SCHEMA` and the rules with the JSON
+instructions (not the text format) as its cached block; the score is
+clamped, findings land by severity with their file and empty ones are
+dropped, a blocker still decides the recommendation, and the review text
+reads as before; every object in the schema forbids extra properties and
+requires all its fields; `ClaudeService.generate_json` sends the schema in
+`output_config.format` next to the effort.
+
 `tests.standalone_task_test` — the real page, headless, on a throwaway
 database: **Generate code** turns the description into a plan of one task
 (title and description split as typed) and hands it to a background worker

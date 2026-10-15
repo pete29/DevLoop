@@ -63,7 +63,7 @@ PYTHONIOENCODING=utf-8 PYTHONPATH=. .venv/Scripts/python tests/<name>_test.py
 
 CI (`.github/workflows/tests.yml`, Windows) runs the offline suites on every PR and on `main`.
 
-There are 35 test files. **31 run offline** and all pass. Four call a real model and are skipped
+There are 36 test files. **32 run offline** and all pass. Four call a real model and are skipped
 in routine runs: `architect_test`, `workflow_test`, `langgraph_test`, `ollama_test` (needs a
 local Ollama). Node must be on PATH for `compile_test`, `install_test` and
 `test_execution_test`.
@@ -178,7 +178,8 @@ its own.
    Architect's review is now three findings of two sentences (-32% per review, effort kept
    high). Plans show their total and stop at `PLAN_COST_LIMIT` (`services/costs.py`).
 7. **The structural filter on Architect claims is text-based**; new phrasings can slip through
-   as noise.
+   as noise. The review itself is structured JSON on Claude (`REVIEW_SCHEMA`); the text
+   format and its parser remain only for providers without structured outputs.
 8. **`google.generativeai` is deprecated** (switch to `google.genai` if Gemini is ever used).
 
 ---
