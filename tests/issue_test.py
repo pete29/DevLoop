@@ -139,7 +139,7 @@ def fake_request(method: str, url: str, **kwargs):
 
     return FakeResponse(
         200,
-        {**ISSUES[0], "labels": [{"name": "hitl:pr-created"}]},
+        {**ISSUES[0], "labels": [{"name": "devloop:pr-created"}]},
     )
 
 
@@ -185,8 +185,8 @@ refuses(
 
 check(
     "labels can be replaced",
-    service.update_labels(101, ["hitl:pr-created"]),
-    ["hitl:pr-created"],
+    service.update_labels(101, ["devloop:pr-created"]),
+    ["devloop:pr-created"],
 )
 
 print()

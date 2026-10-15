@@ -1,4 +1,4 @@
-# HumanInTheLoop: handoff
+# DevLoop: handoff
 
 Read this before you touch the code. It covers what the project is, what changed in the
 session of 14–15 October 2026, what is decided, what is still open, and the traps already found.
@@ -9,7 +9,7 @@ deeper. This file is the map.
 
 ## 1. What this is
 
-**DevLoop**  is an **AI software factory with
+**DevLoop** is an **AI software factory with
 human-in-the-loop governance**. A requirement goes in; AI agents plan it, write it, review it,
 test it; a human approves every change; git and GitHub carry it to a pull request; a human
 merges.
@@ -46,7 +46,7 @@ Anthropic SDK. **Stack it generates:** TypeScript + Vitest only (by decision, se
 | Python | **3.13.16** via `py install 3.13`. The machine default is 3.15, where `zstandard` (pulled in by `langgraph`) has no wheel. `.venv` is built on 3.13. |
 | venv | `.venv/` with the full `requirements.txt` (`streamlit`, `google-generativeai`, `python-dotenv`, `requests`, `langgraph`, `anthropic` 1.14). |
 | Node | **24.20.0 LTS**, npm 11.19 at `C:\Program Files\nodejs`. Needed for tsc, Vitest and npm install inside generated projects. |
-| Run | `run.bat`, or **F5** in VS Code (`.vscode/launch.json`, "HumanInTheLoop (Streamlit)": runs from `.venv`, adds Node to PATH, `runOnSave`). `.vscode/` is gitignored, so it stays local. |
+| Run | `run.bat`, or **F5** in VS Code (`.vscode/launch.json`, "DevLoop (Streamlit)": runs from `.venv`, adds Node to PATH, `runOnSave`). `.vscode/` is gitignored, so it stays local. |
 | `.env` | `ANTHROPIC_API_KEY` (works), `GITHUB_PAT` (fine-grained, scoped to `pete29/hitl-sandbox`: Contents, Pull requests, Issues read/write; works), `GEMINI_API_KEY` (empty). Gitignored. Never print or commit it. |
 | Git identity | Not set globally. Set locally per repo: `Piotr Tomaszewski <piotr.tomaszewski29@gmail.com>`. |
 

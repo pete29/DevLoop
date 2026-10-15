@@ -8,9 +8,9 @@ from models.task import Task
 from services.github_issue_service import GitHubIssueService
 from services.github_service import GitHubError
 
-IN_PROGRESS_LABEL = "hitl:in-progress"
+IN_PROGRESS_LABEL = "devloop:in-progress"
 
-PR_LABEL = "hitl:pr-created"
+PR_LABEL = "devloop:pr-created"
 
 
 def to_link(issue: GitHubIssue) -> IssueLink:
@@ -195,7 +195,7 @@ class IssueAgent:
         """What the issue is told about a finished task."""
 
         lines = [
-            "**Human In The Loop** ran this task.",
+            "**DevLoop** ran this task.",
             "",
             f"**Task:** {task.description.strip()}",
             "",

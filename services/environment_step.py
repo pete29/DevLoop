@@ -14,7 +14,7 @@ LOCK_FILE = "package-lock.json"
 
 COMMIT_MESSAGE = (
     "chore: project scaffolding\n\n"
-    "Written from templates by HumanInTheLoop before the "
+    "Written from templates by DevLoop before the "
     "first task, so every task branch starts from a "
     "project that builds."
 )

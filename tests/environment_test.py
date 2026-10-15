@@ -190,7 +190,7 @@ try:
     print("=" * 80)
 
     # Left on a task branch by an earlier run.
-    git(path, "checkout", "-b", "hitl/earlier-task")
+    git(path, "checkout", "-b", "devloop/earlier-task")
 
     commit_hash = commit_scaffolding(path)
 
@@ -219,7 +219,7 @@ try:
     check(
         "and the earlier branch does not have it",
         "package.json"
-        in git(path, "ls-tree", "--name-only", "hitl/earlier-task"),
+        in git(path, "ls-tree", "--name-only", "devloop/earlier-task"),
         False,
     )
 

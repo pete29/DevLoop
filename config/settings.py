@@ -182,4 +182,4 @@ class Settings:
     # UI
     # =====================
 
-    PAGE_TITLE = "👑 Human In The Loop"
+    PAGE_TITLE = "👑 DevLoop"

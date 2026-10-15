@@ -69,7 +69,7 @@ ENABLE_QA = True
 MAX_REVIEW_LOOPS = 3
 MAX_GATE_FIXES = 2
 
-PAGE_TITLE = "👑 Human In The Loop"
+PAGE_TITLE = "👑 DevLoop"
 ```
 
 ### Why a file goes missing
