@@ -49,11 +49,19 @@ Anthropic SDK. **Stack it generates:** TypeScript + Vitest only (by decision, se
 | `.env` | `ANTHROPIC_API_KEY` (works), `GITHUB_PAT` (fine-grained, scoped to `pete29/hitl-sandbox`: Contents, Pull requests, Issues read/write; works), `GEMINI_API_KEY` (empty). Gitignored. Never print or commit it. |
 | Git identity | Not set globally. Set locally per repo: `Piotr Tomaszewski <piotr.tomaszewski29@gmail.com>`. |
 
-**Running the tests.** Each test is a plain script, not pytest:
+**Running the tests.** Each test is a plain script, not pytest. All offline ones:
+
+```bash
+.venv/Scripts/python tests/run_offline.py
+```
+
+One of them:
 
 ```bash
 PYTHONIOENCODING=utf-8 PYTHONPATH=. .venv/Scripts/python tests/<name>_test.py
 ```
+
+CI (`.github/workflows/tests.yml`, Windows) runs the offline suites on every PR and on `main`.
 
 There are 30 test files. **26 run offline** and all pass. Four call a real model and are skipped
 in routine runs: `architect_test`, `workflow_test`, `langgraph_test`, `ollama_test` (needs a

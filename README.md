@@ -1,5 +1,7 @@
 # 👑 DevLoop
 
+[![tests](https://github.com/pete29/DevLoop/actions/workflows/tests.yml/badge.svg)](https://github.com/pete29/DevLoop/actions/workflows/tests.yml)
+
 An AI software factory with a human gate in the middle.
 
 A requirement goes in. AI agents plan it, write it, review it and test it.
@@ -293,11 +295,22 @@ which a split into issues is suggested.
 
 ## Tests
 
-Each test is a plain script, not pytest. Run them from the project root:
+Each test is a plain script, not pytest. All the offline ones at once, from
+the project root:
+
+```bash
+.venv/Scripts/python tests/run_offline.py
+```
+
+or one of them:
 
 ```bash
 PYTHONIOENCODING=utf-8 PYTHONPATH=. .venv/Scripts/python tests/<name>_test.py
 ```
+
+CI runs the offline suites on every pull request and on `main`
+([`.github/workflows/tests.yml`](.github/workflows/tests.yml)): Windows,
+Python 3.13, Node 24, no secrets.
 
 There are 30 test files. 26 run offline, against fake transports and
 throwaway repositories; `compile_test`, `install_test` and

@@ -1,10 +1,24 @@
 # Testing
 
-Run them as modules, not as paths, or the imports will not resolve:
+Every offline suite at once, each in its own process, with a summary and a
+non-zero exit code on any failure:
 
 ```powershell
-python -m tests.severity_test      # not python tests/severity_test.py
+python tests/run_offline.py
 ```
+
+One suite: as a module, or as a path with `PYTHONPATH` set to the project
+root, or the imports will not resolve:
+
+```powershell
+python -m tests.severity_test
+```
+
+**CI** (`.github/workflows/tests.yml`) runs `tests/run_offline.py` on every
+pull request and on every push to `main`, on Windows with Python 3.13 and
+Node 24. It has no secrets: the suites fake every model and GitHub call,
+and the ones that need a token set a fake one. The four that call a real
+model are not run there.
 
 ---
 
