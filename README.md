@@ -128,6 +128,10 @@ the everyday `GITHUB_PAT` keeps its narrow scope.
 **🧠 Requirements** holds a title and a description: user stories,
 constraints, acceptance criteria. **📥 GitHub Issues** turns an open issue of
 the repository's remote into a requirement; importing it again updates it.
+A requirement belongs to a repository, chosen above its text; opening it
+selects that repository, and choosing another moves it. Saving writes only
+the fields it changed, so a page left open does not undo a change made in
+another.
 
 The other way works too. **📤 Create a GitHub issue** files a requirement
 written here as an issue, so its plan gets the issue's branch and its pull
@@ -407,7 +411,7 @@ CI. Run it before and after changing a prompt, a model or an effort. The
 baseline: 6/6 passed, $0.2454; the package case asked for `@types/node`, and
 the plan case planned 3 tasks with no plan problems.
 
-There are 39 test files. 36 run offline, against fake transports and
+There are 40 test files. 37 run offline, against fake transports and
 throwaway repositories; `compile_test`, `install_test` and
 `test_execution_test` need Node on `PATH`. Three call a real model and are
 skipped in routine runs: `architect_test`, `workflow_test`,

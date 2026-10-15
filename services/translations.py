@@ -612,6 +612,14 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "Repozytorium: {name}",
         "en": "Repository: {name}",
     },
+    "requirement.repository": {
+        "pl": "Repozytorium",
+        "en": "Repository",
+    },
+    "requirement.repository_none": {
+        "pl": "Wybierz repozytorium",
+        "en": "Choose a repository",
+    },
     "requirement.imported_from": {
         "pl": "Zaimportowane ze zgłoszenia {label}",
         "en": "Imported from issue {label}",

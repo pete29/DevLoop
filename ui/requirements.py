@@ -9,6 +9,7 @@ from models.pull_request_info import PullRequestState
 from models.requirement import RequirementSource, now
 from services import plan_branch, usage_ledger
 from ui.actions import continue_plan, plan_pull_request, plan_records, remote_of
+from ui import shared
 from ui.shared import plan_store, repository_path_now, requirement_store, run_store, t
 
 
@@ -18,9 +19,18 @@ def requirement_view() -> None:
     if not st.session_state.requirement:
         return
 
+    # Read again on every run: another tab, or the worker,
+    # may have changed it since this page kept its copy.
+    stored = requirement_store.get_by_id(st.session_state.requirement.id)
+
+    if stored is not None:
+        st.session_state.requirement = stored
+
     requirement = st.session_state.requirement
 
     requirement_header(requirement)
+
+    requirement_repository(requirement)
 
     requirement_plans(requirement)
 
@@ -58,6 +68,71 @@ def requirement_header(requirement) -> None:
                 label=requirement.issue.label,
             )
         )
+
+
+def requirement_repository(requirement) -> None:
+    """Which repository the requirement is for; it can be moved.
+
+    Choosing one also selects it: plans are made, and
+    issues filed, in the repository the requirement is for.
+    """
+
+    if not shared.repositories:
+        return
+
+    ids = [item.id for item in shared.repositories]
+
+    current = requirement.repository_id if requirement.repository_id in ids else None
+
+    chosen = st.selectbox(
+        t("requirement.repository"),
+        ids,
+        index=ids.index(current) if current else None,
+        format_func=lambda item: shared.repositories_by_id[item].name,
+        key=f"requirement-repository-{requirement.id}",
+        placeholder=t("requirement.repository_none"),
+    )
+
+    if not chosen or chosen == requirement.repository_id:
+        return
+
+    requirement.repository_id = chosen
+
+    requirement.updated_at = now()
+
+    # A requirement not saved yet has nothing to update;
+    # its first save writes the repository with the rest.
+    if requirement_store.get_by_id(requirement.id) is not None:
+        requirement_store.update(requirement, "repository_id")
+
+    st.session_state.requirement = requirement
+
+    st.session_state.repository_id = chosen
+
+    st.session_state.issues_from = None
+
+    st.rerun()
+
+
+def store_text(requirement, new_title, new_content) -> None:
+    """Saves the title and text as edited, and only those."""
+
+    requirement.title = new_title
+
+    requirement.content = new_content
+
+    requirement.updated_at = now()
+
+    if not requirement.repository_id:
+        requirement.repository_id = st.session_state.repository_id or ""
+
+    if requirement_store.get_by_id(requirement.id) is None:
+        requirement_store.save(requirement)
+
+    else:
+        requirement_store.update(requirement, "title", "content", "repository_id")
+
+    st.session_state.requirement = requirement
 
 
 def requirement_plans(requirement) -> None:
@@ -201,15 +276,7 @@ def save_requirement(requirement, new_title, new_content) -> None:
 
     if st.button(t("requirement.save"), use_container_width=True):
 
-        requirement.title = new_title
-
-        requirement.content = new_content
-
-        requirement.updated_at = now()
-
-        requirement_store.save(requirement)
-
-        st.session_state.requirement = requirement
+        store_text(requirement, new_title, new_content)
 
         st.rerun()
 
@@ -224,13 +291,7 @@ def generate_plan(requirement, new_title, new_content) -> None:
         or not new_content.strip(),
     ):
 
-        requirement.title = new_title
-
-        requirement.content = new_content
-
-        requirement.updated_at = now()
-
-        requirement_store.save(requirement)
+        store_text(requirement, new_title, new_content)
 
         with st.spinner(t("plan.planner_spinner")):
 
@@ -353,11 +414,9 @@ def create_issue_button(requirement, new_title, new_content, requirement_remote)
 
             requirement.source = RequirementSource.GITHUB_ISSUE
 
-            requirement.updated_at = now()
+            store_text(requirement, new_title, new_content)
 
-            requirement_store.save(requirement)
-
-            st.session_state.requirement = requirement
+            requirement_store.update(requirement, "issue", "source")
 
             st.session_state.issues_from = None
 

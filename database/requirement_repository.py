@@ -91,6 +91,47 @@ class RequirementRepository:
 
         self.connection.commit()
 
+    def update(self, requirement: Requirement, *fields: str) -> None:
+        """Writes only the named fields of a stored requirement.
+
+        The page keeps a requirement between its runs, and a
+        whole-row save from a page opened earlier put back
+        what another had changed since -- the repository it
+        had been moved to, for one.
+        """
+
+        allowed = {"repository_id", "title", "content", "source", "issue"}
+
+        unknown = set(fields) - allowed
+
+        if unknown:
+            raise ValueError(f"Not a requirement field: {sorted(unknown)}")
+
+        values = {
+            "repository_id": requirement.repository_id,
+            "title": requirement.title,
+            "content": requirement.content,
+            "source": requirement.source.value,
+            "issue": self._issue_json(requirement),
+        }
+
+        columns = [*fields, "updated_at"]
+
+        cursor = self.connection.cursor()
+
+        cursor.execute(
+            "UPDATE requirements SET "
+            + ", ".join(f"{column} = ?" for column in columns)
+            + " WHERE id = ?",
+            (
+                *[values[field] for field in fields],
+                requirement.updated_at,
+                requirement.id,
+            ),
+        )
+
+        self.connection.commit()
+
     def delete(self, requirement_id: str) -> None:
 
         cursor = self.connection.cursor()

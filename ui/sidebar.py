@@ -281,6 +281,10 @@ def requirements_section() -> None:
                 requirement_store.get_by_id(item.id)
             )
 
+            # Its repository is the one to plan in.
+            if item.repository_id in shared.repositories_by_id:
+                st.session_state.repository_id = item.repository_id
+
             st.session_state.plan = None
 
             st.rerun()

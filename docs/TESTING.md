@@ -330,6 +330,10 @@ instead of running it in the page.
 git cannot be added until **🌱 Make it a repository** runs `git init`; a
 folder inside a repository offers the repository instead.
 
+`tests.requirement_form_test` — the real page, headless: opening a
+requirement selects its repository, choosing another moves it, and a save
+from a page holding an older copy keeps the move.
+
 `tests.review_feedback_test` — inline comments, review text and the
 conversation are read, oldest first, with bare approvals and DevLoop's own
 comments left out, and only reads are sent; an inline comment knows its file
