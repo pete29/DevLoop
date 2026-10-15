@@ -256,16 +256,16 @@ without undoing the approval or the push.
 
 ---
 
-## Suites that need Ollama
+## Suites that call a real model
 
-Minutes rather than seconds, and they exercise the real model:
+Minutes rather than seconds, and they spend tokens on the configured
+provider (Claude by default), so they are skipped in routine runs:
 
 ```powershell
-python -m tests.ollama_test        # the connection and the model
 python -m tests.architect_test     # a stateful review with history
-python -m tests.qa_test            # test generation
 python -m tests.workflow_test      # the whole pipeline, one task
 python -m tests.langgraph_test     # the same agents wired through LangGraph
+python -m tests.ollama_test        # the connection and the model; needs a local Ollama
 ```
 
 ---

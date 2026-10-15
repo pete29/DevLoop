@@ -291,7 +291,7 @@ its own test.
 | `github_issue_service` | issues: read, comment, label, close |
 | `review_history_formatter` | previous rounds, for the Architect |
 | `code_cleaner` | strips fences and reasoning blocks |
-| `llm_factory` | picks Ollama or Gemini |
+| `llm_factory` | picks Claude (per role), Ollama or Gemini |
 
 ---
 

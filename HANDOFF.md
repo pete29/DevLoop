@@ -69,7 +69,16 @@ polluting the real DB, set `Settings.DATABASE_NAME` to a temp file **before** im
 
 ## 3. What was done in this session
 
-### Committed (on `master`, local, **4 commits ahead of `origin/master`, not pushed**)
+### Repository move (15 October 2026)
+
+The project moved from `C:\Projects\HumanInTheLoop` (branch `master`) to
+**`C:\Projects\DevLoop`**, remote `https://github.com/pete29/DevLoop.git`, branch **`main`**.
+The old history did not come along: everything below, committed and uncommitted alike, landed
+here as one commit, `587c0c2` (*feat: bring the human-in-the-loop factory into this
+repository*), on top of the GitHub-created initial commits. Not pushed yet. The commit hashes
+in the table below refer to the old repository.
+
+### Committed in the old repository (`master`)
 
 | Commit | What |
 |---|---|
@@ -78,7 +87,7 @@ polluting the real DB, set `Settings.DATABASE_NAME` to a temp file **before** im
 | `16c358c` feat: make the environment step 0 of every plan | `services/environment_step.py` plus a UI panel: write scaffolding from templates → npm install (human button) → commit scaffolding on the base branch. Tasks stay disabled until Step 0 is done (explicit override checkbox). A task outside a plan commits the scaffolding it wrote. |
 | `6964103` feat: give a plan one branch, and undo a rejected task's files | `services/plan_branch.py`: one branch per plan (`feature/plan-<id8>-<slug>`), checked out **before** generation. Tasks commit in run order (`GitAgent.unresolved_before`). `services/task_rollback.py`: reject deletes created files and restores tracked ones (`git checkout -- <paths>`). `Task.branch` and `Task.created_files` added, with a DB migration. |
 
-### Uncommitted (in the working tree; **commit before moving repos**)
+### Uncommitted in the old repository (now part of `587c0c2`)
 
 1. **`git fetch` allowed in one shape:** `fetch --quiet <remote>`, no refspec, so it only
    touches `origin/*`. Also `merge-base --is-ancestor` (read-only). `GitService.start_point()`
@@ -196,7 +205,7 @@ are all explicit human actions. Nothing installs, commits or pushes on its own.
 - **Goal set by the user:** a tool that meets requirements *without errors* and *without wasting
   tokens*. Cheap deterministic checks before expensive model calls; measure cost before
   optimising.
-- **This repo (HumanInTheLoop itself): commit straight to `master`**, no feature branches.
+- **This repo (the factory itself, now DevLoop): commit straight to `main`**, no feature branches.
   **Push only when asked.** The repos the *factory* manages are the opposite: branches and PRs
   are the product.
 - **Commit messages:** `feat:` / `fix:` plus a lowercase, behaviour-describing subject, and a body
@@ -230,7 +239,8 @@ are all explicit human actions. Nothing installs, commits or pushes on its own.
 
 ## 9. Memory files
 
-The previous agent kept notes in
+Agent memory now lives in `C:\Users\piotr\.claude\projects\c--Projects-DevLoop\memory\`
+(`working-preferences.md`). The notes kept before the move are in
 `C:\Users\piotr\.claude\projects\c--Projects-HumanInTheLoop\memory\`
-(`factory-vision.md`, `commit-to-master.md`). §7 contains everything in them. If the repo
-moves, that path changes with the project folder name.
+(`factory-vision.md`, `commit-to-master.md`); §7 contains everything in them. If the repo
+moves again, the path changes with the project folder name.

@@ -5,38 +5,53 @@
 ## Installing
 
 ```powershell
-git clone https://github.com/ptomaszewski29/HumanInTheLoop.git
-cd HumanInTheLoop
+git clone https://github.com/pete29/DevLoop.git
+cd DevLoop
 
-python -m venv .venv
+py -3.13 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 
 pip install -r requirements.txt
 ```
 
-Python 3.11 or newer; developed on 3.14.
+**Python 3.13.** Newer versions fail on `zstandard` (pulled in by
+`langgraph`), which has no wheel for them yet.
+
+**Node.js 24 LTS** on `PATH`: `tsc`, Vitest and `npm install` run inside
+the generated projects. A terminal opened before Node was installed may
+still have the old `PATH`.
 
 ---
 
-## Ollama
+## Providers
 
-The default provider is a local Ollama, not a cloud API.
+The default provider is **Claude**, with a model chosen per agent; see
+**Claude (the default)** below. Ollama and Gemini remain as alternatives:
+the agents talk to whatever `LLMFactory` returns.
+
+To run on a local Ollama instead:
 
 ```powershell
 ollama pull qwen2.5-coder:3b
 ollama serve
 ```
 
-The app expects it on `http://localhost:11434`. If Ollama is not running,
-generation fails with a connection error; everything else in the app still
-works.
+and set `LLM_PROVIDER = LLMProvider.OLLAMA`. The app expects it on
+`http://localhost:11434`. The Ollama sections below apply only then.
 
 ---
 
 ## `config/settings.py`
 
 ```python
-LLM_PROVIDER = LLMProvider.OLLAMA   # or LLMProvider.GEMINI
+LLM_PROVIDER = LLMProvider.CLAUDE   # or OLLAMA, GEMINI
+
+CLAUDE_MODEL = "claude-opus-5-5"    # for a role missing from CLAUDE_MODELS
+CLAUDE_EFFORT = "high"
+CLAUDE_MODELS = {...}               # per role, see below
+CLAUDE_EFFORTS = {...}
+CLAUDE_PRICES = {...}               # $ per million tokens, for the cost report
+CLAUDE_MAX_TOKENS = 64000
 
 OLLAMA_MODEL = "qwen2.5-coder:3b"
 OLLAMA_URL = "http://localhost:11434/api/generate"
@@ -52,6 +67,7 @@ DATABASE_NAME = "human_in_the_loop.db"
 ENABLE_ARCHITECT = True
 ENABLE_QA = True
 MAX_REVIEW_LOOPS = 3
+MAX_GATE_FIXES = 2
 
 PAGE_TITLE = "👑 Human In The Loop"
 ```
@@ -260,9 +276,14 @@ can no longer see.
 generous on purpose: feeding the review history into the Architect makes
 prompts grow, and a review round on a local 8B model can take minutes.
 
-**`MAX_REVIEW_LOOPS`** — how often the Architect may send work back. Three
-rounds is usually enough to clear structural findings. Raising it costs
-proportionally more time; it does not make the model smarter.
+**`MAX_REVIEW_LOOPS`** — how many times the Architect may review one task.
+Raising it costs proportionally more time and tokens; it does not make the
+model smarter.
+
+**`MAX_GATE_FIXES`** — how many fixes the free checks (structural validator
+and `tsc`) may ask for before each review. A separate budget on purpose:
+when the two shared one, compile errors used up the rounds the Architect's
+blockers needed, and those blockers were never fixed.
 
 **`OLLAMA_THINKING`** — leave `False`. With thinking on, some models answer
 in the reasoning field and return an empty response; the error message says
@@ -315,14 +336,17 @@ Everything downstream is unchanged — the agents talk to whatever
 ## `.env`
 
 ```env
-# Only when LLM_PROVIDER = GEMINI
-GEMINI_API_KEY=your_key
+# The default provider
+ANTHROPIC_API_KEY=your_key
 
-# Only for the pull request stage
+# Only for issues, pull requests and delivery feedback
 GITHUB_PAT=your_token
+
+# Only when LLM_PROVIDER = GEMINI
+GEMINI_API_KEY=
 ```
 
-Neither is needed to generate, review and commit code on a local Ollama.
+Only `ANTHROPIC_API_KEY` is needed to generate, review and commit code.
 
 `.env` is in `.gitignore`. Nothing in it is written to the database.
 
@@ -330,11 +354,16 @@ Neither is needed to generate, review and commit code on a local Ollama.
 
 ## GitHub token
 
-Needed only to open pull requests. Without it the button is disabled and
-says which setting is missing; nothing else is affected.
+Needed for importing issues, pushing feedback to them, opening and updating
+a plan's pull request, and checking whether it was merged. Without it the
+GitHub buttons are disabled and say which setting is missing; nothing else
+is affected.
 
-**Scope:** `repo` on a classic token, or `Pull requests: write` on a
-fine-grained one, for the repositories you will target.
+**Scope:** prefer a **fine-grained** token limited to the repositories you
+will target, with `Contents`, `Pull requests` and `Issues` set to read and
+write. A classic token with `repo` also works, but reaches every repository
+you own. A fine-grained token is 93 characters; if GitHub answers 401,
+check the length in `.env` before anything else.
 
 **Create it:** GitHub → Settings → Developer settings → Personal access
 tokens.
@@ -366,7 +395,7 @@ streamlit run app.py
 
 SQLite, `human_in_the_loop.db` in the project root, in `.gitignore`.
 
-Two tables: `tasks` and `plans`. Columns added by later sprints are applied
+Four tables: `repositories`, `requirements`, `plans` and `tasks`. Columns added by later sprints are applied
 by a migration that runs when the app starts, so an older database keeps
 working — it simply reports empty values for anything it predates.
 
@@ -383,4 +412,5 @@ sandbox: generation overwrites files whose paths collide.
 
 For the commit, push and pull request stages the folder must be a git
 repository with a remote named `origin`, and it needs a base branch
-(`main` or `master`) for task branches to be cut from.
+(`main` or `master`) for plan branches to be cut from. Each plan gets one
+branch, `feature/plan-<id8>-<slug>`, and one pull request.
