@@ -219,6 +219,14 @@ Rules:
   resolved.
 - Write "None" under a heading that has no
   entries.
+- Write every finding in English, even when
+  the task or the code is in another
+  language. Your answer is parsed by English
+  rules.
+- One finding is one bullet holding one
+  paragraph. Never put a list inside a
+  finding: write examples and cases as
+  sentences, separated by semicolons.
 
 Return exactly in this format, with no
 extra commentary:

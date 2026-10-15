@@ -88,6 +88,37 @@ check(
     ["Consider strategy pattern"],
 )
 
+# From the first live run: a finding that introduces a
+# list, written at the same indent as the findings.
+LISTED = """WARNINGS:
+- Matches invisible characters. In practice it gives false positives:
+- An NFD password passes.
+- A trailing newline passes.
+
+SUGGESTIONS:
+- Accept the message in the constructor.
+- Share a PatternRule.
+"""
+
+check(
+    "a list inside a finding stays in that finding",
+    ReviewParser.section(LISTED, "warnings"),
+    [
+        "Matches invisible characters. In practice it gives "
+        "false positives: An NFD password passes. A trailing "
+        "newline passes."
+    ],
+)
+
+check(
+    "findings without a colon are still separate",
+    ReviewParser.section(LISTED, "suggestions"),
+    [
+        "Accept the message in the constructor.",
+        "Share a PatternRule.",
+    ],
+)
+
 print()
 print("=" * 80)
 print("RECOMMENDATION RULES")

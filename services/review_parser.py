@@ -140,6 +140,16 @@ class ReviewParser:
 
         items: list[str] = []
 
+        # A finding that ends in a colon introduces a list,
+        # and the model writes that list at the same indent
+        # as the findings themselves. Those bullets belong
+        # to it: split off, "In practice it gives false
+        # positives:" reached the pull request as a finding
+        # of its own, and each example as another. Merging
+        # too much keeps every word; splitting loses the
+        # meaning.
+        open_list = False
+
         for line in block.splitlines():
 
             stripped = line.strip()
@@ -157,8 +167,17 @@ class ReviewParser:
 
             text = text.strip("*").strip()
 
-            if text:
-                items.append(text)
+            if not text:
+                continue
+
+            if open_list and items:
+                joiner = " " if items[-1].endswith((":", ".")) else "; "
+                items[-1] = f"{items[-1]}{joiner}{text}"
+                continue
+
+            items.append(text)
+
+            open_list = text.endswith(":")
 
         return [
             item
