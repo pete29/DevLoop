@@ -232,7 +232,8 @@ Each task shows its tokens and cost per agent.
 
 **What it costs.** Every task stores its dollars; the plan shows its total —
 planning, every attempt, every revision, and attempts that failed before a
-record was saved — and the sidebar shows the month. `PLAN_COST_LIMIT`
+record was saved — and the sidebar shows the month; **📊 Cost history**
+there charts the last 30 days and lists plans by cost. `PLAN_COST_LIMIT`
 (default $5, 0 for none) stops a background run **before** a task once the
 plan has spent that much, never inside one; the run buttons are disabled
 and the plan says why.
@@ -423,7 +424,7 @@ docs/          architecture, workflow, security, configuration, testing, roadmap
 app.py         the Streamlit page: session state, then the parts below, in order
 ui/            the page's parts: shared (stores, language), actions (runs,
                revisions, plans continued), sidebar, repositories,
-               requirements, plans, tasks (the task window); every visible
+               requirements, plans, tasks (the task window), costs; every visible
                string in Polish and English
 ```
 

@@ -269,7 +269,8 @@ it ended, and how many of its tasks wait for approval.
 Before each task the worker adds up what the plan has cost — planning,
 every attempt and revision, failed attempts — and stops (`STOPPED`, "Cost
 limit reached") once that reaches `PLAN_COST_LIMIT`. The plan shows the
-running total; the sidebar shows the month.
+running total; the sidebar shows the month, and **📊 Cost history** the
+last 30 days per day and every plan by what it cost.
 
 A worker that dies writes nothing, so every page load checks the process
 of each active run. One that is gone marks the run `INTERRUPTED`, naming the

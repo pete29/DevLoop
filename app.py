@@ -13,6 +13,7 @@ from ui.actions import start_run
 from ui.plans import plan_view
 from ui.requirements import requirement_view
 from ui.shared import plan_store, run_store, show_message, t
+from ui.costs import cost_view
 from ui.sidebar import sidebar
 from ui.tasks import close_task, task_view
 
@@ -68,6 +69,9 @@ if st.session_state.task is None:
     show_message()
 
 sidebar()
+
+if st.session_state.get("show_costs"):
+    cost_view()
 
 if st.session_state.task is None:
 

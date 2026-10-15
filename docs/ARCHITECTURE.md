@@ -380,7 +380,7 @@ and was removed: only its own test used it.
 | `notify` | a Windows toast when a background run ends, through PowerShell, its text passed as environment variables |
 | `ci_checks` | a pull request's check runs and a failed job's log, read only; a failure as revision notes |
 | `packages` | which npm packages the code imports and the repository lacks; valid package names |
-| `costs` | a task's dollars (stored, or read from an older usage line), a plan's total, a month's, the limit |
+| `costs` | a task's dollars (stored, or read from an older usage line), a plan's total, a month's, per day for 30 days, per plan, the limit |
 | `prompt_cache` | `ask(llm, cached, prompt)`: repeated blocks first, cached by Claude, concatenated for other providers |
 | `review_history_formatter` | previous rounds, for the Architect |
 | `code_cleaner` | strips fences and reasoning blocks |

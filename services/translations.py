@@ -445,6 +445,38 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "Plan osiągnął limit kosztów (${limit}, PLAN_COST_LIMIT). Nowe zadania nie startują; podnieś limit w config/settings.py, jeśli chcesz kontynuować.",
         "en": "The plan has reached its cost limit (${limit}, PLAN_COST_LIMIT). No new task starts; raise the limit in config/settings.py to carry on.",
     },
+    "cost.history": {
+        "pl": "📊 Historia kosztów",
+        "en": "📊 Cost history",
+    },
+    "cost.history_heading": {
+        "pl": "📊 Koszty: ostatnie 30 dni",
+        "en": "📊 Costs: the last 30 days",
+    },
+    "cost.history_total": {
+        "pl": "Razem w tych 30 dniach: ${spent}",
+        "en": "In all over these 30 days: ${spent}",
+    },
+    "cost.per_plan": {
+        "pl": "Plany, od najdroższego",
+        "en": "Plans, costliest first",
+    },
+    "cost.column_day": {
+        "pl": "Dzień",
+        "en": "Day",
+    },
+    "cost.column_usd": {
+        "pl": "USD",
+        "en": "USD",
+    },
+    "cost.column_plan": {
+        "pl": "Plan",
+        "en": "Plan",
+    },
+    "cost.close": {
+        "pl": "Zamknij historię kosztów",
+        "en": "Close the cost history",
+    },
     "cost.month": {
         "pl": "💰 Ten miesiąc: ${spent}",
         "en": "💰 This month: ${spent}",

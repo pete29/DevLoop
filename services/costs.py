@@ -6,6 +6,7 @@ nothing stopped a run that kept going.
 """
 
 import re
+from datetime import date, timedelta
 
 from config.settings import Settings
 
@@ -75,6 +76,50 @@ def month_spent(tasks, plans, month: str) -> float:
         for plan in plans
         if plan.created_at.startswith(month)
     )
+
+
+def daily(tasks, plans, today: date, days: int = 30) -> list[tuple[str, float]]:
+    """Dollars per day for the last `days` days, today included.
+
+    Every day is listed, a day with nothing spent as 0: a
+    gap in a chart reads as missing data, not as a quiet day.
+    A plan's planning and failed attempts count on the day
+    the plan was made.
+    """
+
+    first = today - timedelta(days=days - 1)
+
+    spent = {
+        (first + timedelta(days=offset)).isoformat(): 0.0
+        for offset in range(days)
+    }
+
+    for task in tasks:
+        day = task.created_at[:10]
+        if day in spent:
+            spent[day] += task_cost(task)
+
+    for plan in plans:
+        day = plan.created_at[:10]
+        if day in spent:
+            spent[day] += plan.planning_cost + plan.failed_cost
+
+    return [(day, round(value, 4)) for day, value in spent.items()]
+
+
+def per_plan(tasks, plans) -> list[tuple[str, str, float]]:
+    """(plan title, created day, dollars) per plan, costliest first."""
+
+    rows = [
+        (
+            (plan.epic.strip().splitlines() or ["-"])[0][:80],
+            plan.created_at[:10],
+            round(plan_spent(plan, tasks), 4),
+        )
+        for plan in plans
+    ]
+
+    return sorted(rows, key=lambda row: row[2], reverse=True)
 
 
 def limit() -> float:

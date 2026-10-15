@@ -340,7 +340,9 @@ month counts only its own; the limit and its "0 means none"; costs survive
 storage, and failed-attempt costs add up in the database rather than in a
 copy. `tests.plan_runner_test` also checks that a run stops **before** the
 task that would start over the limit, and that a failed attempt's spend
-lands on the plan.
+lands on the plan. The history lists every one of the last 30 days, 0 for a quiet one, counts
+a plan's own costs on its day, leaves later tasks out, and orders plans by
+cost.
 
 `tests.prompt_cache_test` — caching hits only on identical bytes, so that
 is what it pins down: the Developer's planning call and every file call open

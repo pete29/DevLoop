@@ -108,6 +108,41 @@ try:
 
     print()
     print("=" * 80)
+    print("THE HISTORY: PER DAY AND PER PLAN")
+    print("=" * 80)
+
+    from datetime import date
+
+    days = costs.daily(tasks_of_month, [plan], date(2026, 10, 15), days=30)
+
+    check("thirty days, today last", (len(days), days[-1][0], days[0][0]), (30, "2026-10-15", "2026-09-16"))
+
+    by_day = dict(days)
+
+    check(
+        "a quiet day is 0, not missing; a plan's own costs count on its day",
+        (by_day["2026-10-02"], by_day["2026-10-01"], by_day["2026-10-15"], by_day["2026-09-30"]),
+        (0.0, 1.0, 0.15, 5.0),
+    )
+
+    check(
+        "a task after the window is left out",
+        "2026-10-31" in by_day,
+        False,
+    )
+
+    other = Plan(epic="Second plan\n\nmore", created_at="2026-10-16T00:00:00+00:00")
+
+    rows = costs.per_plan(records + [Task(plan_id=other.id, cost=2.0)], [plan, other])
+
+    check(
+        "plans by what they cost, the costliest first, titled by their first line",
+        [(title, round(spent, 2)) for title, _, spent in rows],
+        [("Second plan", 2.0), ("-", 1.05)],
+    )
+
+    print()
+    print("=" * 80)
     print("THE LIMIT")
     print("=" * 80)
 

@@ -40,6 +40,10 @@ def sidebar() -> None:
             )
         )
 
+        if st.button(t("cost.history"), key="cost-history", use_container_width=True):
+            st.session_state.show_costs = True
+            st.rerun()
+
         st.divider()
 
         st.header(t("repo.heading"))
