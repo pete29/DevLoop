@@ -305,6 +305,15 @@ excluded.
 `tests.environment_test` — Step 0: scaffolding from templates, the install
 button, and the scaffolding commit.
 
+`tests.repository_setup_test` — a folder's name becomes the repository's;
+a new repository's name and place are checked first; a local-only one is a
+repository on `main` with no remote; one "on GitHub" (faked, with a local
+bare repository standing in) asks for a private repository with a first
+commit, sets `origin`, and leaves `main` tracking `origin/main`. A GitHub
+refusal leaves nothing behind. Every other shape of `init` and `remote add`
+is refused, and so are templates, teams and organisations for a new
+repository.
+
 ## Suites that call a real model
 
 Minutes rather than seconds, and they spend tokens on the configured

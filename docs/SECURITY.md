@@ -50,7 +50,7 @@ run continues.
 and refuses anything not on this list:
 
 **Allowed:** `add`, `branch`, `checkout`, `commit`, `diff`, `fetch`,
-`ls-files`, `merge-base`, `push`, `remote`, `rev-parse`, `status`,
+`init`, `ls-files`, `merge-base`, `push`, `remote`, `rev-parse`, `status`,
 `symbolic-ref`
 
 **Shared branches are refused.** A push to `main`, `master`, `develop`,
@@ -61,11 +61,16 @@ but a rule that holds only because nobody exercises it is not a rule.
 **Refused:** `pull`, `clone`, `rebase`, `merge`, `reset`, `tag`,
 `cherry-pick`, `submodule`
 
-Four commands are only safe in one shape, so they are checked at subcommand
+Some commands are only safe in one shape, so they are checked at subcommand
 level:
 
-- `remote` may only `get-url`. It may not add, rewrite, rename or remove a
-  remote.
+- `remote` may `get-url`, and `add` only as `remote add origin <url>` — no
+  other name, no flags, no credentials in the URL — and only into a
+  repository that has no origin (`GitService.add_origin`). It may not
+  rewrite, rename or remove a remote. Adding exists for "New repository".
+- `init` may only be `init --quiet --initial-branch=<name>`, never `--bare`,
+  `--template` or a separate git dir, and only in a folder that is not a
+  repository yet. Also for "New repository".
 - `fetch` may only be `fetch --quiet <remote>`: no refspec, so it updates
   `origin/*` and nothing else — never a local branch, never the working
   tree. It is allowed because without it a pull request merged on GitHub
@@ -136,6 +141,7 @@ exist, and no others:
 | `GET /repos/{owner}/{repo}/issues/{n}` | read one issue |
 | `POST /repos/{owner}/{repo}/issues` | file an issue: `title` and `body` only, on a human's click |
 | `POST /repos/{owner}/{repo}/issues/{n}/sub_issues` | link a split's child under its parent: `sub_issue_id` only, never `replace_parent` |
+| `POST /user/repos` | "New repository": `name`, `private`, `description`, `auto_init` only — never a template, a team or an organisation; with `GITHUB_ADMIN_PAT` when set |
 | `POST /repos/{owner}/{repo}/issues/{n}/comments` | report progress |
 | `PATCH /repos/{owner}/{repo}/issues/{n}` | labels and state only |
 | `PATCH /repos/{owner}/{repo}/pulls/{n}` | title and body only |

@@ -55,7 +55,7 @@ Anthropic SDK. **Stack it generates:** TypeScript + Vitest only (by decision, se
 PYTHONIOENCODING=utf-8 PYTHONPATH=. .venv/Scripts/python tests/<name>_test.py
 ```
 
-There are 29 test files. **25 run offline** and all pass. Four call a real model and are skipped
+There are 30 test files. **26 run offline** and all pass. Four call a real model and are skipped
 in routine runs: `architect_test`, `workflow_test`, `langgraph_test`, `ollama_test` (needs a
 local Ollama). Node must be on PATH for `compile_test`, `install_test` and
 `test_execution_test`.
@@ -94,6 +94,7 @@ branch **`main`**. The old history did not come along: it all landed as one comm
 | `10c26fa` | **Send back for revision:** a third answer beside accept/reject. Chosen Architect findings and/or human notes go to the Developer as blockers; `WorkflowOrchestrator.revise()` edits the files on disk and reruns checks, review (history carried on), QA and tests. Notes are appended to the task description. The old record becomes `TaskStatus.REVISED`; the plan points at the new one. |
 | `f9af41a` | **Issues both ways:** "Create a GitHub issue" from a requirement; "Split into issues" (`agents/story_splitter.py`, planner model, 2–6 stories, human edits and confirms). Allow list: `POST /issues` with `title`/`body` only. Plans with more than `SPLIT_HINT_TASKS` (6) tasks suggest the split. |
 | `5d1855e` | split children linked as real GitHub **sub-issues** (`POST /issues/{n}/sub_issues`, `sub_issue_id` only); the sidebar shows issues as a tree with parent progress; the plan shows its branch (local / on GitHub / link), DevLoop commits on it, and when it continues an earlier plan. |
+| `2dfa3ff` | **Repositories from the file system:** "Choose a folder…" (tkinter `askdirectory`, the app runs locally) fills path and name; "New repository" (`services/repository_setup.py`) creates a GitHub repo with `auto_init` first, then `init` → `remote add origin` → `fetch` → checkout `main` tracking `origin/main`. Git allow list: `init` (one shape), `remote add origin` (once, no credentials). GitHub: `POST /user/repos` (name, private, description, auto_init). Token: `GITHUB_ADMIN_PAT` if set, else `GITHUB_PAT`. Not tried live: the current PAT is scoped to hitl-sandbox and cannot create repositories. |
 | `637da3d` | **The planner sees the code:** file listing with exports plus referenced files in full; tasks declare `creates` / `modifies`; `services/plan_validator.py` reports false assumptions (creates an existing file, modifies a missing one, file dependency without task dependency, two creators, test files, unsafe paths). File lists reach the Developer in the task prompt (`Create: …`, `Modify: …`). |
 
 ---
@@ -137,15 +138,17 @@ branch **`main`**. The old history did not come along: it all landed as one comm
 | UI | `app.py` (about 3,500 lines), `services/translations.py` | Every visible string goes through `t()`, in Polish and English. `translation_test` enforces it. The task view is `task_view()` shown via `st.dialog(width="large")`. |
 
 **Git safety model (current):**
-- **Allowed:** `add`, `branch`, `checkout`, `commit`, `diff`, `fetch` (one shape), `ls-files`,
-  `merge-base --is-ancestor`, `push` (no force, delete, mirror or tags; never to
-  `main`/`master`/`develop`/`release`/`trunk`), `remote get-url`, `rev-parse`, `status`,
+- **Allowed:** `add`, `branch`, `checkout`, `commit`, `diff`, `fetch` (one shape), `init`
+  (one shape, new folders only), `ls-files`, `merge-base --is-ancestor`, `push` (no force,
+  delete, mirror or tags; never to `main`/`master`/`develop`/`release`/`trunk`),
+  `remote get-url`, `remote add origin <url>` (only without an origin), `rev-parse`, `status`,
   `symbolic-ref`.
 - **Refused:** `pull`, `clone`, `merge`, `rebase`, `reset`, `tag`, `cherry-pick`, `submodule`.
 
 **GitHub writes (all on a human's click):** create PR; PATCH PR `title`/`body`; create issue
 (`title`/`body`); link sub-issue (`sub_issue_id`); comment on an issue; PATCH issue
-`labels`/`state`.
+`labels`/`state`; create a repository (`name`/`private`/`description`/`auto_init`, with
+`GITHUB_ADMIN_PAT` when set).
 
 **Human gates:** commit, push, PR creation, npm install, scaffolding commit, filing issues,
 merge (on GitHub) are all explicit human actions. Nothing installs, commits, files or pushes on
@@ -198,6 +201,8 @@ its own.
   sub-issues; small ones stay one branch with a commit per task. The split is proposed by the
   model and confirmed by a human; nothing is filed automatically.
 - **Merge PRs with "Create a merge commit"**, so one commit per task survives on `main`.
+- **"New repository" creates on GitHub too** (decided 2026-10-15), private by default, with a
+  separate `GITHUB_ADMIN_PAT` for the account-level permission it needs.
 - **Keep the `.md` files current** with every change, README included.
 
 ---

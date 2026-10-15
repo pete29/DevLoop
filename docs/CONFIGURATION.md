@@ -348,6 +348,9 @@ ANTHROPIC_API_KEY=your_key
 # Only for issues, pull requests and delivery feedback
 GITHUB_PAT=your_token
 
+# Only for "New repository" on GitHub
+GITHUB_ADMIN_PAT=
+
 # Only when LLM_PROVIDER = GEMINI
 GEMINI_API_KEY=
 ```
@@ -373,6 +376,15 @@ check the length in `.env` before anything else.
 
 **Create it:** GitHub → Settings → Developer settings → Personal access
 tokens.
+
+**Creating repositories needs more.** "New repository" calls
+`POST /user/repos`, which needs `Administration: write` on the account —
+far more than the everyday work needs. Put such a token in
+`GITHUB_ADMIN_PAT`: it is used for that one call and nothing else, and
+`GITHUB_PAT` keeps its narrow, per-repository scope. Without
+`GITHUB_ADMIN_PAT` the call falls back to `GITHUB_PAT`, and GitHub answers
+403 if that token cannot create repositories. A new repository's own work
+(issues, pull requests) then needs `GITHUB_PAT` to include it.
 
 The token is read from the environment at call time, never stored, and
 stripped from error text before anything is shown or saved. If it ever
@@ -413,8 +425,10 @@ To start clean, delete the file. It is recreated on the next run.
 
 Registered in the app, not in configuration. Sidebar → **📦 Repositories**.
 
-A repository is a name and a path to an existing folder. Point it at a
-sandbox: generation overwrites files whose paths collide.
+A repository is a name and a path to an existing folder, chosen with the
+system's folder window or typed. **🆕 New repository** makes one: a folder
+with git, and by default a private GitHub repository as its origin. Point
+the factory at a sandbox: generation overwrites files whose paths collide.
 
 For the commit, push and pull request stages the folder must be a git
 repository with a remote named `origin`, and it needs a base branch

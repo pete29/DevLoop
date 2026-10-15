@@ -339,6 +339,7 @@ its own test.
 | `github_service` | the GitHub calls, behind an allow list |
 | `github_issue_service` | issues: read, create, link sub-issues, comment, label, close; the parent/child tree |
 | `plan_validator` | a plan's file claims against the folder and the dependency graph |
+| `repository_setup` | the folder window, and "New repository": GitHub first, then a clone made of allowed git steps |
 | `plan_branch` | one branch per plan, or per issue: `feature/issue-<n>-<slug>` |
 | `task_rollback` | undoes a rejected task's files; refuses a committed one |
 | `usage_ledger` | tokens and dollars per agent, per run |

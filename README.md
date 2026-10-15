@@ -47,6 +47,7 @@ code it generates is **TypeScript with Vitest**, and only that.
 | git | branches, commits and pushes in the target repository |
 | An Anthropic API key | the default provider |
 | A GitHub fine-grained token | optional; issues, push feedback and pull requests |
+| A second token with `Administration: write` | optional; only for creating GitHub repositories (`GITHUB_ADMIN_PAT`) |
 
 Ollama and Gemini remain as alternative providers; see
 [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
@@ -72,6 +73,9 @@ ANTHROPIC_API_KEY=your_key
 
 # Only for issues, pull requests and delivery feedback
 GITHUB_PAT=your_token
+
+# Only for "New repository" on GitHub (Administration: write)
+GITHUB_ADMIN_PAT=
 
 # Only when LLM_PROVIDER = GEMINI
 GEMINI_API_KEY=
@@ -100,10 +104,22 @@ or, with the virtual environment active, `streamlit run app.py`. In VS Code,
 
 ### 1. Register a repository
 
-Sidebar → **📦 Repositories** → **➕ Add repository**, with a name and the
-path to an existing folder. Point it at a sandbox: generated files overwrite
-files whose paths collide, which shows up afterwards in the diff as
-`modified`.
+Sidebar → **📦 Repositories** → **➕ Add repository** → **📁 Choose a
+folder…** opens the system's folder window and fills the path and the name
+(the folder's). Typing a path works too, and fills the name. The added
+repository becomes the selected one. Point it at a sandbox: generated files
+overwrite files whose paths collide, which shows up afterwards in the diff
+as `modified`.
+
+**🆕 New repository** creates one: a folder with git on `main` and, by
+default, a private GitHub repository set as its `origin`, ready for plans,
+pull requests and issues. GitHub goes first and creates the repository with
+a first commit, so `main` exists and a pull request has a base; the local
+side is then `init`, `remote add origin`, `fetch` and a checkout of `main`
+(a clone made of allowed steps — `clone` itself is refused). If GitHub
+refuses, nothing is left behind locally. Creating a repository needs a
+token with `Administration: write`: `GITHUB_ADMIN_PAT` is used when set, so
+the everyday `GITHUB_PAT` keeps its narrow scope.
 
 ### 2. Write a requirement, or import one
 
@@ -226,8 +242,10 @@ absolute paths and drive letters are rejected, not cleaned up.
 
 **git** is limited to an allow list: `add`, `branch`, `checkout`, `commit`,
 `diff`, `fetch` (only `fetch --quiet <remote>`, which touches nothing but
-`origin/*`), `ls-files`, `merge-base --is-ancestor`, `push`,
-`remote get-url`, `rev-parse`, `status`, `symbolic-ref`. `push` may not
+`origin/*`), `init` (only `--quiet --initial-branch=<name>`, in a folder
+without a repository), `ls-files`, `merge-base --is-ancestor`, `push`,
+`remote get-url`, `remote add origin <url>` (only where there is no origin,
+no credentials in the URL), `rev-parse`, `status`, `symbolic-ref`. `push` may not
 force, delete, mirror or push tags, and never targets `main`, `master`,
 `develop`, `release` or `trunk`. `pull`, `clone`, `merge`, `rebase`,
 `reset`, `tag`, `cherry-pick` and `submodule` are refused. Staging is by
@@ -235,7 +253,8 @@ file name, never `git add .`.
 
 **GitHub** is limited to a fixed set of calls matched on method and path.
 A new issue may carry only `title` and `body`; linking a sub-issue only the
-child's id. A `PATCH` on a pull request may carry only `title` and `body`; on
+child's id; a new repository only its name, visibility, description and a
+first commit (never a template, team or organisation). A `PATCH` on a pull request may carry only `title` and `body`; on
 an issue only `labels` and `state`. Merging, closing and deleting are not
 reachable.
 
@@ -280,7 +299,7 @@ Each test is a plain script, not pytest. Run them from the project root:
 PYTHONIOENCODING=utf-8 PYTHONPATH=. .venv/Scripts/python tests/<name>_test.py
 ```
 
-There are 29 test files. 25 run offline, against fake transports and
+There are 30 test files. 26 run offline, against fake transports and
 throwaway repositories; `compile_test`, `install_test` and
 `test_execution_test` need Node on `PATH`. Four call a real model and are
 skipped in routine runs: `architect_test`, `workflow_test`,

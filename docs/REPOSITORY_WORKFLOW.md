@@ -7,14 +7,26 @@ a pull request exists.
 
 ## 1. Selecting a repository
 
-Sidebar → **📦 Repositories** → **➕ Add repository**. A name and a path to
-an existing folder.
+Sidebar → **📦 Repositories** → **➕ Add repository**. **📁 Choose a
+folder…** opens the system's folder window (the app runs on your machine)
+and fills the path and the name — the folder's own. A typed path fills the
+name too. The repository added becomes the selected one.
 
-- The folder must already exist; the app will not create it.
+- The folder must already exist; this panel does not create it.
 - It does not have to be a git repository. Generation works either way; the
   commit, push and pull request stages need one.
 - The same folder cannot be registered twice.
 - A task creation is blocked until a repository is selected.
+
+**🆕 New repository** creates one: a folder with git on `main` and, by
+default, a private GitHub repository set as its `origin`, ready for plans,
+pull requests and issues. GitHub goes first and creates the repository with
+a first commit, so `main` exists and a pull request has a base; the local
+side is then `init`, `remote add origin`, `fetch` and a checkout of `main`
+(a clone made of allowed steps — `clone` itself is refused). If GitHub
+refuses, nothing is left behind locally. Creating a repository needs a
+token with `Administration: write`: `GITHUB_ADMIN_PAT` is used when set, so
+the everyday `GITHUB_PAT` keeps its narrow scope.
 
 Removing a repository asks for confirmation when tasks are linked to it,
 and says how many. Removal does not delete those tasks: each one also

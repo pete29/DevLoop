@@ -67,6 +67,7 @@ What has been built, in the order it was built, and what the next step is.
 | 11.3 | **First live end-to-end run** — push, PR, merge and delivery verified against GitHub; the bugs it found fixed (below) |
 | 12 | **The human can say more than yes or no** — a task opens in a window, and can be sent back with chosen findings and the human's own notes |
 | 12.1 | **Issues both ways** — a requirement filed as an issue; a large one split into user stories, filed as sub-issues; the issue list as a tree; plans for an issue share `feature/issue-<n>-<slug>` |
+| 12.3 | **Repositories from the file system** — a folder window fills the name and path; "New repository" makes a folder with git and a private GitHub repository as its origin |
 | 12.2 | **The planner sees the code** — file listing and exports, referenced files in full; tasks declare what they create and modify; `PlanValidator` checks the claims |
 
 ---
