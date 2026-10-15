@@ -27,6 +27,17 @@ There are no release branches; one is cut from a tag
   so the others read the prompt cache it writes. Same cost, a task about
   a third faster. (#39)
 
+### Tests
+- pytest runs everything: the suites as one item each in their own
+  process, marked `unit`, `integration`, `ui` or `live`; `pytest -n auto`
+  in about 30 seconds. (#41)
+- `python tests/coverage.py`: coverage of every process the tests start,
+  80% of statements. (#41)
+- An offline end-to-end test from a GitHub issue to a merged, delivered
+  pull request through the real page, the model scripted and GitHub faked
+  on localhost. (#41)
+- The page in a real browser, through Playwright and Chromium. (#41)
+
 ## 0.9.0 (alpha) — 2026-10-15
 
 The first numbered release: everything up to here.

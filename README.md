@@ -409,14 +409,21 @@ what one plan may spend before no new task starts; `MONTH_COST_LIMIT`
 
 ## Tests
 
-Each test is a plain script, not pytest. All the offline ones at once, from
-the project root:
+With `pip install -r requirements-dev.txt`:
 
 ```bash
-.venv/Scripts/python tests/run_offline.py
+.venv/Scripts/python -m pytest -n auto      # everything offline, in parallel
+.venv/Scripts/python -m pytest -m unit      # unit, integration, ui, e2e, browser
+.venv/Scripts/python tests/coverage.py      # what the tests reach (80%)
 ```
 
-or one of them:
+Unit, integration and headless-UI suites; an offline end-to-end test that
+takes a GitHub issue all the way to a merged pull request through the real
+page (model scripted, GitHub faked on localhost); and the page in a real
+browser through Playwright. [docs/TESTING.md](docs/TESTING.md) says what
+each proves. The suites are plain scripts that pytest collects one per
+process; `tests/run_offline.py` still runs them without pytest, or one of
+them:
 
 ```bash
 PYTHONIOENCODING=utf-8 PYTHONPATH=. .venv/Scripts/python tests/<name>_test.py
@@ -444,7 +451,7 @@ CI. Run it before and after changing a prompt, a model or an effort. The
 baseline: 6/6 passed, $0.2454; the package case asked for `@types/node`, and
 the plan case planned 3 tasks with no plan problems.
 
-There are 47 test files. 44 run offline, against fake transports and
+There are 47 suite files and 2 end-to-end tests. 44 suites run offline, against fake transports and
 throwaway repositories; `compile_test`, `install_test` and
 `test_execution_test` need Node on `PATH`. Three call a real model and are
 skipped in routine runs: `architect_test`, `workflow_test`,

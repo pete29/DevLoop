@@ -1,0 +1,29 @@
+# What the tests reach. Run with:  python tests/coverage.py
+[run]
+source =
+    agents
+    config
+    database
+    models
+    services
+    ui
+    workflows
+    app.py
+# Each suite runs in its own process, and some start more
+# (the background worker): every Python subprocess is
+# measured, each into its own data file, combined after.
+patch = subprocess
+parallel = True
+data_file = .coverage-data/.coverage
+concurrency = thread
+
+[report]
+skip_empty = True
+sort = Cover
+precision = 0
+exclude_also =
+    if __name__ == .__main__.:
+    raise NotImplementedError
+
+[html]
+directory = coverage-html

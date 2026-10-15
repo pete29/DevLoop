@@ -37,3 +37,5 @@ Thumbs.db
 
 # Background run consoles
 storage/runs/
+.coverage-data/
+coverage-html/

@@ -1,5 +1,74 @@
 # Testing
 
+## Running them
+
+The tests run under pytest (`pip install -r requirements-dev.txt`, and for
+the browser test `python -m playwright install chromium`):
+
+```powershell
+pytest -n auto                 # everything offline, in parallel (~30 s)
+pytest -m unit                 # one level: unit, integration, ui, e2e, browser
+pytest --live                  # also the suites that call the real model (paid)
+python tests/coverage.py       # under coverage: a summary and coverage-html/
+```
+
+**The levels.** Each test is marked with what it exercises:
+
+| Marker | What it runs against | How many |
+|---|---|---|
+| `unit` | functions and classes on their own | 11 suites |
+| `integration` | real git, SQLite, files, processes or the TypeScript compiler | 27 suites |
+| `ui` | the real page, rendered headlessly with Streamlit's AppTest | 6 suites |
+| `e2e` | a whole path through DevLoop | 2 tests |
+| `browser` | the real page in Chromium (also `e2e`) | 1 test |
+| `live` | the real model; skipped unless `--live` | 3 suites |
+
+The suites (`tests/*_test.py`) predate pytest and stay plain scripts:
+`tests/conftest.py` collects each one as a single pytest item and runs it in
+its own process, because several patch modules or settings that would leak
+into the next suite in a shared one. A failing suite reports the checks that
+failed. Its level is listed in `LEVELS` in `tests/conftest.py`; a new suite
+without one is refused at collection. Tests written for pytest itself live
+in `tests/e2e/` and are named `e2e_*.py` (the default `test_*.py` would
+import `test_execution_test.py`, and importing a suite runs it).
+
+**Coverage.** `python tests/coverage.py` runs everything under coverage,
+every Python subprocess included (each suite's process, the background
+worker, the browser test's server), combines the data and prints the
+summary; `coverage-html/index.html` has it line by line. At the time of
+writing: 80% of 6,676 statements. The full-path e2e test is left out of
+the measured run (#42): under coverage its in-process render cannot import
+numpy, so `ui/tasks.py`, which it exercises, reads low.
+
+### The end-to-end tests
+
+`tests/e2e/e2e_full_path.py` — a GitHub issue in, a merged pull request out,
+clicked through the real page: the issue is imported as a requirement, the
+planner plans it, the whole plan runs in the worker's loop, each task is
+reviewed and accepted, the branch is pushed, the pull request opened, the
+issue told; GitHub merges it, and "Check the PR" reads it back as
+DELIVERED. Real: the page, the orchestrator and its checks, git, SQLite,
+the HTTP calls with their allow list. Scripted: the model's answers
+(`scripted_model.py`; the code is correct, and one file imports
+`./days.js`). Faked: GitHub, a server on localhost (`fake_github.py`); the
+remote is a bare repository on disk that git reaches through `insteadOf`.
+With TypeScript and Vitest borrowed from a sibling project
+(`DEVLOOP_TYPESCRIPT_HOME`, or found next to this repository), the real
+compiler and test runner check both tasks; without them the environment
+step is skipped and the path must still complete.
+
+`tests/e2e/e2e_browser.py` — DevLoop's own server on a free localhost port
+against a throwaway database, and Chromium through Playwright: the page
+loads with its version, a repository is added by typing its path, a
+requirement is written and saved, and the settings switch the language.
+It does not press "Choose a folder", which would open a Windows dialog.
+Skipped without Playwright's Chromium.
+
+### The old runner
+
+`python tests/run_offline.py` still runs every offline suite, one after
+another, with a summary; CI uses it.
+
 Every offline suite at once, each in its own process, with a summary and a
 non-zero exit code on any failure:
 

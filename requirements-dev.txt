@@ -1,0 +1,8 @@
+# What the tests need on top of requirements.txt:
+#     pip install -r requirements-dev.txt
+#     python -m playwright install chromium   (for the browser test)
+-r requirements.txt
+pytest
+pytest-xdist
+coverage
+playwright
