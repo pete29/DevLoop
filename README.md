@@ -107,7 +107,9 @@ or, with the virtual environment active, `streamlit run app.py`. In VS Code,
 Sidebar → **📦 Repositories** → **➕ Add repository** → **📁 Choose a
 folder…** opens the system's folder window and fills the path and the name
 (the folder's). Typing a path works too, and fills the name. The added
-repository becomes the selected one. Point it at a sandbox: generated files
+repository becomes the selected one. A folder without git is refused, with
+**🌱 Make it a repository** to run `git init` on `main`; a folder inside a
+repository offers the repository's own folder instead. Point it at a sandbox: generated files
 overwrite files whose paths collide, which shows up afterwards in the diff
 as `modified`.
 
@@ -405,7 +407,7 @@ CI. Run it before and after changing a prompt, a model or an effort. The
 baseline: 6/6 passed, $0.2454; the package case asked for `@types/node`, and
 the plan case planned 3 tasks with no plan problems.
 
-There are 38 test files. 35 run offline, against fake transports and
+There are 39 test files. 36 run offline, against fake transports and
 throwaway repositories; `compile_test`, `install_test` and
 `test_execution_test` need Node on `PATH`. Three call a real model and are
 skipped in routine runs: `architect_test`, `workflow_test`,

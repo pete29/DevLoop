@@ -63,6 +63,61 @@ def folder_name(path: str) -> str:
     return os.path.basename(os.path.normpath(path or "")) if path else ""
 
 
+def git_root(path: str) -> str:
+    """The folder holding the repository `path` is in, or "".
+
+    Read from the folders, not from git: the form asks on
+    every keystroke.
+    """
+
+    if not path:
+        return ""
+
+    current = os.path.abspath(path)
+
+    while True:
+
+        if os.path.exists(os.path.join(current, ".git")):
+            return current
+
+        parent = os.path.dirname(current)
+
+        if parent == current:
+            return ""
+
+        current = parent
+
+
+def check_existing(path: str) -> tuple[str, str]:
+    """Whether a folder can be registered as it is.
+
+    ("", "") when it can; otherwise a reason -- "missing",
+    "not_git" or "inside" -- and, for "inside", the
+    repository's own folder. A folder without git cannot
+    have a branch, so nothing could run in it; a folder
+    inside a repository would read only part of it.
+    """
+
+    if not path or not os.path.isdir(path):
+        return "missing", ""
+
+    root = git_root(path)
+
+    if not root:
+        return "not_git", ""
+
+    if os.path.normcase(root) != os.path.normcase(os.path.abspath(path)):
+        return "inside", root
+
+    return "", ""
+
+
+def start_git(path: str) -> None:
+    """Makes an existing folder a repository, on main."""
+
+    GitService(path).init(BASE_BRANCH)
+
+
 def admin_token() -> str:
 
     return (os.getenv(ADMIN_TOKEN_VARIABLE) or "").strip() or read_token()

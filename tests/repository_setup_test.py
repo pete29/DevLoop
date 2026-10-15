@@ -69,6 +69,39 @@ def git(path: str, *args: str) -> str:
 try:
 
     print("=" * 80)
+    print("A FOLDER IS CHECKED BEFORE IT IS ADDED")
+    print("=" * 80)
+
+    plain = folder()
+
+    check("a folder without git is not a repository", setup.check_existing(plain), ("not_git", ""))
+
+    check(
+        "a folder that is not there is missing",
+        setup.check_existing(os.path.join(plain, "nope"))[0],
+        "missing",
+    )
+
+    setup.start_git(plain)
+
+    check("git can be started in it", setup.check_existing(plain), ("", ""))
+
+    check("on main", git(plain, "symbolic-ref", "--short", "HEAD"), "main")
+
+    inner = os.path.join(plain, "src")
+
+    os.makedirs(inner)
+
+    check(
+        "a folder inside a repository points at the repository",
+        setup.check_existing(inner),
+        ("inside", os.path.abspath(plain)),
+    )
+
+    refuses("git is not started twice", lambda: setup.start_git(plain), GitError)
+
+    print()
+    print("=" * 80)
     print("A FOLDER'S NAME IS THE REPOSITORY'S")
     print("=" * 80)
 

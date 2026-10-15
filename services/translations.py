@@ -912,6 +912,30 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "Ten folder nie istnieje: {path}",
         "en": "That folder does not exist: {path}",
     },
+    "repo.not_git": {
+        "pl": "Ten folder nie jest repozytorium git, więc nie da się w nim zrobić brancha ani uruchomić planu.",
+        "en": "This folder is not a git repository, so no branch can be made and no plan can run in it.",
+    },
+    "repo.start_git": {
+        "pl": "🌱 Zrób z niego repozytorium (git init)",
+        "en": "🌱 Make it a repository (git init)",
+    },
+    "repo.git_started": {
+        "pl": "Folder {path} jest teraz repozytorium git, na gałęzi main.",
+        "en": "{path} is now a git repository, on main.",
+    },
+    "repo.git_start_failed": {
+        "pl": "Nie udało się zrobić repozytorium: {reason}",
+        "en": "Could not make a repository: {reason}",
+    },
+    "repo.inside": {
+        "pl": "Ten folder leży wewnątrz repozytorium {root}. Dodaj całe repozytorium.",
+        "en": "This folder is inside the repository {root}. Add the whole repository.",
+    },
+    "repo.use_root": {
+        "pl": "Użyj {root}",
+        "en": "Use {root}",
+    },
     "repo.added": {
         "pl": "Dodano repozytorium {name}.",
         "en": "Added the repository {name}.",

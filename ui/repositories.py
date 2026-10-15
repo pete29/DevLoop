@@ -4,7 +4,8 @@ import os
 
 import streamlit as st
 
-from services.repository_setup import check_new, create as create_repository, folder_name, pick_folder
+from services.git_service import GitError
+from services.repository_setup import check_existing, check_new, create as create_repository, folder_name, pick_folder, start_git
 from ui import shared
 from ui.actions import register_repository
 from ui.shared import repository_store, t
@@ -23,6 +24,13 @@ def add_repository_panel() -> None:
     if st.session_state.pop("repo_add_reset", False):
         st.session_state.repo_add_name = ""
         st.session_state.repo_add_path = ""
+
+    # The same for a path chosen by a button below the field.
+    chosen_root = st.session_state.pop("repo_add_root", "")
+
+    if chosen_root:
+        st.session_state.repo_add_path = chosen_root
+        st.session_state.repo_add_name = folder_name(chosen_root)
 
     with st.expander(t("repo.add")):
 
@@ -51,20 +59,23 @@ def add_repository_panel() -> None:
 
         new_name = st.text_input(t("repo.name"), key="repo_add_name")
 
+        path = os.path.normpath(new_path.strip()) if new_path.strip() else ""
+
+        problem = folder_problem(path)
+
         if not st.button(
             t("repo.add_button"),
             key="repo-add",
             use_container_width=True,
             type="primary",
+            disabled=problem in ("not_git", "inside"),
         ):
             return
-
-        path = os.path.normpath(new_path.strip()) if new_path.strip() else ""
 
         if not new_name.strip() or not path:
             st.error(t("repo.name_and_path_required"))
 
-        elif not os.path.isdir(path):
+        elif problem == "missing":
             st.error(t("repo.folder_missing", path=path))
 
         elif repository_store.get_by_path(path):
@@ -81,6 +92,47 @@ def add_repository_panel() -> None:
             )
 
             st.rerun()
+
+
+def folder_problem(path: str) -> str:
+    """Says what is wrong with the folder, and offers the fix.
+
+    A folder without git was accepted before, and every
+    plan in it failed at its first step, the branch.
+    """
+
+    if not path:
+        return "missing"
+
+    problem, root = check_existing(path)
+
+    if problem == "not_git":
+
+        st.warning(t("repo.not_git"))
+
+        if st.button(t("repo.start_git"), key="repo-add-git-init", use_container_width=True):
+
+            try:
+                start_git(path)
+
+                st.session_state.git_message = ("success", t("repo.git_started", path=path))
+
+            except (GitError, OSError) as error:
+                st.session_state.git_message = ("warning", t("repo.git_start_failed", reason=error))
+
+            st.rerun()
+
+    elif problem == "inside":
+
+        st.warning(t("repo.inside", root=root))
+
+        if st.button(t("repo.use_root", root=root), key="repo-add-use-root", use_container_width=True):
+
+            st.session_state.repo_add_root = root
+
+            st.rerun()
+
+    return problem
 
 
 def name_from_path() -> None:

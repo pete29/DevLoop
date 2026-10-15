@@ -326,6 +326,10 @@ database: **Generate code** turns the description into a plan of one task
 (title and description split as typed) and hands it to a background worker
 instead of running it in the page.
 
+`tests.repository_form_test` — the real page, headless: a folder without
+git cannot be added until **🌱 Make it a repository** runs `git init`; a
+folder inside a repository offers the repository instead.
+
 `tests.review_feedback_test` — inline comments, review text and the
 conversation are read, oldest first, with bare approvals and DevLoop's own
 comments left out, and only reads are sent; an inline comment knows its file

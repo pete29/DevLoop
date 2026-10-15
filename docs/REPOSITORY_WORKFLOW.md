@@ -13,8 +13,11 @@ and fills the path and the name — the folder's own. A typed path fills the
 name too. The repository added becomes the selected one.
 
 - The folder must already exist; this panel does not create it.
-- It does not have to be a git repository. Generation works either way; the
-  commit, push and pull request stages need one.
+- It has to be a git repository: every task runs on a branch. A folder
+  without git shows **🌱 Make it a repository**, which runs `git init` on
+  `main`; nothing is committed.
+- A folder inside a repository is refused, with **Use <repository>** to take
+  the repository's own folder.
 - The same folder cannot be registered twice.
 - A task creation is blocked until a repository is selected.
 
