@@ -1,0 +1,22 @@
+[
+  {
+    "id": "lowercase-rule",
+    "what": "one new file building on an existing interface",
+    "task": "Create the LowercaseRule class\n\nImplement the existing PasswordRule interface. Reject a password that contains no lowercase letter, counting Unicode lowercase letters such as the Polish ą or ł, and return null otherwise."
+  },
+  {
+    "id": "password-strength",
+    "what": "a function that uses an existing class without changing it",
+    "task": "Create the passwordStrength function\n\nIn its own file, passwordStrength(password: string, validator: PasswordValidator) returns \"weak\" when the validator rejects the password, \"medium\" when it accepts it and the password is shorter than 12 characters, and \"strong\" otherwise. Do not change PasswordValidator."
+  },
+  {
+    "id": "blocklist-rule",
+    "what": "two new files, one depending on the other",
+    "task": "Create the BlocklistRule class\n\nImplement the existing PasswordRule interface. Reject a password found, case-insensitively, in a list given to the constructor. Keep a built-in list of at least 20 common passwords in src/common-passwords.ts and use it when no list is given."
+  },
+  {
+    "id": "repeated-characters",
+    "what": "a small rule with an edge case",
+    "task": "Create the RepeatedCharactersRule class\n\nImplement the existing PasswordRule interface. Reject a password that contains the same character three or more times in a row, with an error message that says so, and return null otherwise."
+  }
+]

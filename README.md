@@ -363,7 +363,22 @@ CI runs the offline suites on every pull request and on `main`
 ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)): Windows,
 Python 3.13, Node 24, no secrets.
 
-There are 35 test files. 32 run offline, against fake transports and
+**The eval** measures the factory itself: four tasks from
+`evals/cases.json`, each through the real pipeline on a fresh copy of
+`evals/fixture` (a small TypeScript project with code to build on). Per
+case: compiles, tests pass, the Architect's score and verdict, review
+rounds, files, cost and time.
+
+```bash
+.venv/Scripts/python evals/run_eval.py my-label
+.venv/Scripts/python evals/compare.py evals/reports/2026-10-15-baseline.json evals/reports/<new>.json
+```
+
+It calls the real model (about $0.12 for the four cases) and never runs in
+CI. Run it before and after changing a prompt, a model or an effort. The
+baseline: 4/4 passed, scores 93-96, one review round each, $0.1163.
+
+There are 36 test files. 33 run offline, against fake transports and
 throwaway repositories; `compile_test`, `install_test` and
 `test_execution_test` need Node on `PATH`. Three call a real model and are
 skipped in routine runs: `architect_test`, `workflow_test`,
@@ -383,6 +398,7 @@ services/      LLM providers, usage ledger, repository survey, plan validator,
 models/        the data the pipeline passes around
 database/      SQLite persistence: repositories, requirements, plans, tasks
 tests/         see above
+evals/         the eval: cases, the fixture project, reports
 docs/          architecture, workflow, security, configuration, testing, roadmap
 app.py         the Streamlit page: session state, then the parts below, in order
 ui/            the page's parts: shared (stores, language), actions (runs,

@@ -1,0 +1,102 @@
+{
+  "label": "baseline",
+  "at": "2026-10-15T13:02:40+00:00",
+  "models": {
+    "planner": "claude-opus-5-5",
+    "architect": "claude-opus-5-5",
+    "developer": "claude-sonnet-5-5",
+    "qa": "claude-sonnet-5-5"
+  },
+  "efforts": {
+    "planner": "high",
+    "architect": "high",
+    "developer": "high",
+    "qa": "medium"
+  },
+  "results": [
+    {
+      "id": "lowercase-rule",
+      "compile": "PASSED",
+      "tests": "PASSED",
+      "tests_passed": 21,
+      "tests_total": 21,
+      "score": 95,
+      "recommendation": "APPROVE",
+      "review_rounds": 1,
+      "blockers": 0,
+      "warnings": 0,
+      "files": [
+        "src/lowercase-rule.ts",
+        "tests/lowercase-rule.test.ts"
+      ],
+      "cost": 0.0279,
+      "output_tokens": 938,
+      "seconds": 18.7,
+      "passed": true
+    },
+    {
+      "id": "password-strength",
+      "compile": "PASSED",
+      "tests": "PASSED",
+      "tests_passed": 21,
+      "tests_total": 21,
+      "score": 95,
+      "recommendation": "APPROVE",
+      "review_rounds": 1,
+      "blockers": 0,
+      "warnings": 0,
+      "files": [
+        "src/password-strength.ts",
+        "tests/password-strength.test.ts"
+      ],
+      "cost": 0.0195,
+      "output_tokens": 971,
+      "seconds": 17.3,
+      "passed": true
+    },
+    {
+      "id": "blocklist-rule",
+      "compile": "PASSED",
+      "tests": "PASSED",
+      "tests_passed": 24,
+      "tests_total": 24,
+      "score": 93,
+      "recommendation": "APPROVE",
+      "review_rounds": 1,
+      "blockers": 0,
+      "warnings": 0,
+      "files": [
+        "src/blocklist-rule.ts",
+        "src/common-passwords.ts",
+        "tests/blocklist-rule.test.ts",
+        "tests/common-passwords.test.ts"
+      ],
+      "cost": 0.0407,
+      "output_tokens": 2442,
+      "seconds": 29.9,
+      "passed": true
+    },
+    {
+      "id": "repeated-characters",
+      "compile": "PASSED",
+      "tests": "PASSED",
+      "tests_passed": 21,
+      "tests_total": 21,
+      "score": 96,
+      "recommendation": "APPROVE",
+      "review_rounds": 1,
+      "blockers": 0,
+      "warnings": 0,
+      "files": [
+        "src/repeated-characters-rule.ts",
+        "tests/repeated-characters-rule.test.ts"
+      ],
+      "cost": 0.0282,
+      "output_tokens": 1815,
+      "seconds": 22.0,
+      "passed": true
+    }
+  ],
+  "total_cost": 0.1163,
+  "passed": 4
+}

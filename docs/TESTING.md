@@ -382,6 +382,24 @@ refusal leaves nothing behind. Every other shape of `init` and `remote add`
 is refused, and so are templates, teams and organisations for a new
 repository.
 
+## The eval
+
+`evals/run_eval.py` runs the four tasks in `evals/cases.json` through the
+real pipeline, each on a fresh copy of `evals/fixture` - a TypeScript
+project with a password validator and six rules, so every case builds on
+existing code - and writes `evals/reports/<date>-<label>.json`: per case,
+compile and test results, the Architect's score and verdict, review rounds,
+blockers and warnings, files, cost, output tokens and time. A case passes
+when it compiles, its tests pass and it is approved. `evals/compare.py`
+puts two reports side by side. `tests.eval_test` checks the verdict, the
+table and the comparison offline.
+
+It costs money, so it is never part of CI. Run it around any change to a
+prompt, a model or an effort; the baseline is
+`evals/reports/2026-10-15-baseline.json` (4/4, $0.1163). One run is one
+sample: the same task reviewed twice raises different minor findings, so
+read a single-case difference as noise until it repeats.
+
 ## Suites that call a real model
 
 Minutes rather than seconds, and they spend tokens on the configured

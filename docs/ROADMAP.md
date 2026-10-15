@@ -67,6 +67,7 @@ What has been built, in the order it was built, and what the next step is.
 | 11.3 | **First live end-to-end run** — push, PR, merge and delivery verified against GitHub; the bugs it found fixed (below) |
 | 12 | **The human can say more than yes or no** — a task opens in a window, and can be sent back with chosen findings and the human's own notes |
 | 12.1 | **Issues both ways** — a requirement filed as an issue; a large one split into user stories, filed as sub-issues; the issue list as a tree; plans for an issue share `feature/issue-<n>-<slug>` |
+| 12.14 | **An eval** — four real tasks on a fixture project, one command, a dated report and a comparison; baseline 4/4 at $0.12 |
 | 12.13 | **The page split** — app.py from 3,849 lines to a page of about 160 and seven modules in ui/; the LangGraph variant and the Gemini provider removed |
 | 12.12 | **A structured review** — the Architect answers in a JSON schema on Claude; findings carry their file; nothing is parsed out of prose |
 | 12.11 | **Continuing a plan** — done tasks stay; the planner plans only what is missing, on the same branch and pull request |
