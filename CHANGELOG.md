@@ -40,6 +40,12 @@ There are no release branches; one is cut from a tag
 - A running plan shows which task runs (RUNNING) and which wait (QUEUED)
   instead of their results from an earlier run, and the page redraws as
   each task finishes. (#47)
+- A task is judged only on the tests it broke: the suites run once
+  before it, and tests already failing are not its to fix. On datepicker
+  every task after the third read FAILED, and paid for a fix round, for
+  the third task's two tests. (#48)
+- A background run stops at a task whose own tests fail, not only at one
+  that does not compile. (#49)
 
 ### Tests
 - pytest runs everything: the suites as one item each in their own

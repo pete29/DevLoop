@@ -446,14 +446,24 @@ def work(
 
         runs.progress(run.id, 0, run.produced)
 
-        # The next task compiles the whole project, this
-        # task's files included: one broken file fails every
-        # task after it, each paying to try to fix it.
-        if generated.compile_result.status == CompileStatus.FAILED:
+        # The next task compiles and tests the whole project,
+        # this task's files included: work that cannot be
+        # approved fails every task after it, each paying to
+        # try to fix it. Facts only -- an Architect's opinion
+        # alone does not stop the run.
+        broken = (
+            "does not compile"
+            if generated.compile_result.status == CompileStatus.FAILED
+            else f"breaks tests ({generated.test_result.summary})"
+            if generated.test_result.blocks_delivery
+            else ""
+        )
+
+        if broken:
             runs.finish(
                 run,
                 RunStatus.STOPPED,
-                f"Task {item.id} does not compile; the tasks after "
+                f"Task {item.id} {broken}; the tasks after "
                 "it would build on it. Review it first.",
             )
             break

@@ -307,6 +307,54 @@ check(
 
 print()
 print("=" * 80)
+print("A TEST FAILING BEFORE THE TASK IS NOT THE TASK'S")
+print("=" * 80)
+
+# As Vitest reports it, from the datepicker run: the third
+# task left two tests failing, and every later run of the
+# whole project showed them again.
+OLD = (
+    " FAIL  tests/days.test.ts > days > adds across a month\n"
+    " FAIL  tests/days.test.ts > days > keeps the object form\n"
+)
+
+before = TestResult(status=TestStatus.FAILED, total_tests=12, failed_tests=2, output=OLD)
+
+inherited = TestResult(status=TestStatus.FAILED, total_tests=15, failed_tests=2, output=OLD).since(before)
+
+check("only old failures: the task passes", inherited.status, TestStatus.PASSED)
+
+check("and says why", "were failing before this task" in inherited.summary, True)
+
+own = TestResult(
+    status=TestStatus.FAILED,
+    total_tests=21,
+    failed_tests=3,
+    output=OLD + " FAIL  tests/weekday.test.ts > startOfWeek > returns the Monday\n",
+).since(before)
+
+check("a new failure still fails it", own.status, TestStatus.FAILED)
+
+check(
+    "and the fix is asked for that one alone",
+    own.output.split("\n\n")[0],
+    "Failing since this task -- fix these:\n- tests/weekday.test.ts > startOfWeek > returns the Monday",
+)
+
+check(
+    "without a baseline, nothing changes",
+    TestResult(status=TestStatus.FAILED, output=OLD).since(None).status,
+    TestStatus.FAILED,
+)
+
+check(
+    "an unreadable output is left as it was",
+    TestResult(status=TestStatus.FAILED, output="crashed").since(before).status,
+    TestStatus.FAILED,
+)
+
+print()
+print("=" * 80)
 
 if failures:
     print(f"FAILED: {len(failures)}")

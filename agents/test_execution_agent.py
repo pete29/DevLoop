@@ -47,6 +47,16 @@ class TestExecutionAgent:
         return result
 
     @staticmethod
+    def baseline(repository_path: str) -> TestResult:
+        """The suites before a task writes anything.
+
+        Its own name, so a test faking the runs a task is
+        judged by does not have this one use up its answers.
+        """
+
+        return TestExecutionAgent.execute(repository_path)
+
+    @staticmethod
     def fix_brief(
         result: TestResult,
         source_files: list[GeneratedFile],

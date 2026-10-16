@@ -228,7 +228,8 @@ Each task goes through the pipeline above:
 - The **free checks** — structural validator and `tsc` — run before the
   Architect sees anything, with their own budget (`MAX_GATE_FIXES`). `tsc`
   runs once before the task too: an error already there is not the task's,
-  and nobody is paid to fix it. A
+  and nobody is paid to fix it. So do the tests: a task is judged only on
+  tests that start failing with it. A
   missing npm package stops the task there and is offered for installation
   (below).
 - The **Architect** reviews design only (coupling, abstractions, SOLID),
@@ -249,9 +250,9 @@ ends, Windows shows a notification: the plan, how it ended, and how many
 tasks wait for approval (`NOTIFY_ON_RUN_END`).
 A task described on its own (**Generate code** at the bottom of the page) becomes a plan of one task: it gets its branch before anything is generated, runs in the background worker, and has a pull request and a cost like any planned task. **⏹ Stop
 after this task** stops it between tasks, and a worker that died is marked
-`INTERRUPTED` on the next page load. A task whose code does not compile stops the run too:
-the tasks after it would build on it, each paying to fix it. Its record
-waits for review.
+`INTERRUPTED` on the next page load. A task that does not compile, or breaks tests, stops the run
+too: the tasks after it would build on it, each paying to fix it. Its
+record waits for review. An Architect's opinion alone does not stop it.
 
 **Packages a task needs.** The Developer is told which packages the project
 has. When the code imports one it lacks (or a Node built-in such as

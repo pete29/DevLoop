@@ -34,6 +34,7 @@ from models.plan_run import PlanRun, RunStatus  # noqa: E402
 from models.task import Task  # noqa: E402
 from models.task_breakdown import TaskBreakdown  # noqa: E402
 from models.task_status import TaskStatus  # noqa: E402
+from models.test_result import TestResult, TestStatus  # noqa: E402
 from models.task_execution import ExecutionStatus, TaskExecution  # noqa: E402
 from services import plan_runner  # noqa: E402
 
@@ -54,9 +55,10 @@ def check(label: str, actual: object, expected: object) -> None:
 class Pipeline:
     """Stands in for the orchestrator; can fail or ask to stop."""
 
-    def __init__(self, fail_on: str = "", stop_after: str = "", runs=None, broken: str = ""):
+    def __init__(self, fail_on: str = "", stop_after: str = "", runs=None, broken: str = "", failing: str = ""):
         self.fail_on = fail_on
         self.broken = broken
+        self.failing = failing
         self.stop_after = stop_after
         self.runs = runs
         self.ran: list[str] = []
@@ -77,6 +79,8 @@ class Pipeline:
         )
         if title == self.broken:
             task.compile_result = CompileResult(status=CompileStatus.FAILED)
+        if title == self.failing:
+            task.test_result = TestResult(status=TestStatus.FAILED, total_tests=4, failed_tests=1)
         return task
 
 
@@ -235,6 +239,25 @@ try:
         "the run stopped, keeping the record for review",
         (halted.status, len(halted.produced), "Task 1" in halted.message),
         (RunStatus.STOPPED, 1, True),
+    )
+
+    print()
+    print("=" * 80)
+    print("A TASK THAT BREAKS TESTS STOPS THE RUN TOO")
+    print("=" * 80)
+
+    plan = make_plan(plans)
+
+    pipeline = Pipeline(failing="one")
+
+    halted = run_with(pipeline, plan)
+
+    check("nothing was built on it", pipeline.ran, ["one"])
+
+    check(
+        "the run says which task, and that its tests fail",
+        (halted.status, "Task 1 breaks tests (3/4 passed" in halted.message),
+        (RunStatus.STOPPED, True),
     )
 
     print()

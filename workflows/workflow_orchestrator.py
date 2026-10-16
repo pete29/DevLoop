@@ -230,9 +230,12 @@ class WorkflowOrchestrator:
                 ", ".join(created),
             )
 
-        # What already fails to compile, before this task
-        # writes anything: those errors are not its to fix.
+        # What already fails to compile, and which tests
+        # already fail, before this task writes anything:
+        # neither is its to fix.
         baseline = type_checker.baseline(repository_path)
+
+        test_baseline = TestExecutionAgent.baseline(repository_path)
 
         source_files = self.developer.execute(
             task_description,
@@ -258,6 +261,7 @@ class WorkflowOrchestrator:
             spent,
             created,
             baseline=baseline,
+            test_baseline=test_baseline,
         )
 
     def revise(self, task: Task, feedback: str) -> Task:
@@ -348,6 +352,7 @@ class WorkflowOrchestrator:
         created: list[str],
         review_history: list[ReviewHistory] | None = None,
         baseline: CompileResult | None = None,
+        test_baseline: TestResult | None = None,
     ) -> Task:
         """Checks, review, tests: everything after the first draft.
 
@@ -546,6 +551,7 @@ class WorkflowOrchestrator:
         test_result = self.run_tests(
             repository_path,
             compile_result,
+            test_baseline,
         )
 
         if not compile_result.blocks_delivery:
@@ -649,6 +655,7 @@ class WorkflowOrchestrator:
             test_result = self.run_tests(
                 repository_path,
                 compile_result,
+                test_baseline,
             )
 
             if not compile_result.blocks_delivery:
@@ -747,6 +754,7 @@ class WorkflowOrchestrator:
     def run_tests(
         repository_path: str,
         compile_result: CompileResult,
+        baseline: TestResult | None = None,
     ) -> TestResult:
 
         if compile_result.blocks_delivery:
@@ -755,7 +763,7 @@ class WorkflowOrchestrator:
                 output="Skipped: the code does not compile.",
             )
 
-        return TestExecutionAgent.execute(repository_path)
+        return TestExecutionAgent.execute(repository_path).since(baseline)
 
     def needs_packages(
         self,

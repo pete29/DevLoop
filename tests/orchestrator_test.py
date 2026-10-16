@@ -181,6 +181,8 @@ def tests_report(*statuses):
 
     TestExecutionAgent.execute = staticmethod(fake)
 
+    TestExecutionAgent.baseline = staticmethod(lambda repository_path: TestResult())
+
 
 def run(developer, architect, qa, root):
 
