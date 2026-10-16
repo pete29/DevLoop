@@ -449,9 +449,11 @@ on the real page, the panel saves the monthly limit into effect, has no
 password section, starts in English and remembers a language chosen.
 
 `tests.reject_plan_test` — the real page, headless, on a real repository:
-**🗑 Reject the whole plan** rejects every waiting task after a
-confirmation, deletes the files they created, restores the file git knows,
-and reopens the tasks in the plan.
+**Review several at once** lists the waiting tasks, unchecked where no
+verdict allows approval; **Reject checked** after a confirmation deletes
+the files they created, restores the file git knows and reopens them in
+the plan; **Accept checked** commits approvable tasks, checked already,
+one commit each in the plan's order.
 
 `tests.review_feedback_test` — inline comments, review text and the
 conversation are read, oldest first, with bare approvals and DevLoop's own

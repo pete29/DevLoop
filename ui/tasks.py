@@ -15,7 +15,7 @@ from models.test_result import TestStatus
 from services.git_diff_service import GitDiffService
 from services.git_service import GitError, GitService
 from services.task_rollback import roll_back
-from ui.actions import install_and_recheck, plan_context, reopen_in_plan, revise_task
+from ui.actions import accept_record, install_and_recheck, plan_context, reopen_in_plan, revise_task
 from ui import shared
 from ui.shared import file_content, repository, repository_label, resolve_repository, show_files, show_message, t
 
@@ -1158,28 +1158,11 @@ def accept_button(task) -> None:
         disabled=task.git_operation.committed,
     ):
 
-        task.status = TaskStatus.APPROVED
-
-        repository.update_status(
-            task.id,
-            TaskStatus.APPROVED,
-        )
-
         # The git agent only ever runs once the human
         # has approved, and never pushes.
         try:
 
-            operation = GitAgent.execute(
-                task,
-                repository.get_all(),
-            )
-
-            repository.update_git_operation(
-                task.id,
-                operation,
-            )
-
-            task.git_operation = operation
+            operation = accept_record(task)
 
             st.session_state.git_message = (
                 "success",

@@ -637,6 +637,34 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "🕒 Czeka w kolejce tego przebiegu; jego poprzedni wynik nie ma już znaczenia.",
         "en": "🕒 Waiting its turn in this run; its earlier result no longer counts.",
     },
+    "review.heading": {
+        "pl": "✅ Przejrzyj kilka naraz ({count} czeka na decyzję)",
+        "en": "✅ Review several at once ({count} waiting for a decision)",
+    },
+    "review.caption": {
+        "pl": "Zaznaczone domyślnie: te, które można zaakceptować (APPROVE, kompiluje się, testy przechodzą). Akceptacja commituje w kolejności planu i zatrzymuje się na pierwszym błędzie; odrzucenie cofa pliki, od najnowszego.",
+        "en": "Checked by default: those that can be approved (APPROVE, compiles, tests pass). Accepting commits them in the plan's order and stops at the first failure; rejecting undoes their files, newest first.",
+    },
+    "review.facts": {
+        "pl": "{score}/100 {verdict} · kompilacja {compile} · testy {tests}",
+        "en": "{score}/100 {verdict} · compile {compile} · tests {tests}",
+    },
+    "review.accept": {
+        "pl": "✅ Zaakceptuj zaznaczone ({count})",
+        "en": "✅ Accept checked ({count})",
+    },
+    "review.reject": {
+        "pl": "❌ Odrzuć zaznaczone ({count})",
+        "en": "❌ Reject checked ({count})",
+    },
+    "review.accepted": {
+        "pl": "Zaakceptowano i zacommitowano {count}: {hashes}.",
+        "en": "Accepted and committed {count}: {hashes}.",
+    },
+    "review.accept_stopped": {
+        "pl": "Zacommitowano {count}, potem zatrzymano: {reason}",
+        "en": "Committed {count}, then stopped: {reason}",
+    },
     "plan.close": {
         "pl": "🗑 Zamknij plan",
         "en": "🗑 Close plan",

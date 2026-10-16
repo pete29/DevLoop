@@ -14,7 +14,7 @@ from services.git_service import GitError, GitService
 from services.github_service import GitHubError, parse_remote
 from services.package_installer import blocked, install
 from services.task_rollback import Rollback
-from ui.actions import log_tail, plan_pull_request, plan_records, reject_plan, revise_task, start_run, waiting_records
+from ui.actions import accept_records, approvable, log_tail, plan_pull_request, plan_records, reject_records, revise_task, start_run, waiting_records
 from ui import shared
 from ui.shared import plan_store, repository, repository_path_now, run_store, t
 
@@ -1210,42 +1210,100 @@ def run_buttons(plan, active_run, environment_ok, over_budget, target_path) -> N
         close_plan_button()
 
     if active_run is None:
-        reject_plan_panel(plan)
+        review_panel(plan)
 
 
-def reject_plan_panel(plan) -> None:
-    """Reject every waiting task of the plan, after a confirmation."""
+def review_panel(plan) -> None:
+    """Every task waiting for a decision, to accept or reject together.
+
+    Finishing a plan meant opening each task's window to press
+    Accept: five for one datepicker issue, eight for another.
+    """
 
     waiting = waiting_records(plan)
 
     if not waiting:
         return
 
-    with st.expander(t("plan.reject_all", count=len(waiting))):
+    labels = {}
 
-        st.caption(t("plan.reject_all_caption"))
+    for item in plan.tasks:
+        execution = plan.execution(item.id)
+        if execution is not None and execution.task_record_id:
+            labels[execution.task_record_id] = f"{item.id}. {item.title}"
 
-        sure = st.checkbox(t("plan.reject_all_sure"), key=f"reject-all-sure-{plan.id}")
+    with st.expander(t("review.heading", count=len(waiting)), expanded=True):
 
-        if not st.button(
-            t("plan.reject_all_button", count=len(waiting)),
-            key=f"reject-all-{plan.id}",
-            disabled=not sure,
-            use_container_width=True,
-        ):
-            return
+        st.caption(t("review.caption"))
+
+        checked = []
+
+        for record in waiting:
+
+            facts = t(
+                "review.facts",
+                score=record.architecture_score,
+                verdict=record.recommendation.value,
+                compile=record.compile_result.status.value,
+                tests=record.test_result.summary,
+            )
+
+            label = labels.get(record.id) or record.description.strip().splitlines()[0][:60]
+
+            if st.checkbox(
+                f"**{label}** · {facts}",
+                value=approvable(record),
+                key=f"review-pick-{record.id}",
+            ):
+                checked.append(record)
+
+        accept, reject = st.columns(2)
+
+        with accept:
+            accepting = st.button(
+                t("review.accept", count=len(checked)),
+                key=f"accept-checked-{plan.id}",
+                disabled=not checked,
+                type="primary",
+                use_container_width=True,
+            )
+
+        with reject:
+            sure = st.checkbox(t("plan.reject_all_sure"), key=f"reject-checked-sure-{plan.id}")
+
+            rejecting = st.button(
+                t("review.reject", count=len(checked)),
+                key=f"reject-checked-{plan.id}",
+                disabled=not checked or not sure,
+                use_container_width=True,
+            )
+
+    if accepting:
+
+        made, problem = accept_records(checked)
+
+        st.session_state.git_message = (
+            ("warning", t("review.accept_stopped", count=len(made), reason=problem))
+            if problem
+            else ("success", t("review.accepted", count=len(made), hashes=", ".join(item.short_hash for item in made)))
+        )
+
+    elif rejecting:
 
         try:
-            count, undone = reject_plan(plan)
+            count, undone = reject_records(checked)
 
             st.session_state.git_message = ("success", rejected_message(count, undone))
 
         except (GitError, ValueError, OSError) as error:
             st.session_state.git_message = ("warning", t("task.rollback_failed", reason=error))
 
-        st.session_state.plan = plan_store.get_by_id(plan.id)
+    else:
+        return
 
-        st.rerun()
+    st.session_state.plan = plan_store.get_by_id(plan.id)
+
+    st.rerun()
 
 
 def rejected_message(count: int, undone: Rollback) -> str:

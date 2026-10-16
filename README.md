@@ -290,9 +290,11 @@ tests, diff and git. Three answers:
 - **❌ Reject** deletes the files the task created, restores the tracked
   files it changed, and reopens the task in the plan so it can run again;
   tasks that depend on it wait. A committed task cannot be rejected.
-- **🗑 Reject the whole plan** (under the plan's buttons) does the same for
-  every task still waiting, newest first, after a confirmation: one click for
-  what a broken run leaves behind.
+- **✅ Review several at once** (under the plan's tasks) lists every task
+  still waiting, with its score, verdict, compile and tests, and a checkbox
+  -- checked already where the facts allow approval. **Accept checked**
+  commits them in the plan's order, stopping at the first that fails;
+  **Reject checked**, after a confirmation, undoes them newest first.
 
 ### 7. Push, pull request, delivery
 

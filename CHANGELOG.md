@@ -55,6 +55,12 @@ There are no release branches; one is cut from a tag
   committed (`Part of #<issue>` before), so merging it closes the issue
   and the parent's progress counts it. (#53)
 
+### Added
+- Review several at once: under a plan's tasks, every task waiting for a
+  decision with a checkbox and its facts; Accept checked commits them in
+  the plan's order, Reject checked undoes them. Those that can be
+  approved are checked already. (#54)
+
 ### Tests
 - pytest runs everything: the suites as one item each in their own
   process, marked `unit`, `integration`, `ui` or `live`; `pytest -n auto`

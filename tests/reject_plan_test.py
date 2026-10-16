@@ -164,13 +164,21 @@ try:
 
     check("the page did not fail", [e.value for e in at.exception], [])
 
-    reject = [item for item in at.button if item.key == f"reject-all-{plan.id}"]
+    reject = [item for item in at.button if item.key == f"reject-checked-{plan.id}"]
 
-    check("the plan offers to reject both tasks, after a confirmation", [item.disabled for item in reject], [True])
+    # Neither was reviewed (no verdict), so neither is checked.
+    check(
+        "the plan lists both, unchecked, rejecting only after a confirmation",
+        ([item.disabled for item in reject], [at.checkbox(key=f"review-pick-{r.id}").value for r in (first, second)]),
+        ([True], [False, False]),
+    )
 
-    at.checkbox(key=f"reject-all-sure-{plan.id}").check().run()
+    for record in (first, second):
+        at.checkbox(key=f"review-pick-{record.id}").check()
 
-    [item for item in at.button if item.key == f"reject-all-{plan.id}"][0].click().run()
+    at.checkbox(key=f"reject-checked-sure-{plan.id}").check().run()
+
+    [item for item in at.button if item.key == f"reject-checked-{plan.id}"][0].click().run()
 
     check("the page did not fail", [e.value for e in at.exception], [])
 
@@ -197,8 +205,85 @@ try:
 
     check(
         "nothing is left to reject",
-        [item.key for item in at.button if item.key == f"reject-all-{plan.id}"],
+        [item.key for item in at.button if item.key == f"reject-checked-{plan.id}"],
         [],
+    )
+
+    print()
+    print("=" * 80)
+    print("SEVERAL ACCEPTED AT ONCE, IN THE PLAN'S ORDER")
+    print("=" * 80)
+
+    from workflows.review_decision import ReviewDecision
+
+    write("src/types.ts", "export type A = string;")
+    write("src/days.ts", "export const d = 1;")
+
+    later = datetime.now(timezone.utc)
+
+    good = []
+
+    for offset, (item_id, path) in enumerate(((1, "src/types.ts"), (2, "src/days.ts"))):
+
+        record = Task(
+            repository_id=repository.id,
+            repository_path=root,
+            description=f"task {item_id}",
+            status=TaskStatus.WAITING_FOR_APPROVAL,
+            branch=branch,
+            recommendation=ReviewDecision.APPROVE,
+            generated_files=[GeneratedFile(path, FileType.SOURCE, "")],
+            created_files=[path],
+            created_at=(later + timedelta(seconds=offset)).isoformat(),
+        )
+
+        TaskRepository().save(record)
+
+        good.append(record)
+
+    again = PlanRepository().get_by_id(plan.id)
+
+    for item_id, record in zip((1, 2), good):
+        again.record(
+            TaskExecution(
+                task_id=item_id,
+                status=ExecutionStatus.COMPLETED,
+                started_at=record.created_at,
+                completed_at=record.created_at,
+                task_record_id=record.id,
+            )
+        )
+
+    PlanRepository().update_progress(again)
+
+    at.session_state.plan = PlanRepository().get_by_id(plan.id)
+
+    at.run()
+
+    check(
+        "tasks the facts approve are checked already",
+        [at.checkbox(key=f"review-pick-{r.id}").value for r in good],
+        [True, True],
+    )
+
+    [item for item in at.button if item.key == f"accept-checked-{plan.id}"][0].click().run()
+
+    check("the page did not fail", [e.value for e in at.exception], [])
+
+    stored = [TaskRepository().get_by_id(r.id) for r in good]
+
+    check(
+        "both are approved and committed",
+        [(r.status, r.git_operation.committed) for r in stored],
+        [(TaskStatus.APPROVED, True), (TaskStatus.APPROVED, True)],
+    )
+
+    log = subprocess.run(["git", "-C", root, "log", "--format=%H", "-2"], capture_output=True, text=True).stdout.split()
+
+    check(
+        "one commit each, in the plan's order",
+        log,
+        [stored[1].git_operation.commit_hash, stored[0].git_operation.commit_hash],
     )
 
 finally:

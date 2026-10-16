@@ -2,6 +2,7 @@
 
 import streamlit as st
 
+from agents.git_agent import GitAgent
 from agents.planner_agent import PlannerAgent
 from models.repository import Repository
 from models.requirement import now
@@ -40,6 +41,57 @@ def waiting_records(plan) -> list:
     ]
 
 
+def approvable(record) -> bool:
+    """Whether the facts let a record be accepted as it is."""
+
+    return (
+        record.recommendation.value == "APPROVE"
+        and not record.compile_result.blocks_delivery
+        and not record.test_result.blocks_delivery
+    )
+
+
+def accept_record(record):
+    """Approves a record and commits it; GitError if the commit fails.
+
+    Approval stands even when the commit fails, as with the
+    single Accept button: pressing again retries the commit.
+    """
+
+    record.status = TaskStatus.APPROVED
+
+    repository.update_status(record.id, TaskStatus.APPROVED)
+
+    operation = GitAgent.execute(record, repository.get_all())
+
+    repository.update_git_operation(record.id, operation)
+
+    record.git_operation = operation
+
+    return operation
+
+
+def accept_records(records) -> tuple[list, str]:
+    """Accepts each in turn, oldest first; stops at the first that fails.
+
+    Oldest first is the plan's order: each commit builds on
+    the files of the one before. Returns the commits made,
+    and why it stopped, or "".
+    """
+
+    made = []
+
+    for record in sorted(records, key=lambda item: item.created_at):
+
+        try:
+            made.append(accept_record(record))
+
+        except GitError as error:
+            return made, str(error)
+
+    return made, ""
+
+
 def reject_plan(plan) -> tuple[int, Rollback]:
     """Rejects every waiting record of the plan, files first.
 
@@ -48,7 +100,11 @@ def reject_plan(plan) -> tuple[int, Rollback]:
     they wrote removed by hand.
     """
 
-    records = waiting_records(plan)
+    return reject_records(waiting_records(plan))
+
+
+def reject_records(records) -> tuple[int, Rollback]:
+    """Rejects these records, their files undone newest first."""
 
     undone = roll_back_all(records)
 
