@@ -22,7 +22,12 @@ EXPORTED_DECLARATION = re.compile(
     rf"({IDENTIFIER})"
 )
 
-EXPORTED_LIST = re.compile(r"\bexport\s*\{([^}]*)\}")
+# "export { a, b as c }", and the type-only form a barrel
+# file is made of: "export type { CalendarDate } from ...".
+# Without "type" here, datepicker's src/index.ts exported
+# nothing that was a type, and every import of one was
+# reported as broken.
+EXPORTED_LIST = re.compile(r"\bexport\s*(?:type\s*)?\{([^}]*)\}")
 
 EXPORT_STAR = re.compile(r"\bexport\s*\*\s*from")
 
@@ -226,7 +231,7 @@ class StructureValidator:
 
             for raw in match.group(1).split(","):
 
-                name = raw.strip().split(" as ")[-1].strip()
+                name = raw.strip().split(" as ")[-1].strip().removeprefix("type ").strip()
 
                 if re.fullmatch(IDENTIFIER, name or ""):
                     names.add(name)

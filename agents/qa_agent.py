@@ -39,6 +39,9 @@ USES_DOM = re.compile(
 
 DOM_DIRECTIVE = "// @vitest-environment jsdom"
 
+# A barrel's line: "export type { CalendarDate, Clock } from './types.js'".
+RE_EXPORT = re.compile(r"""\bexport\s*(?:type\s*)?\{([^}]*)\}\s*from\s*['"]([^'"]+)['"]""")
+
 
 DOM_RULE = f"""- the file under test uses the DOM, and Vitest runs in
   Node: the suite's very first line is
@@ -236,23 +239,56 @@ class QAAgent:
 
         blocks: list[str] = []
 
+        shown: set[str] = {source.path}
+
         spent = 0
 
-        for target, _ in StructureValidator.imports(source.content):
+        def show(path: str) -> str:
+            """Adds a file to the prompt once, within the budget; its content."""
+
+            nonlocal spent
+
+            content = written.get(path) or found.read(path)
+
+            if not content or path in shown or spent + len(content) > MAX_IMPORTED_CHARS:
+                return content or ""
+
+            shown.add(path)
+
+            spent += len(content)
+
+            blocks.append(f"// {path}\n{content.strip()}")
+
+            return content
+
+        for target, names in StructureValidator.imports(source.content):
 
             path = StructureValidator.resolve(source.path, target, known)
 
             if not path or path == source.path:
                 continue
 
-            content = written.get(path) or found.read(path)
+            content = show(path)
 
-            if not content or spent + len(content) > MAX_IMPORTED_CHARS:
-                continue
+            # A barrel only names where things live. Shown
+            # src/index.ts alone, QA still did not know what
+            # CalendarDate was: the file that defines each
+            # imported name is shown too.
+            wanted = set(names or ())
 
-            spent += len(content)
+            for listed, origin in RE_EXPORT.findall(content):
 
-            blocks.append(f"// {path}\n{content.strip()}")
+                exported = {
+                    raw.strip().split(" as ")[-1].strip().removeprefix("type ").strip()
+                    for raw in listed.split(",")
+                }
+
+                if wanted & exported:
+
+                    defining = StructureValidator.resolve(path, origin, known)
+
+                    if defining:
+                        show(defining)
 
         if not blocks:
             return ""

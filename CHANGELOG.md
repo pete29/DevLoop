@@ -58,6 +58,9 @@ There are no release branches; one is cut from a tag
   `// @vitest-environment jsdom`, and a task whose tests then need jsdom
   stops and offers the install, as for any package, instead of paying
   for fixes. (#55)
+- Barrel files are read: `export type { … } from` counts as an export, and
+  QA is shown the file that defines each name imported through a barrel.
+  (#58)
 
 ### Added
 - Review several at once: under a plan's tasks, every task waiting for a

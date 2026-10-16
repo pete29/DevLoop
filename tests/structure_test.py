@@ -114,6 +114,40 @@ check(
 
 print()
 print("=" * 80)
+print("A BARREL'S TYPE RE-EXPORTS ARE EXPORTS")
+print("=" * 80)
+
+# datepicker's src/index.ts: every import of a type from it
+# was reported as broken, and paid for three fix rounds.
+report = StructureValidator.validate(
+    [
+        source(
+            "demo/demo-types.ts",
+            'import type { CalendarDate, Clock } from "../src/index.js";\n'
+            "export type Shown = CalendarDate;",
+        ),
+        source(
+            "src/index.ts",
+            'export type { CalendarDate, Clock } from "./types.js";\n'
+            'export { type Weekday, addDays as plus } from "./days.js";',
+        ),
+    ],
+)
+
+check(
+    "types re-exported by a barrel import cleanly",
+    [item for item in report.blockers if "does not export" in item],
+    [],
+)
+
+check(
+    "and so do inline type and renamed re-exports",
+    sorted(StructureValidator.exports('export { type Weekday, addDays as plus } from "./days.js";')),
+    ["Weekday", "plus"],
+)
+
+print()
+print("=" * 80)
 print("A SYMBOL IMPORTED BUT NEVER EXPORTED")
 print("=" * 80)
 

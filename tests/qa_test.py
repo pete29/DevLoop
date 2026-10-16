@@ -395,6 +395,28 @@ check(
     True,
 )
 
+with open(os.path.join(project, "src", "index.ts"), "w", encoding="utf-8") as handle:
+    handle.write('export type { CalendarDate } from "./types.js";\n')
+
+llm = FakeLLM()
+
+qa(llm).execute(
+    [
+        GeneratedFile(
+            "demo/state.ts",
+            FileType.SOURCE,
+            'import type { CalendarDate } from "../src/index.js";\nexport function today(d: CalendarDate): CalendarDate { return d; }\n',
+        )
+    ],
+    repository_path=project,
+)
+
+check(
+    "through a barrel, the file that defines the type is shown too",
+    ("// src/index.ts" in llm.prompts[0], "export type CalendarDate = string" in llm.prompts[0]),
+    (True, True),
+)
+
 print()
 print("=" * 80)
 print("A SUITE FOR DOM CODE ASKS FOR JSDOM")
