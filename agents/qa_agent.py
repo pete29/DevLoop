@@ -1,3 +1,4 @@
+import os
 import posixpath
 import re
 
@@ -90,6 +91,23 @@ def notes_rule(notes: str) -> str:
 
 {notes.strip()}
 
+"""
+
+
+def existing_rule(existing: str) -> str:
+    """The suite already on disk, to extend rather than replace."""
+
+    if not existing.strip():
+        return "- at most 3 tests\n"
+
+    return f"""- this suite already exists, from earlier work:
+
+{existing.rstrip()}
+
+  return the whole suite: keep every test in it that
+  still holds for the file as it is now, fix the ones
+  it no longer matches, and add at most 3 new tests
+  for what is new
 """
 
 
@@ -353,6 +371,19 @@ class QAAgent:
             source.path,
         )
 
+        # Written again from nothing, a suite kept 3 tests and
+        # lost the rest (csv-kit: parser.test.ts lost its RFC
+        # 4180 edge cases to a task that touched the parser).
+        existing = ""
+
+        root = getattr(self, "repository_path", "")
+
+        on_disk = os.path.join(root or "", path)
+
+        if root and os.path.isfile(on_disk):
+            with open(on_disk, encoding="utf-8", errors="replace") as handle:
+                existing = handle.read()
+
         prompt = f"""
 You are a QA Engineer.
 
@@ -375,8 +406,7 @@ Rules:
     import {{ describe, it, expect }} from 'vitest';
     import {{ ... }} from '{specifier}';
 
-- at most 3 tests
-{DOM_RULE if uses_dom(source.content) else ""}{notes_rule(self.notes)}- use describe, it and expect
+{existing_rule(existing)}{DOM_RULE if uses_dom(source.content) else ""}{notes_rule(self.notes)}- use describe, it and expect
 - this is Vitest, not Jest. For a mock write
   vi.fn(), and for a mocked type use
   ReturnType<typeof vi.fn>. The name `jest` does

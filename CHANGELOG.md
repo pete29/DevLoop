@@ -36,6 +36,8 @@ There are no release branches; one is cut from a tag
   not "breaks tests (45/45 passed)". (#69)
 - A revision's notes reach QA as well as the developer: a wrong test can
   be corrected by a revision instead of by hand. (#70)
+- QA extends a suite already on disk instead of writing it again with 3
+  tests: earlier tests are kept, and the cap of 3 is for new tests. (#71)
 
 ### Changed
 - Push and the pull request belong to the plan: **Push the branch** and

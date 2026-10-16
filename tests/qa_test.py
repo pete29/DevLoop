@@ -395,6 +395,32 @@ check(
     True,
 )
 
+check(
+    "with no suite on disk yet, a new one is capped at 3 tests",
+    "- at most 3 tests\n" in llm.prompts[0] and "already exists" not in llm.prompts[0],
+    True,
+)
+
+os.makedirs(os.path.join(project, "tests"))
+
+with open(os.path.join(project, "tests", "days.test.ts"), "w", encoding="utf-8") as handle:
+    handle.write("it('keeps the RFC edge case', () => {});\n")
+
+llm = FakeLLM()
+
+qa(llm).execute(
+    [GeneratedFile("src/days.ts", FileType.SOURCE, "export function addDays(d: string): string { return d; }\n")],
+    repository_path=project,
+)
+
+check(
+    "a suite already on disk is extended, its tests kept (csv-kit parser.test.ts)",
+    "already exists" in llm.prompts[0] and "keeps the RFC edge case" in llm.prompts[0],
+    True,
+)
+
+os.remove(os.path.join(project, "tests", "days.test.ts"))
+
 with open(os.path.join(project, "src", "index.ts"), "w", encoding="utf-8") as handle:
     handle.write('export type { CalendarDate } from "./types.js";\n')
 
