@@ -246,6 +246,33 @@ check(
 
 print()
 print("=" * 80)
+print("MERGING THE WHOLE PLAN CLOSES ITS ISSUE, HALF OF IT DOES NOT")
+print("=" * 80)
+
+from models.github_issue import IssueLink  # noqa: E402
+
+plan.issue = IssueLink(id=5870283902, number=2, title="Calendar date arithmetic", state="open", url="https://github.com/o/r/issues/2")
+
+check("with tasks still to commit, it is only part of it", "Part of #2" in plan_description(plan, records), True)
+
+check("and does not close it", "Closes #2" in plan_description(plan, records), False)
+
+whole = Plan(id="abcdef12-0001", epic="Dates", tasks=[TaskBreakdown(id=1, title="Rule contract")], issue=plan.issue)
+
+whole.record(TaskExecution(task_id=1, status=ExecutionStatus.COMPLETED, task_record_id=first.id))
+
+check("every task committed: merging closes it", "Closes #2" in plan_description(whole, [first]), True)
+
+check(
+    "a plan without an issue names none",
+    any(word in plan_description(Plan(id="x", epic="E", tasks=[]), []) for word in ("Closes #", "Part of #")),
+    False,
+)
+
+plan.issue = IssueLink()
+
+print()
+print("=" * 80)
 print("A PUSH REWRITES THE OPEN REQUEST")
 print("=" * 80)
 

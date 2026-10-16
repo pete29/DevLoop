@@ -51,6 +51,9 @@ There are no release branches; one is cut from a tag
 - QA is shown the repository files the file under test imports, so it
   builds test data from the real types: twice on datepicker it guessed
   `CalendarDate` (a branded string) was an object. (#51)
+- A plan's pull request says `Closes #<issue>` once every task is
+  committed (`Part of #<issue>` before), so merging it closes the issue
+  and the parent's progress counts it. (#53)
 
 ### Tests
 - pytest runs everything: the suites as one item each in their own

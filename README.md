@@ -322,7 +322,9 @@ DevLoop does on the pull request: it never comments, reviews or resolves.
 
 You merge on GitHub. **🔄 Check the PR** in the plan view then moves the
 requirement to `DELIVERED`. When the work came from an issue, the issue gets
-a comment with the pull request; it is never closed automatically.
+a comment with the pull request. DevLoop never closes it itself: the pull
+request says `Closes #<issue>` once every task of the plan is committed
+(`Part of #<issue>` before), so the issue closes when a person merges.
 
 ---
 

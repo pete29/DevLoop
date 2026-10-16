@@ -64,6 +64,7 @@ def description(task: Task) -> str:
         section("Blockers", task.blockers),
         section("Warnings", task.warnings),
         section("Suggestions", task.suggestions),
+        *([f"Closes #{task.issue.number}", ""] if task.issue.exists and task.issue.number else []),
         "---",
         "",
         (
@@ -117,6 +118,10 @@ def plan_description(plan: Plan, records: list[Task]) -> str:
 
     committed: list[Task] = []
 
+    # Whether every task of this plan is committed: only then
+    # may merging the request close the issue.
+    complete = True
+
     # Findings and costs are labelled like the checklist,
     # so a reader can find the task they belong to.
     labels: dict[str, str] = {}
@@ -152,6 +157,9 @@ def plan_description(plan: Plan, records: list[Task]) -> str:
         if done:
             committed.append(record)
             labels[record.id] = f"{item.id}. {item.title}"
+
+        else:
+            complete = False
 
     # Plans made from the same issue share a branch and its
     # pull request; what an earlier plan committed there is
@@ -215,6 +223,7 @@ def plan_description(plan: Plan, records: list[Task]) -> str:
         section("Blockers", findings("blockers")),
         section("Warnings", findings("warnings")),
         section("Cost", costs),
+        *issue_line(plan, complete),
         "---",
         "",
         (
@@ -225,6 +234,24 @@ def plan_description(plan: Plan, records: list[Task]) -> str:
     ]
 
     return "\n".join(parts)
+
+
+def issue_line(plan: Plan, complete: bool) -> list[str]:
+    """`Closes #n` once the plan is all committed, `Part of #n` before.
+
+    datepicker's issue #2 stayed open after its pull request
+    was merged: nothing in the body named it. GitHub closes
+    an issue a merged request says it closes -- so the merge,
+    a person's act, is what closes it. A merge of half the
+    work must not, hence "Part of" until the last commit.
+    """
+
+    if not plan.issue.exists or not plan.issue.number:
+        return []
+
+    word = "Closes" if complete else "Part of"
+
+    return [f"{word} #{plan.issue.number}", ""]
 
 
 class PullRequestAgent:
