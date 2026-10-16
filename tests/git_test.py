@@ -829,6 +829,27 @@ check("it points at the commit that holds its work", later_commit.commit_hash, f
 
 check("and says so", "already in" in later_commit.commit_message, True)
 
+# csv-kit: another task's file sits modified, unstaged -- and
+# first in git's status, where a stripped line read as staged.
+with open(os.path.join(shared_repo, "src", "a-first.ts"), "w", encoding="utf-8") as handle:
+    handle.write("export const first = 1;")
+
+subprocess.run(["git", "-C", shared_repo, "add", "src/a-first.ts"], check=True)
+subprocess.run(["git", "-C", shared_repo, "commit", "-q", "-m", "other"], check=True)
+
+with open(os.path.join(shared_repo, "src", "a-first.ts"), "w", encoding="utf-8") as handle:
+    handle.write("export const first = 2;")
+
+beside = GitAgent.execute(approved_task(shared_repo))
+
+check("another task's unstaged change does not count as staged", "already in" in beside.commit_message, True)
+
+check(
+    "and stays unstaged, out of this task's commit",
+    " M src/a-first.ts" in subprocess.run(["git", "-C", shared_repo, "status", "--porcelain"], capture_output=True, text=True).stdout.splitlines(),
+    True,
+)
+
 print()
 print("=" * 80)
 

@@ -664,27 +664,21 @@ class GitService:
         return self.tracked(paths) - staged_new
 
     def staged_files(self) -> list[str]:
+        """The files staged for the next commit.
 
-        output = self._run(
-            "status",
-            "--porcelain",
-        )
+        From `diff --cached`, not from `status --porcelain`:
+        there a leading space means "not staged", and the git
+        runner strips its output, so the first line lost that
+        space and an unstaged file read as staged. Accepting a
+        task whose work an earlier commit held then failed
+        with "nothing added to commit" (csv-kit, #65).
+        """
 
-        staged: list[str] = []
-
-        for line in output.splitlines():
-
-            if not line.strip():
-                continue
-
-            index_state = line[0]
-
-            if index_state in (" ", "?"):
-                continue
-
-            staged.append(line[3:].strip().strip('"'))
-
-        return staged
+        return [
+            line.strip().strip('"')
+            for line in self._run("diff", "--cached", "--name-only").splitlines()
+            if line.strip()
+        ]
 
     def remote_url(
         self,

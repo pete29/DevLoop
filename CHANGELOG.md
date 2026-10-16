@@ -21,7 +21,11 @@ There are no release branches; one is cut from a tag
 
 ## Unreleased
 
-Nothing yet.
+### Fixed
+- What is staged is read from `git diff --cached`: another task's unstaged
+  change, first in git's status, read as staged, and accepting a task whose
+  work an earlier commit held failed with "nothing added to commit".
+  (#65)
 
 ## 0.11.0 (alpha) — 2026-10-16
 
