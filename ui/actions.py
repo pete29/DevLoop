@@ -1,11 +1,14 @@
 """What the page does, apart from drawing: runs, revisions, plans continued."""
 
+import time
+
 import streamlit as st
 
 from agents.git_agent import GitAgent
 from agents.issue_agent import IssueAgent
 from agents.pull_request_agent import PullRequestAgent
 from agents.planner_agent import PlannerAgent
+from models.pull_request_info import PullRequestState
 from models.repository import Repository
 from models.requirement import now
 from models.task_execution import ExecutionStatus, TaskExecution
@@ -188,6 +191,50 @@ def open_plan_pull_request(plan, records) -> tuple[str, str]:
         return "success", f"Opened {info.label} and commented on {holder.issue.label}"
 
     return "warning", f"Opened {info.label}, but the issue was not updated: {detail}"
+
+
+# How often an open pull request is asked about, at most.
+PR_CHECK_SECONDS = 60
+
+
+def refresh_pull_request(holder, records):
+    """The request's state from GitHub, stored on every record of the branch."""
+
+    fresh = PullRequestAgent.refresh(holder)
+
+    for record in records:
+        repository.update_pull_request(record.id, fresh)
+
+    return fresh
+
+
+def check_open_request(plan, holder, records, state=None, clock=time.monotonic):
+    """An open request's state, asked of GitHub at most once a minute.
+
+    Merging happens on GitHub and nothing tells DevLoop: a
+    merged request showed as open until someone pressed the
+    refresh button (csv-kit #6, #67).
+    """
+
+    info = holder.pull_request
+
+    if info.state != PullRequestState.OPEN:
+        return info
+
+    state = st.session_state if state is None else state
+
+    key = f"pr-checked-{plan.id}"
+
+    moment = clock()
+
+    last = state.get(key)
+
+    if last is not None and moment - last < PR_CHECK_SECONDS:
+        return info
+
+    state[key] = moment
+
+    return refresh_pull_request(holder, records)
 
 
 def plan_pull_request(records):

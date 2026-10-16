@@ -30,7 +30,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LEVELS = {
     "unit": {
         "ci_checks_test", "developer_test", "eval_test", "grounding_test",
-        "parallel_test", "plan_pull_request_test", "qa_test", "severity_test",
+        "parallel_test", "plan_pull_request_test", "pr_watch_test", "qa_test", "severity_test",
         "structure_test", "translation_test", "version_test",
     },
     "integration": {

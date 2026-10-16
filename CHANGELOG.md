@@ -40,6 +40,9 @@ There are no release branches; one is cut from a tag
   tests: earlier tests are kept, and the cap of 3 is for new tests. (#71)
 
 ### Changed
+- An open pull request is asked about when its plan is shown, at most
+  once a minute: a merge on GitHub shows without pressing the refresh
+  button. (#67)
 - Push and the pull request belong to the plan: **Push the branch** and
   **Open pull request** sit in the plan view, for every committed task at
   once, instead of in a task's window. A request already merged is not

@@ -14,7 +14,7 @@ from services.git_service import GitError, GitService
 from services.github_service import GitHubError, parse_remote
 from services.package_installer import blocked, install
 from services.task_rollback import Rollback
-from ui.actions import accept_records, approvable, latest_committed, log_tail, open_plan_pull_request, plan_pull_request, plan_records, push_plan, reject_records, revise_task, start_run, waiting_records
+from ui.actions import accept_records, approvable, check_open_request, latest_committed, log_tail, open_plan_pull_request, plan_pull_request, plan_records, push_plan, refresh_pull_request, reject_records, revise_task, start_run, waiting_records
 from ui import shared
 from ui.shared import plan_store, repository, repository_path_now, run_store, t
 
@@ -419,9 +419,10 @@ def pull_request_panel(plan) -> None:
     """The plan's pull request, and a way to ask GitHub.
 
     Merging is a human's act on GitHub, and nothing here
-    hears about it on its own. The button reads it back,
-    and a merged request is what moves the requirement to
-    DELIVERED.
+    hears about it on its own: an open request is asked
+    about when the plan is shown, at most once a minute,
+    and the button asks at once. A merged request is what
+    moves the requirement to DELIVERED.
     """
 
     records = plan_records(plan)
@@ -435,7 +436,7 @@ def pull_request_panel(plan) -> None:
 
         return
 
-    info = holder.pull_request
+    info = check_open_request(plan, holder, records)
 
     # A fifth of the width cut "Check the PR" to "Sprawdź sta…".
     left, right = st.columns([2, 1])
@@ -458,10 +459,7 @@ def pull_request_panel(plan) -> None:
             use_container_width=True,
         ):
 
-            fresh = PullRequestAgent.refresh(holder)
-
-            for record in records:
-                repository.update_pull_request(record.id, fresh)
+            fresh = refresh_pull_request(holder, records)
 
             st.session_state.git_message = (
                 "success",
