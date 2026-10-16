@@ -25,7 +25,7 @@ Requirement (typed by hand, or imported from a GitHub issue)
                                 send back = your notes, the Developer revises
                                 reject    = the task's files are undone
   → Push → pull request         one PR per plan, description rebuilt on every push
-  → Human merges on GitHub → "Check the PR" → requirement DELIVERED
+  → Human merges on GitHub → the plan notices → requirement DELIVERED
 ```
 
 **The core rule: facts belong to code, reasoning belongs to AI.** Anything
@@ -337,8 +337,9 @@ in the app; accept and push, and the pull request's description updates. A
 comment sent back is remembered and not offered again. Reading is all
 DevLoop does on the pull request: it never comments, reviews or resolves.
 
-You merge on GitHub. **🔄 Check the PR** in the plan view then moves the
-requirement to `DELIVERED`. When the work came from an issue, the issue gets
+You merge on GitHub. The plan view asks GitHub about an open pull request
+when it is shown, at most once a minute (**🔄 Check the PR** asks at once),
+and a merge moves the requirement to `DELIVERED`. When the work came from an issue, the issue gets
 a comment with the pull request. DevLoop never closes it itself: the pull
 request says `Closes #<issue>` once every task of the plan is committed
 (`Part of #<issue>` before), so the issue closes when a person merges.

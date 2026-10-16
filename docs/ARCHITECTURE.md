@@ -239,8 +239,9 @@ mistaken for a fresh one.
 requirement, every task with its state, score, compile and test results,
 the files and findings of committed tasks, and what they cost. Every push
 of the plan's branch rewrites it (title and body only). Opening it is a
-human's click; so is merging it, on GitHub — and "Check the PR" reads that
-back, which is what moves the requirement to `DELIVERED`.
+human's click; so is merging it, on GitHub. The plan view reads an open
+request's state back when it is shown, at most once a minute ("Check the PR"
+asks at once), and a merge is what moves the requirement to `DELIVERED`.
 
 A task described on its own becomes a plan of one task, so it gets a
 plan's branch before generation, cut from the freshest base like any other,
