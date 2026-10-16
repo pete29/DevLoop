@@ -43,8 +43,12 @@ MAX_IMPORTED_CHARS = 12_000
 # Code that touches the DOM. Vitest runs in Node, where none
 # of these exist: the suite has to ask for jsdom.
 USES_DOM = re.compile(
-    r"\bdocument\.|\bwindow\.|\bHTML\w*Element\b|\b(?:Keyboard|Mouse|Focus|Pointer)Event\b"
+    r"\b(?:document|window)\.[A-Za-z_$]|\bHTML\w*Element\b|\b(?:Keyboard|Mouse|Focus|Pointer)Event\b"
 )
+
+# Comments are prose: "statistics for a CSV document." is
+# not the DOM (csv-kit #7).
+COMMENT = re.compile(r"/\*.*?\*/|//[^\n]*", re.DOTALL)
 
 DOM_DIRECTIVE = "// @vitest-environment jsdom"
 
@@ -62,7 +66,7 @@ DOM_RULE = f"""- the file under test uses the DOM, and Vitest runs in
 def uses_dom(content: str) -> bool:
     """Whether code reaches for the DOM's globals."""
 
-    return bool(USES_DOM.search(content))
+    return bool(USES_DOM.search(COMMENT.sub("", content)))
 
 
 def with_dom(suite: str) -> str:

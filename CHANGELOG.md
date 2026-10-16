@@ -26,6 +26,10 @@ There are no release branches; one is cut from a tag
   change, first in git's status, read as staged, and accepting a task whose
   work an earlier commit held failed with "nothing added to commit".
   (#65)
+- QA no longer reads "a CSV document." in a comment as DOM use: only
+  member access on `document`/`window` outside comments counts. The false
+  match put jsdom on a Node-only suite, and the run stopped on a missing
+  package with every test passing. (#68)
 
 ### Changed
 - Push and the pull request belong to the plan: **Push the branch** and

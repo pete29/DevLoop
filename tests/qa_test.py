@@ -459,6 +459,18 @@ check(
     False,
 )
 
+check(
+    "nor a doc comment that ends a sentence on 'document.'",
+    uses_dom("/**\n * Summary statistics for a CSV document.\n */\nexport interface CsvStats { rowCount: number }\n"),
+    False,
+)
+
+check(
+    "while document.createElement in the code does",
+    uses_dom("// builds the table\nconst cell = document.createElement('td');\n"),
+    True,
+)
+
 llm = FakeLLM()
 
 suites = qa(llm).execute([GeneratedFile("src/dom-render.ts", FileType.SOURCE, DOM_SOURCE)])
