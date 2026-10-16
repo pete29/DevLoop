@@ -97,7 +97,10 @@ WRITE_RULES = """
 Write the complete file. Every method has a real body.
 No TODO, no placeholder, no "in a real implementation
 this would ...". Import from the other files by their
-paths above where you need them.
+paths above where you need them, and call what you import
+with its real signature: never through a cast such as
+`as unknown as` or `as any`, which hides a wrong argument
+order from the compiler.
 
 Return the TypeScript only: no JSON, no markdown fence,
 no explanation.

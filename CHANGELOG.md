@@ -38,6 +38,9 @@ There are no release branches; one is cut from a tag
   be corrected by a revision instead of by hand. (#70)
 - QA extends a suite already on disk instead of writing it again with 3
   tests: earlier tests are kept, and the cap of 3 is for new tests. (#71)
+- The developer is told to call what it imports with its real signature,
+  never through `as unknown as` or `as any`: a cast hid swapped arguments
+  from the compiler. (#74)
 
 ### Changed
 - **New repository** asks GitHub, with the everyday token, whether it can

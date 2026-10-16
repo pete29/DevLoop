@@ -235,6 +235,12 @@ check(
     True,
 )
 
+check(
+    "and calls through a cast (csv-kit #6: as unknown as hid swapped arguments)",
+    all("never through a cast" in prompt for prompt in llm.prompts[1:]),
+    True,
+)
+
 print()
 print("=" * 80)
 print("ONE FILE FAILING DOES NOT LOSE THE TASK")
