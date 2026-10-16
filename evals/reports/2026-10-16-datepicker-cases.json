@@ -1,0 +1,111 @@
+{
+  "label": "datepicker-cases",
+  "at": "2026-10-16T11:07:57+00:00",
+  "models": {
+    "planner": "claude-opus-5-5",
+    "architect": "claude-opus-5-5",
+    "developer": "claude-sonnet-5-5",
+    "qa": "claude-sonnet-5-5"
+  },
+  "efforts": {
+    "planner": "high",
+    "architect": "high",
+    "developer": "high",
+    "qa": "medium"
+  },
+  "results": [
+    {
+      "id": "js-extension-import",
+      "kind": "task",
+      "packages_asked": [],
+      "compile": "PASSED",
+      "tests": "PASSED",
+      "tests_passed": 21,
+      "tests_total": 21,
+      "score": 92,
+      "recommendation": "APPROVE",
+      "review_rounds": 1,
+      "blockers": 0,
+      "warnings": 0,
+      "files": [
+        "src/max-length-rule.ts",
+        "tests/max-length-rule.test.ts"
+      ],
+      "cost": 0.0339,
+      "output_tokens": 1194,
+      "seconds": 21.8,
+      "passed": true
+    },
+    {
+      "id": "barrel-types",
+      "kind": "task",
+      "packages_asked": [],
+      "compile": "PASSED",
+      "tests": "PASSED",
+      "tests_passed": 21,
+      "tests_total": 21,
+      "score": 96,
+      "recommendation": "APPROVE",
+      "review_rounds": 1,
+      "blockers": 0,
+      "warnings": 0,
+      "files": [
+        "src/describe-result.ts",
+        "tests/describe-result.test.ts"
+      ],
+      "cost": 0.0152,
+      "output_tokens": 564,
+      "seconds": 15.9,
+      "passed": true
+    },
+    {
+      "id": "dom-render",
+      "kind": "task",
+      "packages_asked": [
+        "jsdom"
+      ],
+      "compile": "PASSED",
+      "tests": "PASSED",
+      "tests_passed": 21,
+      "tests_total": 21,
+      "score": 97,
+      "recommendation": "APPROVE",
+      "review_rounds": 2,
+      "blockers": 0,
+      "warnings": 0,
+      "files": [
+        "src/render-errors.ts",
+        "tests/render-errors.test.ts"
+      ],
+      "cost": 0.028,
+      "output_tokens": 1631,
+      "seconds": 42.2,
+      "passed": true
+    },
+    {
+      "id": "html-page",
+      "kind": "task",
+      "packages_asked": [],
+      "compile": "PASSED",
+      "tests": "PASSED",
+      "tests_passed": 21,
+      "tests_total": 21,
+      "score": 90,
+      "recommendation": "APPROVE",
+      "review_rounds": 1,
+      "blockers": 0,
+      "warnings": 1,
+      "files": [
+        "demo/index.html",
+        "demo/main.ts",
+        "tests/main.test.ts"
+      ],
+      "cost": 0.0436,
+      "output_tokens": 2309,
+      "seconds": 30.5,
+      "passed": true
+    }
+  ],
+  "total_cost": 0.1207,
+  "passed": 4
+}

@@ -21,6 +21,14 @@ There are no release branches; one is cut from a tag
 
 ## Unreleased
 
+Nothing yet.
+
+## 0.11.0 (alpha) — 2026-10-16
+
+The factory stops tripping over what the datepicker epic hit. The eval's
+four cases from it pass first time: 4/4, $0.1207
+(`evals/reports/2026-10-16-datepicker-cases.json`).
+
 ### Changed
 - The compiler, when it runs, alone judges imports, exports and missing
   files; DevLoop's own structural reading keeps only cycles and the task's
