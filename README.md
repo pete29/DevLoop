@@ -208,7 +208,8 @@ Before the first task, the plan's environment panel:
 1. writes the missing `package.json`, `tsconfig` and Vitest config from
    templates (an existing file is never touched),
 2. runs `npm install` — **only when you press the button**,
-3. commits the scaffolding on the base branch. Files only staged with
+3. commits the scaffolding on the base branch; if git does not know who
+   commits, it first asks for a name and an email for that repository. Files only staged with
    `git add` count as not committed: they are on no branch yet.
 
 Tasks stay disabled until Step 0 is done, unless you explicitly override it.

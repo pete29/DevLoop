@@ -49,7 +49,7 @@ run continues.
 `services/git_service.py` passes arguments as lists, never through a shell,
 and refuses anything not on this list:
 
-**Allowed:** `add`, `branch`, `checkout`, `commit`, `diff`, `fetch`,
+**Allowed:** `add`, `branch`, `checkout`, `commit`, `config`, `diff`, `fetch`,
 `init`, `ls-files`, `merge-base`, `push`, `remote`, `rev-parse`, `status`,
 `symbolic-ref`
 
@@ -78,6 +78,13 @@ level:
   and branched on code the team has moved past. A new plan's branch starts
   from `origin/main` when the local `main` is behind it. `pull` stays
   refused: it would merge into a local branch.
+- `config` may only read `user.name` or `user.email` (`--get`), or set one
+  of them for this repository (`--local`, one line). Never `--global`,
+  never another key: hooks, credentials and remotes are config too. It
+  exists for Step 0, which asks who commits when git does not know.
+- `checkout -B <branch> <start>` moves a plan's branch only when it has no
+  commits of its own (`GitService.restart_branch` checks first), so
+  nothing is discarded.
 - `merge-base` may only be `--is-ancestor`, a read-only question about
   which of two commits contains the other.
 - `push` may not pass `--force`, `-f`, `--force-with-lease`, `--delete`,

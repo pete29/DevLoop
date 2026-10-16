@@ -13,6 +13,7 @@ ALLOWED_COMMANDS = frozenset(
         "branch",
         "checkout",
         "commit",
+        "config",
         "diff",
         "fetch",
         "init",
@@ -57,6 +58,11 @@ ALLOWED_SUBCOMMANDS = {
 # never learns about merged pull requests plans every new
 # requirement on stale code.
 FETCH_FLAGS = frozenset({"--quiet"})
+
+# config in two shapes only: reading who commits, and setting
+# it for this one repository. Never --global, never another
+# key: hooks, credentials and remotes are all config too.
+IDENTITY_KEYS = frozenset({"user.name", "user.email"})
 
 FORBIDDEN_PUSH_FLAGS = (
     "--force",
@@ -215,6 +221,26 @@ class GitService:
                     f"only {sorted(permitted)} are."
                 )
 
+        if command == "config":
+
+            shape = list(arguments[1:])
+
+            reading = len(shape) == 2 and shape[0] == "--get" and shape[1] in IDENTITY_KEYS
+
+            setting = (
+                len(shape) == 3
+                and shape[0] == "--local"
+                and shape[1] in IDENTITY_KEYS
+                and bool(shape[2].strip())
+                and not any(character in shape[2] for character in "\r\n")
+            )
+
+            if not reading and not setting:
+                raise GitError(
+                    "'git config' is allowed only to read or set "
+                    "user.name and user.email for this repository."
+                )
+
         if command == "fetch":
 
             flags = [a for a in arguments[1:] if a.startswith("-")]
@@ -364,6 +390,28 @@ class GitService:
             return False
 
         return True
+
+    def identity(self) -> tuple[str, str]:
+        """Who git will say made a commit: name and email, or ""."""
+
+        found = []
+
+        for key in ("user.name", "user.email"):
+
+            try:
+                found.append(self._run("config", "--get", key))
+
+            except GitError:
+                found.append("")
+
+        return found[0], found[1]
+
+    def set_identity(self, name: str, email: str) -> None:
+        """Sets who commits, in this repository only."""
+
+        self._run("config", "--local", "user.name", name.strip())
+
+        self._run("config", "--local", "user.email", email.strip())
 
     def base_branch(self) -> str:
         """The branch new work should start from.

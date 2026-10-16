@@ -605,6 +605,30 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "DevLoop {label}",
         "en": "DevLoop {label}",
     },
+    "env.identity_missing": {
+        "pl": "Git nie wie, kto robi commity (brak user.name i user.email), więc odrzuci każdy commit: szkieletu i każdego zaakceptowanego zadania. Podaj je dla tego repozytorium.",
+        "en": "git does not know who commits (no user.name or user.email), so it would refuse every commit: the scaffolding's and each accepted task's. Give them for this repository.",
+    },
+    "env.identity_name": {
+        "pl": "Imię i nazwisko",
+        "en": "Name",
+    },
+    "env.identity_email": {
+        "pl": "E-mail",
+        "en": "Email",
+    },
+    "env.identity_save": {
+        "pl": "Zapisz dla tego repozytorium",
+        "en": "Save for this repository",
+    },
+    "env.identity_incomplete": {
+        "pl": "Podaj imię i nazwisko oraz e-mail.",
+        "en": "Give a name and an email.",
+    },
+    "env.identity_saved": {
+        "pl": "Commity w tym repozytorium będą podpisane jako {name}.",
+        "en": "Commits in this repository will be signed {name}.",
+    },
     "plan.close": {
         "pl": "🗑 Zamknij plan",
         "en": "🗑 Close plan",

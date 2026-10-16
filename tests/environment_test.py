@@ -129,6 +129,59 @@ try:
 
     print()
     print("=" * 80)
+    print("A REPOSITORY WHERE GIT DOES NOT KNOW WHO COMMITS")
+    print("=" * 80)
+
+    from services.git_service import GitService
+
+    anonymous = tempfile.mkdtemp()
+
+    folders.append(anonymous)
+
+    git(anonymous, "init", "-b", "main")
+
+    # This machine's own identity, if it has one, is hidden.
+    saved = {name: os.environ.get(name) for name in ("GIT_CONFIG_GLOBAL", "GIT_CONFIG_NOSYSTEM")}
+
+    os.environ["GIT_CONFIG_GLOBAL"] = os.path.join(anonymous, "no-global-config")
+
+    os.environ["GIT_CONFIG_NOSYSTEM"] = "1"
+
+    try:
+        step = assess(anonymous)
+
+        check("it is reported", step.identity_missing, True)
+
+        check("so the step is not ready", step.ready, False)
+
+        GitService(anonymous).set_identity("Ada Lovelace", "ada@example.com")
+
+        check("once given, for this repository", GitService(anonymous).identity(), ("Ada Lovelace", "ada@example.com"))
+
+        check("it is no longer missing", assess(anonymous).identity_missing, False)
+
+    finally:
+        for name, value in saved.items():
+            if value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = value
+
+    for shape in (
+        ("config", "--global", "user.name", "x"),
+        ("config", "core.hooksPath", "x"),
+        ("config", "--local", "user.name", "a\nb"),
+        ("config", "--get", "remote.origin.url"),
+    ):
+        refused = False
+        try:
+            GitService(anonymous)._run(*shape)
+        except GitError:
+            refused = True
+        check(f"git {' '.join(shape)!r} is refused", refused, True)
+
+    print()
+    print("=" * 80)
     print("AN EMPTY REPOSITORY, STEP BY STEP")
     print("=" * 80)
 

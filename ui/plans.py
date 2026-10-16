@@ -120,6 +120,8 @@ def environment_panel(
         if not step.git:
             st.error(t("env.no_git"))
 
+        identity_line(path, step)
+
         scaffolding_line(path, step)
 
         dependencies_line(path, step)
@@ -128,6 +130,40 @@ def environment_panel(
 
         if not step.ready:
             st.checkbox(t("env.skip"), key=skip_key)
+
+
+def identity_line(path: str, step: EnvironmentStep) -> None:
+    """Who commits: without a name and an email git refuses every commit."""
+
+    if not step.git or not step.identity_missing:
+        return
+
+    st.warning(t("env.identity_missing"))
+
+    with st.form(f"env-identity-{path}", border=False):
+
+        name = st.text_input(t("env.identity_name"))
+
+        email = st.text_input(t("env.identity_email"))
+
+        saved = st.form_submit_button(t("env.identity_save"))
+
+    if not saved:
+        return
+
+    if not name.strip() or "@" not in email:
+        st.error(t("env.identity_incomplete"))
+        return
+
+    try:
+        GitService(path).set_identity(name, email)
+
+        st.session_state.git_message = ("success", t("env.identity_saved", name=name.strip()))
+
+    except GitError as error:
+        st.session_state.git_message = ("warning", t("env.commit_failed", reason=error))
+
+    st.rerun()
 
 
 def scaffolding_line(path: str, step: EnvironmentStep) -> None:
@@ -182,7 +218,7 @@ def scaffolding_commit_line(path: str, step: EnvironmentStep) -> None:
 
     # After the install when there is one, so the lock file
     # goes into the same commit.
-    waiting = bool(step.missing) or (
+    waiting = step.identity_missing or bool(step.missing) or (
         step.dependencies_missing and not step.install_blocked
     )
 

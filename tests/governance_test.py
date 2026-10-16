@@ -107,7 +107,9 @@ check(
     # init: only `init --quiet --initial-branch=<name>`, for
     # "New repository"; remote adds only origin, once. Both
     # shapes are pinned in tests.repository_setup_test.
-    ["diff", "fetch", "init", "ls-files", "merge-base", "remote"],
+    # config: only reading or locally setting user.name and
+    # user.email, pinned in tests.environment_test.
+    ["config", "diff", "fetch", "init", "ls-files", "merge-base", "remote"],
 )
 
 # Fetch is allowed because a factory whose main never

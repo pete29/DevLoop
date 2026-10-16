@@ -50,6 +50,10 @@ class EnvironmentStep:
 
     git: bool = False
 
+    # git has no user.name or user.email, here or globally:
+    # every commit would be refused.
+    identity_missing: bool = False
+
     base_branch: str = ""
 
     @property
@@ -57,6 +61,7 @@ class EnvironmentStep:
 
         return (
             self.git
+            and not self.identity_missing
             and not self.missing
             and not self.uncommitted
             and not self.dependencies_missing
@@ -98,6 +103,8 @@ def assess(repository_path: str) -> EnvironmentStep:
     step.git = service.is_repository()
 
     if step.git:
+
+        step.identity_missing = not all(service.identity())
 
         step.base_branch = service.base_branch()
 
