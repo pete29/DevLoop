@@ -419,6 +419,26 @@ check(
 
 print()
 print("=" * 80)
+print("ONLY CODE GETS A SUITE")
+print("=" * 80)
+
+check(
+    "an HTML page and a tool's config are not tested; code is",
+    [
+        item.path
+        for item in QAAgent.worth_testing(
+            [
+                GeneratedFile("demo/index.html", FileType.SOURCE, "<html></html>"),
+                GeneratedFile("vite.config.ts", FileType.SOURCE, "export default {};"),
+                GeneratedFile("demo/main.ts", FileType.SOURCE, "export const a = 1;"),
+            ]
+        )
+    ],
+    ["demo/main.ts"],
+)
+
+print()
+print("=" * 80)
 print("A SUITE FOR DOM CODE ASKS FOR JSDOM")
 print("=" * 80)
 

@@ -61,6 +61,8 @@ There are no release branches; one is cut from a tag
 - Barrel files are read: `export type { … } from` counts as an export, and
   QA is shown the file that defines each name imported through a barrel.
   (#58)
+- QA writes suites for code only: not for an HTML page or a tool's
+  `*.config.*` file. (#59)
 
 ### Added
 - Review several at once: under a plan's tasks, every task waiting for a

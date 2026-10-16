@@ -28,6 +28,15 @@ NOT_WORTH_TESTING = (
     "index.ts",
 )
 
+# A suite imports what it tests, so only code can have one.
+# datepicker's demo/index.html got a suite importing
+# "../demo/index", which does not exist, and the task
+# stopped on a compile error in a file nobody needed.
+TESTABLE = (".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs")
+
+# A tool's config: vite.config.ts, eslint.config.js.
+CONFIG_FILE = re.compile(r"(^|/)[^/]*\.config\.[cm]?[jt]sx?$")
+
 # How much of the imported files a suite's prompt may carry.
 MAX_IMPORTED_CHARS = 12_000
 
@@ -116,7 +125,9 @@ class QAAgent:
         return [
             item
             for item in files
-            if not item.path.endswith(NOT_WORTH_TESTING)
+            if item.path.endswith(TESTABLE)
+            and not item.path.endswith(NOT_WORTH_TESTING)
+            and not CONFIG_FILE.search(item.path)
             and not is_test_path(item.path)
             and item.content.strip()
         ]
