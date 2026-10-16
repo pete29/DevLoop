@@ -1134,7 +1134,9 @@ def revision_panel(task) -> None:
 
 
 def decision_buttons(task) -> None:
-    """The two final answers, side by side."""
+    """The two final answers, side by side, and a free check again."""
+
+    check_again_button(task)
 
     col1, col2 = st.columns(2)
 
@@ -1145,6 +1147,35 @@ def decision_buttons(task) -> None:
     with col2:
 
         reject_button(task)
+
+
+def check_again_button(task) -> None:
+    """The compiler and the tests again, on the files as they are: free."""
+
+    if task.git_operation.committed or task.status != TaskStatus.WAITING_FOR_APPROVAL:
+        return
+
+    if not st.button(t("task.check_again"), key=f"check-again-{task.id}", help=t("task.check_again_help")):
+        return
+
+    with st.spinner(t("task.checking_again")):
+        checked = shared.orchestrator.check_again(task)
+
+    repository.save(checked)
+
+    st.session_state.task = checked
+
+    st.session_state.git_message = (
+        "success" if checked.recommendation.value == "APPROVE" else "warning",
+        t(
+            "task.checked_again",
+            compile=checked.compile_result.status.value,
+            tests=checked.test_result.summary,
+            verdict=checked.recommendation.value,
+        ),
+    )
+
+    st.rerun()
 
 
 def accept_button(task) -> None:

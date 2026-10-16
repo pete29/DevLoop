@@ -351,6 +351,65 @@ class WorkflowOrchestrator:
             list(task.review_history),
         )
 
+    def check_again(self, task: Task) -> Task:
+        """The compiler and the tests again, on the files as they are.
+
+        No model is called. For when the cause of a failed
+        check was fixed outside the task -- a package
+        installed, a stray file removed -- and a revision or
+        a rerun would pay to write the same code again. The
+        recommendation follows the facts: APPROVE again only
+        where the Architect had approved.
+        """
+
+        root = task.repository_path
+
+        compile_result = type_checker.check(root)
+
+        test_result = self.run_tests(root, compile_result)
+
+        passed = not compile_result.blocks_delivery and not test_result.blocks_delivery
+
+        reviewed = task.review_history[-1] if task.review_history else None
+
+        if not passed:
+            task.recommendation = ReviewDecision.REQUEST_CHANGES
+
+        elif (
+            reviewed is not None
+            and reviewed.recommendation == ReviewDecision.APPROVE
+            and not task.blockers
+        ):
+            task.recommendation = ReviewDecision.APPROVE
+
+        task.compile_result = compile_result
+
+        task.test_result = test_result
+
+        on_disk = []
+
+        for item in task.generated_files:
+
+            path = FileWriter.resolve(root, item.path)
+
+            if os.path.isfile(path):
+                with open(path, encoding="utf-8") as handle:
+                    on_disk.append(handle.read())
+
+        task.packages = [] if passed else packages.missing(on_disk, root)
+
+        steps = StepRecorder()
+
+        steps.record(
+            "step.check_again",
+            f"tsc {compile_result.status.value} · {test_result.summary}",
+            ok=passed,
+        )
+
+        task.steps = list(task.steps) + steps.steps
+
+        return task
+
     def finish(
         self,
         task_description: str,

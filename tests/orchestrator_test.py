@@ -706,6 +706,41 @@ try:
 
     print()
     print("=" * 80)
+    print("CHECKING AGAIN COSTS NOTHING AND FOLLOWS THE FACTS")
+    print("=" * 80)
+
+    compiles(CompileStatus.FAILED, CompileStatus.FAILED, CompileStatus.FAILED, CompileStatus.FAILED, CompileStatus.FAILED, CompileStatus.FAILED)
+    tests_report()
+
+    stuck = run(Developer([A], [[A], [A], [A], [A], [A]]), Architect(), QA(), root)
+
+    check("it ends unapprovable while the compiler refuses it", stuck.recommendation, ReviewDecision.REQUEST_CHANGES)
+
+    # Whatever was wrong is fixed outside the task.
+    compiles()
+    tests_report()
+
+    CALLS.clear()
+
+    from models.review_history import ReviewHistory
+
+    # As if the Architect had reviewed and approved it.
+    stuck.review_history = [ReviewHistory(iteration=1, score=90, recommendation=ReviewDecision.APPROVE, review="Fine.")]
+
+    again = WorkflowOrchestrator().check_again(stuck)
+
+    check("only the compiler and the tests run: no model", CALLS, ["tsc", "vitest"])
+
+    check(
+        "the results are replaced, and the Architect's verdict counts again",
+        (again.compile_result.status, again.test_result.status, again.recommendation),
+        (CompileStatus.PASSED, TestStatus.PASSED, ReviewDecision.APPROVE),
+    )
+
+    check("a step says it was checked again", again.steps[-1].name, "step.check_again")
+
+    print()
+    print("=" * 80)
     print("A DOM SUITE THAT NEEDS JSDOM STOPS FOR THE INSTALL")
     print("=" * 80)
 

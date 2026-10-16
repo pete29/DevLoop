@@ -284,6 +284,11 @@ last 30 tasks times the tasks left, with the middle half as a range.
 tests, diff and git. Three answers:
 
 - **✅ Accept** commits the task's files on the plan's branch, in run order.
+- **🔄 Check again (free)** runs the compiler and the tests once more on
+  the files as they are on disk, with no model call: for when what failed
+  was fixed outside the task (a package installed, a stray file removed).
+  The recommendation follows the facts, APPROVE only where the Architect
+  had approved.
 - **🔁 Send back for revision**: pick Architect findings and/or write your
   own notes. The Developer edits the existing files with them as blockers,
   and the free checks, the Architect, QA and the tests run again. Your notes

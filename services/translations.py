@@ -665,6 +665,26 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "Zacommitowano {count}, potem zatrzymano: {reason}",
         "en": "Committed {count}, then stopped: {reason}",
     },
+    "task.check_again": {
+        "pl": "🔄 Sprawdź ponownie (za darmo)",
+        "en": "🔄 Check again (free)",
+    },
+    "task.check_again_help": {
+        "pl": "Kompilacja i testy jeszcze raz, na plikach takich, jakie są teraz na dysku. Bez modelu: nic nie kosztuje i nic nie przepisuje.",
+        "en": "The compiler and the tests again, on the files as they are on disk. No model: it costs nothing and rewrites nothing.",
+    },
+    "task.checking_again": {
+        "pl": "Sprawdzam ponownie…",
+        "en": "Checking again…",
+    },
+    "task.checked_again": {
+        "pl": "Sprawdzone ponownie: kompilacja {compile}, testy {tests}; rekomendacja {verdict}.",
+        "en": "Checked again: compile {compile}, tests {tests}; recommendation {verdict}.",
+    },
+    "step.check_again": {
+        "pl": "Sprawdzone ponownie, bez modelu",
+        "en": "Checked again, without the model",
+    },
     "plan.close": {
         "pl": "🗑 Zamknij plan",
         "en": "🗑 Close plan",
