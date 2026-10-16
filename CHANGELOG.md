@@ -41,6 +41,9 @@ There are no release branches; one is cut from a tag
 - The developer is told to call what it imports with its real signature,
   never through `as unknown as` or `as any`: a cast hid swapped arguments
   from the compiler. (#74)
+- **Check again** stores the files as they are on disk, so the task window
+  shows what Accept commits, and a step names the files edited after the
+  Architect's review. (#75)
 
 ### Changed
 - **New repository** asks GitHub, with the everyday token, whether it can

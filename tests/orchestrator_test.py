@@ -776,6 +776,34 @@ try:
 
     check("a step says it was checked again", again.steps[-1].name, "step.check_again")
 
+    check("untouched files raise no flag", "step.edited_since_review" in [step.name for step in again.steps], False)
+
+    # A human fixes a file by hand, then checks again.
+    edited_path = os.path.join(root, again.generated_files[0].path)
+
+    with open(edited_path, encoding="utf-8") as handle:
+        original_text = handle.read()
+
+    with open(edited_path, "w", encoding="utf-8") as handle:
+        handle.write(original_text + "// fixed by hand\n")
+
+    edited = WorkflowOrchestrator().check_again(again)
+
+    check(
+        "a file edited by hand is shown as it is on disk (csv-kit #6)",
+        edited.generated_files[0].content.endswith("// fixed by hand\n"),
+        True,
+    )
+
+    check(
+        "and a step says the review is of the earlier text",
+        [step.name for step in edited.steps][-2],
+        "step.edited_since_review",
+    )
+
+    with open(edited_path, "w", encoding="utf-8") as handle:
+        handle.write(original_text)
+
     from database.task_repository import TaskRepository
 
     # A throwaway database: this suite never touches the real one.

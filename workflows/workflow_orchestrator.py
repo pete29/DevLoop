@@ -1,5 +1,5 @@
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from agents.architect_agent import ArchitectAgent
 from agents.developer_agent import DeveloperAgent
@@ -398,19 +398,29 @@ class WorkflowOrchestrator:
 
         kept = []
 
+        # Edited by hand since the task wrote them: the
+        # window shows, and Accept commits, what is on disk,
+        # and the Architect's review is of the older text
+        # (csv-kit #6: a fixed call, still scored 72).
+        edited = []
+
         for item in task.generated_files:
 
             path = FileWriter.resolve(root, item.path)
 
             if os.path.isfile(path):
-                kept.append(item)
                 with open(path, encoding="utf-8") as handle:
-                    on_disk.append(handle.read())
+                    content = handle.read()
+                if content != item.content:
+                    edited.append(item.path)
+                    item = replace(item, content=content)
+                kept.append(item)
+                on_disk.append(content)
 
         # A file removed since is no longer the task's: left
         # in, approving would try to commit a file that is not
         # there.
-        gone = [item.path for item in task.generated_files if item not in kept]
+        gone = [item.path for item in task.generated_files if item.path not in {kept_item.path for kept_item in kept}]
 
         task.generated_files = kept
 
@@ -422,6 +432,9 @@ class WorkflowOrchestrator:
 
         if gone:
             steps.record("step.revision_gone", ", ".join(gone), ok=False)
+
+        if edited:
+            steps.record("step.edited_since_review", ", ".join(edited), ok=False)
 
         steps.record(
             "step.check_again",

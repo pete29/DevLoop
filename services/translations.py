@@ -729,6 +729,10 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "Uwaga, codzienny token nie ma do niego dostępu: {reason}",
         "en": "Note, the everyday token cannot reach it: {reason}",
     },
+    "step.edited_since_review": {
+        "pl": "Zmienione poza zadaniem po przeglądzie Architekta; jego ocena dotyczy wcześniejszej wersji",
+        "en": "Changed outside the task after the Architect's review; its score is of the earlier text",
+    },
     "plan.close": {
         "pl": "🗑 Zamknij plan",
         "en": "🗑 Close plan",
