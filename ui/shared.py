@@ -6,6 +6,7 @@ on every run of the page (refresh), so modules read it as shared.repositories.""
 import streamlit as st
 from dotenv import load_dotenv
 
+from config.paths import env_path
 from database.plan_repository import PlanRepository
 from database.preference_repository import PreferenceRepository
 from database.repository_repository import RepositoryRepository, same_path
@@ -20,7 +21,7 @@ from workflows.workflow_orchestrator import WorkflowOrchestrator
 
 # Before anything below is built: the model clients read
 # ANTHROPIC_API_KEY when they are created.
-load_dotenv()
+load_dotenv(env_path())
 
 orchestrator = WorkflowOrchestrator()
 repository = TaskRepository()

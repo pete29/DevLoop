@@ -28,13 +28,14 @@ from models.requirement import now
 from services import costs, plan_branch, usage_ledger
 from services.notify import notify
 from services.git_service import GitService
+from config import paths
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = paths.ROOT
 
 # Where each run's console goes: the pipeline prints what
 # it is doing ("DEVELOPER: writing src/x.ts (3/8)"), and
 # that is the only progress there is inside a task.
-LOG_FOLDER = os.path.join(ROOT, "storage", "runs")
+LOG_FOLDER = os.path.join(paths.home(), "storage", "runs")
 
 
 def log_path(run: PlanRun) -> str:
@@ -346,11 +347,21 @@ def spawn_worker(run: PlanRun) -> None:
             | subprocess.CREATE_NO_WINDOW
         )
 
+    os.makedirs(LOG_FOLDER, exist_ok=True)
+
+    # The exe has no python to pass -m to: it runs the worker
+    # itself when asked (launcher.py).
+    command = (
+        [sys.executable, "--worker", run.id]
+        if paths.frozen()
+        else [sys.executable, "-m", "services.plan_runner", run.id]
+    )
+
     with open(log_path(run), "a", encoding="utf-8") as log:
 
         subprocess.Popen(
-            [sys.executable, "-m", "services.plan_runner", run.id],
-            cwd=ROOT,
+            command,
+            cwd=paths.home() if paths.frozen() else ROOT,
             stdout=log,
             stderr=subprocess.STDOUT,
             stdin=subprocess.DEVNULL,
@@ -633,11 +644,12 @@ def announce(run: PlanRun, plans: PlanRepository, tasks: TaskRepository) -> bool
     return notify(f"DevLoop: {title}", message)
 
 
-if __name__ == "__main__":
+def main(run_id: str) -> None:
+    """The worker process: one run, from start to end."""
 
     from dotenv import load_dotenv
 
-    load_dotenv(os.path.join(ROOT, ".env"))
+    load_dotenv(paths.env_path())
 
     from workflows.workflow_orchestrator import WorkflowOrchestrator
 
@@ -645,7 +657,7 @@ if __name__ == "__main__":
 
     try:
         work(
-            sys.argv[1],
+            run_id,
             store,
             PlanRepository(),
             TaskRepository(),
@@ -654,9 +666,14 @@ if __name__ == "__main__":
 
     except Exception as error:
 
-        failed = store.get_by_id(sys.argv[1])
+        failed = store.get_by_id(run_id)
 
         if failed is not None and failed.status.active:
             store.finish(failed, RunStatus.FAILED, f"The worker crashed: {error}")
 
         raise
+
+
+if __name__ == "__main__":
+
+    main(sys.argv[1])

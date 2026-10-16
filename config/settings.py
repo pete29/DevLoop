@@ -1,5 +1,6 @@
 import os
 
+from config.paths import home
 from services.llm_provider import (
     LLMProvider,
 )
@@ -89,7 +90,10 @@ class Settings:
     # DEVLOOP_DATABASE points a process elsewhere: the tests
     # run a real worker against a throwaway database, and the
     # worker inherits the variable from whoever started it.
-    DATABASE_NAME = os.getenv("DEVLOOP_DATABASE", "human_in_the_loop.db")
+    # Otherwise it sits in the data folder (config/paths.py):
+    # the project folder from source, %LOCALAPPDATA%\DevLoop
+    # in the exe.
+    DATABASE_NAME = os.getenv("DEVLOOP_DATABASE") or os.path.join(home(), "human_in_the_loop.db")
 
     # =====================
     # WORKFLOW

@@ -47,7 +47,7 @@ def main() -> int:
             *(sys.argv[1:] or ["-q"]),
         ],
         cwd=ROOT,
-        env={**os.environ, "PYTHONPATH": ROOT},
+        env={**os.environ, "PYTHONPATH": ROOT, "DEVLOOP_FIRST_RUN": "off"},
     )
 
     coverage("combine", "--quiet")

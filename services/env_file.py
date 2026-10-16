@@ -11,9 +11,11 @@ import os
 import re
 from dataclasses import dataclass
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+from config.paths import env_path
 
-ENV_PATH = os.path.join(ROOT, ".env")
+# In the data folder: the project folder from source, beside
+# the database in the exe (config/paths.py).
+ENV_PATH = env_path()
 
 NAME = re.compile(r"^[A-Z][A-Z0-9_]*$")
 

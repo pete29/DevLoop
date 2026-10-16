@@ -733,6 +733,50 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "Zmienione poza zadaniem po przeglądzie Architekta; jego ocena dotyczy wcześniejszej wersji",
         "en": "Changed outside the task after the Architect's review; its score is of the earlier text",
     },
+    "first_run.heading": {
+        "pl": "Zanim zaczniesz",
+        "en": "Before you start",
+    },
+    "first_run.caption": {
+        "pl": "DevLoop potrzebuje kilku rzeczy, zanim cokolwiek uruchomi. Po zainstalowaniu gita albo Node.js uruchom DevLoop ponownie, żeby je zobaczył.",
+        "en": "DevLoop needs a few things before it can run anything. After installing git or Node.js, start DevLoop again so it sees them.",
+    },
+    "first_run.required": {
+        "pl": "wymagane",
+        "en": "required",
+    },
+    "first_run.optional": {
+        "pl": "opcjonalne",
+        "en": "optional",
+    },
+    "first_run.git": {
+        "pl": "git",
+        "en": "git",
+    },
+    "first_run.node": {
+        "pl": "Node.js",
+        "en": "Node.js",
+    },
+    "first_run.ANTHROPIC_API_KEY": {
+        "pl": "Klucz Anthropic API",
+        "en": "Anthropic API key",
+    },
+    "first_run.GITHUB_PAT": {
+        "pl": "Token GitHub (push i pull requesty)",
+        "en": "GitHub token (push and pull requests)",
+    },
+    "first_run.get_it": {
+        "pl": "Do pobrania: {link}",
+        "en": "Get it here: {link}",
+    },
+    "first_run.next": {
+        "pl": "Potem dodaj pierwsze repozytorium w panelu bocznym: istniejący folder albo nowe repozytorium.",
+        "en": "Then add your first repository in the sidebar: an existing folder or a new repository.",
+    },
+    "first_run.anyway": {
+        "pl": "Przejdź dalej mimo to",
+        "en": "Continue anyway",
+    },
     "plan.close": {
         "pl": "🗑 Zamknij plan",
         "en": "🗑 Close plan",

@@ -21,6 +21,16 @@ There are no release branches; one is cut from a tag
 
 ## Unreleased
 
+### Added
+- `launcher.py`, the exe's entry point: the page on 127.0.0.1 only, in a
+  window of its own (Edge app mode) or a browser tab; a second start opens
+  the running one; `--worker <run id>` runs a background run. Data lives in
+  `%LOCALAPPDATA%\DevLoop` in the exe and in the project folder from
+  source; `DEVLOOP_HOME` overrides both. (#76)
+- A first-run page: git, Node.js 18+ and the Anthropic key are checked on
+  start, and while one is missing the page says so, with the key's form and
+  download links, instead of a run failing on it. (#77)
+
 ### Fixed
 - What is staged is read from `git diff --cached`: another task's unstaged
   change, first in git's status, read as staged, and accepting a task whose

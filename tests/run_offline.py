@@ -49,6 +49,8 @@ def main() -> int:
         "PYTHONPATH": ROOT,
         "PYTHONIOENCODING": "utf-8",
         "PYTHONUTF8": "1",
+        # See tests/conftest.py: first_run_test turns it on.
+        "DEVLOOP_FIRST_RUN": "off",
     }
 
     failed: list[str] = []

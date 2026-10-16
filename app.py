@@ -7,10 +7,12 @@ draws one part of it. The parts live in ui/.
 import streamlit as st
 from dotenv import load_dotenv
 
+from config.paths import env_path
 from config.settings import Settings
 from services import build_info, plan_runner
 from ui import shared
 from ui.costs import cost_view
+from ui.first_run import first_run_page
 from ui.login import logout_button, require_login
 from ui.page import quick_task_panel, status_line, task_window
 from ui.plans import plan_view
@@ -19,12 +21,15 @@ from ui.shared import init_session, run_store, show_message, t
 from ui.settings_view import settings_view
 from ui.sidebar import sidebar
 
-load_dotenv()
+load_dotenv(env_path())
 
 init_session()
 
 # Before anything is read or shown.
 require_login()
+
+# git, Node.js and the key, before the first run can fail on them.
+first_run_page()
 
 shared.refresh()
 

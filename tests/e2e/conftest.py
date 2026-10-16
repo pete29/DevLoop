@@ -14,6 +14,7 @@ WORKSPACE = tempfile.mkdtemp(prefix="devloop-e2e-")
 
 os.environ["DEVLOOP_DATABASE"] = os.path.join(WORKSPACE, "e2e.db")
 os.environ["DEVLOOP_NOTIFY"] = "0"
+os.environ["DEVLOOP_FIRST_RUN"] = "off"
 os.environ["DEVLOOP_PASSWORD_HASH"] = ""
 os.environ["DEVLOOP_MONTH_LIMIT"] = ""
 os.environ["ANTHROPIC_API_KEY"] = ""

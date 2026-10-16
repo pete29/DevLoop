@@ -30,7 +30,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LEVELS = {
     "unit": {
         "ci_checks_test", "developer_test", "eval_test", "grounding_test",
-        "parallel_test", "plan_pull_request_test", "pr_watch_test", "qa_test", "severity_test",
+        "launcher_test", "parallel_test", "plan_pull_request_test", "pr_watch_test", "qa_test", "severity_test",
         "structure_test", "translation_test", "version_test",
     },
     "integration": {
@@ -43,7 +43,7 @@ LEVELS = {
         "schema_test", "structured_review_test", "survey_test", "test_execution_test",
     },
     "ui": {
-        "auth_test", "reject_plan_test", "repository_form_test",
+        "auth_test", "first_run_test", "reject_plan_test", "repository_form_test",
         "jobs_view_test", "requirement_form_test", "run_view_test", "settings_test", "standalone_task_test",
     },
     "live": {"architect_test", "ollama_test", "workflow_test"},
@@ -115,6 +115,9 @@ class SuiteItem(pytest.Item):
             "PYTHONPATH": ROOT,
             "PYTHONIOENCODING": "utf-8",
             "PYTHONUTF8": "1",
+            # The first-run page would stand in front of every
+            # page a suite checks; first_run_test turns it on.
+            "DEVLOOP_FIRST_RUN": "off",
         }
 
         command = [sys.executable]
