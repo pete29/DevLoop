@@ -807,6 +807,30 @@ check(
 
 print()
 print("=" * 80)
+print("A TASK WHOSE CHANGES AN EARLIER COMMIT HOLDS IS COMMITTED THERE")
+print("=" * 80)
+
+# datepicker's demo: task 2 created demo/main.ts, tasks 3-5
+# added to it in the same folder, and task 2's commit took
+# the file as it was by then -- all of their work.
+shared_repo = new_repository()
+
+earlier = approved_task(shared_repo)
+
+first_commit = GitAgent.execute(earlier)
+
+later_task = approved_task(shared_repo)
+
+later_commit = GitAgent.execute(later_task)
+
+check("it is not refused as nothing to commit", later_commit.committed, True)
+
+check("it points at the commit that holds its work", later_commit.commit_hash, first_commit.commit_hash)
+
+check("and says so", "already in" in later_commit.commit_message, True)
+
+print()
+print("=" * 80)
 
 if failures:
     print(f"FAILED: {len(failures)}")

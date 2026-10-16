@@ -75,6 +75,9 @@ There are no release branches; one is cut from a tag
 - A file removed by hand since a task wrote it no longer stops its commit:
   Check again drops it from the task, and the commit stages only files
   that exist or that git knows. (#60)
+- A task whose changes an earlier task's commit already holds (both edited
+  the same file in the shared folder) is recorded as committed there,
+  instead of "nothing to commit" stopping Accept checked. (#61)
 
 ### Tests
 - pytest runs everything: the suites as one item each in their own

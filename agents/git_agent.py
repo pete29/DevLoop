@@ -270,6 +270,23 @@ class GitAgent:
 
         service.add(staged + scaffolding)
 
+        # Nothing differs from the last commit: an earlier
+        # task's commit took these files as they are now. On
+        # datepicker's demo, tasks 3-5 all added to the file
+        # task 2 created; task 2's commit held their work, and
+        # task 3's "nothing to commit" stopped Accept checked.
+        if not service.staged_files():
+
+            already = service.head()
+
+            print(f"git: {task.id[:8]}'s changes are already in {already[:7]}")
+
+            return GitOperation(
+                branch_name=branch,
+                commit_hash=already,
+                commit_message=f"(already in {already[:7]}, an earlier task's commit)",
+            )
+
         message = commit_message(task)
 
         commit_hash = service.commit(message)

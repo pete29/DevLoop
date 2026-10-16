@@ -752,6 +752,11 @@ class GitService:
 
         return f"{remote}/{branch}"
 
+    def head(self) -> str:
+        """The hash of the commit checked out."""
+
+        return self._run("rev-parse", "HEAD")
+
     def commit(self, message: str) -> str:
         """Commits what is staged and returns the hash."""
 
