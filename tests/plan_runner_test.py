@@ -55,8 +55,9 @@ def check(label: str, actual: object, expected: object) -> None:
 class Pipeline:
     """Stands in for the orchestrator; can fail or ask to stop."""
 
-    def __init__(self, fail_on: str = "", stop_after: str = "", runs=None, broken: str = "", failing: str = ""):
+    def __init__(self, fail_on: str = "", stop_after: str = "", runs=None, broken: str = "", failing: str = "", needs: str = ""):
         self.fail_on = fail_on
+        self.needs = needs
         self.broken = broken
         self.failing = failing
         self.stop_after = stop_after
@@ -81,6 +82,8 @@ class Pipeline:
             task.compile_result = CompileResult(status=CompileStatus.FAILED)
         if title == self.failing:
             task.test_result = TestResult(status=TestStatus.FAILED, total_tests=4, failed_tests=1)
+        if title == self.needs:
+            task.packages = ["jsdom"]
         return task
 
 
@@ -257,6 +260,25 @@ try:
     check(
         "the run says which task, and that its tests fail",
         (halted.status, "Task 1 breaks tests (3/4 passed" in halted.message),
+        (RunStatus.STOPPED, True),
+    )
+
+    print()
+    print("=" * 80)
+    print("A TASK WAITING FOR A PACKAGE STOPS THE RUN")
+    print("=" * 80)
+
+    plan = make_plan(plans)
+
+    pipeline = Pipeline(needs="one")
+
+    halted = run_with(pipeline, plan)
+
+    check("nothing was built on it (csv-kit #7)", pipeline.ran, ["one"])
+
+    check(
+        "the run names the package",
+        (halted.status, "Task 1 waits for packages (jsdom)" in halted.message),
         (RunStatus.STOPPED, True),
     )
 

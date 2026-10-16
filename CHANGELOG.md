@@ -30,6 +30,10 @@ There are no release branches; one is cut from a tag
   member access on `document`/`window` outside comments counts. The false
   match put jsdom on a Node-only suite, and the run stopped on a missing
   package with every test passing. (#68)
+- A run stops at a task that waits for packages, naming them, instead of
+  paying for the next task, which fails on the same missing package. A
+  result whose tests all pass but where Vitest reported errors says so,
+  not "breaks tests (45/45 passed)". (#69)
 
 ### Changed
 - Push and the pull request belong to the plan: **Push the branch** and

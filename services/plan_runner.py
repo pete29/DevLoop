@@ -482,8 +482,13 @@ def work(
         # approved fails every task after it, each paying to
         # try to fix it. Facts only -- an Architect's opinion
         # alone does not stop the run.
+        # A task waiting for packages has untested work: the
+        # next one's suite would fail on the same missing
+        # package (csv-kit #7: jsdom), paid for nothing.
         broken = (
-            "does not compile"
+            "waits for packages (" + ", ".join(generated.packages) + "); install them"
+            if generated.packages
+            else "does not compile"
             if generated.compile_result.status == CompileStatus.FAILED
             else f"breaks tests ({generated.test_result.summary})"
             if generated.test_result.blocks_delivery

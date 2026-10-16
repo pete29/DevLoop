@@ -3,6 +3,10 @@ from dataclasses import dataclass, replace
 from enum import Enum
 
 # Vitest's line for each failing test: " FAIL  tests/days.test.ts > days > adds".
+# Vitest's "Errors  1 error": thrown outside any test, e.g. a
+# missing environment package. Every test can pass with it.
+ERRORS_LINE = re.compile(r"^\s*Errors\s+(\d+)\s+errors?", re.MULTILINE)
+
 FAIL_LINE = re.compile(r"^\s*FAIL\s+(\S+\.(?:test|spec)\.[cm]?[jt]sx?.*?)\s*$", re.MULTILINE)
 
 
@@ -144,6 +148,14 @@ class TestResult:
 
         if self.status == TestStatus.NOT_RUN:
             return "Not run"
+
+        errors = ERRORS_LINE.search(self.output)
+
+        if self.status == TestStatus.FAILED and not self.failed_tests and errors:
+            return (
+                f"{self.passed_tests}/{self.total_tests} passed, "
+                f"but Vitest reported {errors.group(1)} error(s) outside the tests"
+            )
 
         return (
             f"{self.passed_tests}/{self.total_tests} passed"

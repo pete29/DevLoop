@@ -353,6 +353,16 @@ check(
     TestStatus.FAILED,
 )
 
+check(
+    "every test passing with an error outside them says so (csv-kit #7)",
+    TestResult(
+        status=TestStatus.FAILED,
+        total_tests=45,
+        output="Error: Cannot find package 'jsdom'\n      Tests  45 passed (45)\n     Errors  1 error\n",
+    ).summary,
+    "45/45 passed, but Vitest reported 1 error(s) outside the tests",
+)
+
 print()
 print("=" * 80)
 
