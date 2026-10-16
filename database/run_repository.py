@@ -17,6 +17,9 @@ COLUMNS = (
     "message",
     "started_at",
     "finished_at",
+    "kind",
+    "subject",
+    "notes",
 )
 
 
@@ -61,10 +64,28 @@ class RunRepository:
                 run.message,
                 run.started_at,
                 run.finished_at,
+                run.kind,
+                run.subject,
+                run.notes,
             ),
         )
 
         self.connection.commit()
+
+    def latest_job(self, kind: str, subject: str) -> PlanRun | None:
+        """The most recent run of a kind about one requirement or task."""
+
+        row = self.connection.execute(
+            f"""
+            SELECT {", ".join(COLUMNS)} FROM plan_runs
+            WHERE kind = ? AND subject = ?
+            ORDER BY started_at DESC
+            LIMIT 1
+            """,
+            (kind, subject),
+        ).fetchone()
+
+        return self._parse(row) if row else None
 
     def get_by_id(self, run_id: str) -> PlanRun | None:
 
@@ -207,4 +228,7 @@ class RunRepository:
             message=row[8] or "",
             started_at=row[9],
             finished_at=row[10] or "",
+            kind=row[11] or "tasks",
+            subject=row[12] or "",
+            notes=row[13] or "",
         )

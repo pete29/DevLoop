@@ -10,6 +10,7 @@ from models.requirement import RequirementSource, now
 from services import plan_branch, usage_ledger
 from ui.actions import continue_plan, plan_pull_request, plan_records, remote_of
 from ui import shared
+from ui.jobs import job_active, job_panel, start_job
 from ui.shared import plan_store, repository_path_now, requirement_store, run_store, t
 
 
@@ -49,6 +50,8 @@ def requirement_view() -> None:
     )
 
     requirement_buttons(requirement, new_title, new_content)
+
+    job_panel("planning", requirement.id, open_planned)
 
     github_buttons(requirement, new_title, new_content)
 
@@ -283,64 +286,27 @@ def save_requirement(requirement, new_title, new_content) -> None:
 
 
 def generate_plan(requirement, new_title, new_content) -> None:
-    """Have the planner turn the requirement into a plan."""
+    """Have the planner turn the requirement into a plan, in the background."""
 
     if st.button(
         t("requirement.generate_plan"),
         use_container_width=True,
         disabled=not st.session_state.repository_id
         or not new_content.strip()
-        or shared.month_blocked,
+        or shared.month_blocked
+        or job_active("planning", requirement.id),
     ):
 
         store_text(requirement, new_title, new_content)
 
-        with st.spinner(t("plan.planner_spinner")):
+        start_job("planning", requirement.id, repository_path_now())
 
-            spent = usage_ledger.mark()
 
-            try:
+def open_planned(run) -> None:
+    """The plan a planning run made, shown."""
 
-                plan = PlannerAgent().execute(
-                    requirement.epic,
-                    st.session_state.repository_id,
-                    repository_path_now(),
-                )
-
-            except Exception as error:
-
-                st.error(
-                    t(
-                        "plan.planner_failed",
-                        reason=error,
-                    )
-                )
-
-                st.stop()
-
-            # Shown once, under the plan it paid for. Not
-            # stored: the plan is the same plan whatever
-            # it cost, and the tasks keep their own.
-            st.session_state.plan_usage = (
-                plan.id,
-                usage_ledger.describe(
-                    usage_ledger.since(spent)
-                ),
-            )
-
-            plan.requirement_id = requirement.id
-
-            plan.issue = requirement.issue
-
-            plan.planning_cost = usage_ledger.dollars(
-                usage_ledger.since(spent)
-            )
-
-            plan_store.save(plan)
-
-            st.session_state.plan = plan
-
-            st.rerun()
+    if run.produced:
+        st.session_state.plan = plan_store.get_by_id(run.produced[0])
 
 
 def delete_requirement(requirement) -> None:

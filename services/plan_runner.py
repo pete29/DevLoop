@@ -274,12 +274,20 @@ def detect_interrupted(runs: RunRepository) -> list[PlanRun]:
     return found
 
 
+def same_folder(one: str, other: str) -> bool:
+
+    return bool(one and other) and os.path.normcase(os.path.abspath(one)) == os.path.normcase(os.path.abspath(other))
+
+
 def start(
     runs: RunRepository,
     plan_id: str,
     repository_path: str,
     task_id: int = 0,
     spawn=None,
+    kind: str = "tasks",
+    subject: str = "",
+    notes: str = "",
 ) -> PlanRun:
     """Starts a background run, one per plan at a time.
 
@@ -290,13 +298,30 @@ def start(
 
     detect_interrupted(runs)
 
-    if any(run.plan_id == plan_id for run in runs.active()):
+    if kind == "tasks" and any(run.kind == "tasks" and run.plan_id == plan_id for run in runs.active()):
         raise RuntimeError("This plan is already running.")
+
+    if kind != "tasks" and any(run.subject == subject for run in runs.active()):
+        raise RuntimeError("This is already being worked on.")
+
+    # Runs that write files take the folder for themselves:
+    # a revision beside a plan's run would write over its
+    # files. Planning only reads, and may run beside either.
+    writing = ("tasks", "revision")
+
+    if kind in writing and any(
+        run.kind in writing and same_folder(run.repository_path, repository_path)
+        for run in runs.active()
+    ):
+        raise RuntimeError("Another run is working in this folder; wait for it to end.")
 
     run = PlanRun(
         plan_id=plan_id,
         task_id=task_id,
         repository_path=repository_path,
+        kind=kind,
+        subject=subject,
+        notes=notes,
     )
 
     runs.save(run)
@@ -357,6 +382,12 @@ def work(
     run = runs.get_by_id(run_id)
 
     runs.mark_started(run.id, os.getpid())
+
+    if run.kind == "planning":
+        return plan_requirement(run, runs, plans)
+
+    if run.kind == "revision":
+        return revise_record(run, runs, plans, tasks, orchestrator)
 
     print(f"RUN {run.id} for plan {run.plan_id} started", flush=True)
 
@@ -471,6 +502,101 @@ def work(
     print(f"RUN {run.id} ended: {run.status.value} {run.message}", flush=True)
 
     announce(run, plans, tasks)
+
+    return run
+
+
+def plan_requirement(run: PlanRun, runs: RunRepository, plans: PlanRepository) -> PlanRun:
+    """Plans a requirement, as "Generate plan" did inside the page.
+
+    In the page a click anywhere while the planner thought
+    threw the call away, unseen. Here it runs to the end.
+    """
+
+    from agents.planner_agent import PlannerAgent
+    from database.requirement_repository import RequirementRepository
+
+    print(f"RUN {run.id}: planning requirement {run.subject}", flush=True)
+
+    requirement = RequirementRepository().get_by_id(run.subject)
+
+    if requirement is None:
+        runs.finish(run, RunStatus.FAILED, "The requirement no longer exists.")
+        return run
+
+    spent = usage_ledger.mark()
+
+    try:
+        plan = PlannerAgent().execute(requirement.epic, requirement.repository_id, run.repository_path)
+
+    except Exception as error:  # noqa: BLE001 -- recorded, not raised
+        runs.finish(run, RunStatus.FAILED, f"The planner failed: {error}")
+        return run
+
+    plan.requirement_id = requirement.id
+
+    plan.issue = requirement.issue
+
+    plan.planning_cost = usage_ledger.dollars(usage_ledger.since(spent))
+
+    plans.save(plan)
+
+    run.produced = [plan.id]
+
+    runs.progress(run.id, 0, run.produced)
+
+    runs.finish(run, RunStatus.DONE, f"Planned {len(plan.tasks)} task(s).")
+
+    print(f"RUN {run.id} ended: {run.status.value} {run.message}", flush=True)
+
+    notify("DevLoop: planned", f"{(requirement.title or 'A requirement')[:80]}: {run.message}")
+
+    return run
+
+
+def revise_record(run: PlanRun, runs: RunRepository, plans: PlanRepository, tasks: TaskRepository, orchestrator) -> PlanRun:
+    """Revises a task with a human's notes, as the page did, and saves it."""
+
+    from services import task_versions
+
+    print(f"RUN {run.id}: revising task {run.subject}", flush=True)
+
+    task = tasks.get_by_id(run.subject)
+
+    if task is None:
+        runs.finish(run, RunStatus.FAILED, "The task no longer exists.")
+        return run
+
+    # Its files are read from disk; on another branch they
+    # are another branch's files.
+    service = GitService(task.repository_path)
+
+    if task.branch and service.is_repository() and service.current_branch() != task.branch:
+        runs.finish(
+            run,
+            RunStatus.FAILED,
+            f"The task was made on {task.branch}, but {service.current_branch()} is checked out.",
+        )
+        return run
+
+    try:
+        newer = orchestrator.revise(task, run.notes)
+
+    except Exception as error:  # noqa: BLE001 -- recorded, not raised
+        runs.finish(run, RunStatus.FAILED, f"The revision failed: {error}")
+        return run
+
+    newer, _ = task_versions.replace_task(plans, tasks, task, newer)
+
+    run.produced = [newer.id]
+
+    runs.progress(run.id, 0, run.produced)
+
+    runs.finish(run, RunStatus.DONE, f"Revised: {newer.recommendation.value}.")
+
+    print(f"RUN {run.id} ended: {run.status.value} {run.message}", flush=True)
+
+    notify("DevLoop: revised", f"{task.description.strip().splitlines()[0][:80]}: {run.message}")
 
     return run
 

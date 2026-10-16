@@ -262,6 +262,107 @@ try:
 
     print()
     print("=" * 80)
+    print("PLANNING A REQUIREMENT RUNS IN THE WORKER")
+    print("=" * 80)
+
+    import agents.planner_agent as planner_module
+    from database.requirement_repository import RequirementRepository
+    from models.requirement import Requirement
+
+    requirement = Requirement(repository_id="repo", title="Dates", content="Add days to a date.")
+
+    RequirementRepository().save(requirement)
+
+    planner_module.PlannerAgent.__init__ = lambda self: None
+
+    planner_module.PlannerAgent.execute = lambda self, epic, repository_id, path: Plan(
+        repository_id=repository_id,
+        epic=epic,
+        tasks=[TaskBreakdown(id=1, title="days")],
+    )
+
+    planning = PlanRun(kind="planning", subject=requirement.id, repository_path=folder)
+
+    runs.save(planning)
+
+    plan_runner.work(planning.id, runs, plans, tasks, Pipeline())
+
+    planned = runs.get_by_id(planning.id)
+
+    made = plans.get_by_id(planned.produced[0]) if planned.produced else None
+
+    check("the run plans and ends", (planned.status, planned.message), (RunStatus.DONE, "Planned 1 task(s)."))
+
+    check(
+        "the plan is stored, linked to its requirement",
+        (made is not None and made.requirement_id, made and [item.title for item in made.tasks]),
+        (requirement.id, ["days"]),
+    )
+
+    print()
+    print("=" * 80)
+    print("A REVISION RUNS IN THE WORKER, AND REPLACES ITS TASK")
+    print("=" * 80)
+
+    class Reviser(Pipeline):
+        def revise(self, task, feedback):
+            self.feedback = feedback
+            return Task(
+                repository_path=task.repository_path,
+                description=task.description + " (revised)",
+                status=TaskStatus.WAITING_FOR_APPROVAL,
+            )
+
+    original = Task(repository_path=folder, description="days", status=TaskStatus.WAITING_FOR_APPROVAL)
+
+    tasks.save(original)
+
+    revising = PlanRun(kind="revision", subject=original.id, notes="Use strings.", repository_path=folder)
+
+    runs.save(revising)
+
+    reviser = Reviser()
+
+    plan_runner.work(revising.id, runs, plans, tasks, reviser)
+
+    revised = runs.get_by_id(revising.id)
+
+    check("the notes reach the revision", reviser.feedback, "Use strings.")
+
+    check(
+        "the new version is stored, the old one REVISED",
+        (revised.status, tasks.get_by_id(revised.produced[0]).description, tasks.get_by_id(original.id).status),
+        (RunStatus.DONE, "days (revised)", TaskStatus.REVISED),
+    )
+
+    print()
+    print("=" * 80)
+    print("TWO RUNS THAT WRITE NEVER SHARE A FOLDER")
+    print("=" * 80)
+
+    busy = PlanRun(plan_id="busy-plan", repository_path=folder, status=RunStatus.RUNNING, pid=os.getpid())
+
+    runs.save(busy)
+
+    refused = False
+
+    try:
+        plan_runner.start(runs, "", folder, kind="revision", subject="another", spawn=lambda run: None)
+    except RuntimeError:
+        refused = True
+
+    check("a revision waits for the plan's run in that folder", refused, True)
+
+    allowed = plan_runner.start(runs, "", folder, kind="planning", subject="read-only", spawn=lambda run: None)
+
+    check("planning, which only reads, may start beside it", allowed.kind, "planning")
+
+    runs.finish(runs.get_by_id(busy.id), RunStatus.DONE)
+
+    runs.finish(runs.get_by_id(allowed.id), RunStatus.DONE)
+
+    print()
+    print("=" * 80)
     print("ONE TASK, WHEN ONE WAS ASKED FOR")
     print("=" * 80)
 

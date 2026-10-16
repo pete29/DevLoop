@@ -18,7 +18,7 @@ python tests/coverage.py       # under coverage: a summary and coverage-html/
 |---|---|---|
 | `unit` | functions and classes on their own | 11 suites |
 | `integration` | real git, SQLite, files, processes or the TypeScript compiler | 27 suites |
-| `ui` | the real page, rendered headlessly with Streamlit's AppTest | 7 suites |
+| `ui` | the real page, rendered headlessly with Streamlit's AppTest | 8 suites |
 | `e2e` | a whole path through DevLoop | 2 tests |
 | `browser` | the real page in Chromium (also `e2e`) | 1 test |
 | `live` | the real model; skipped unless `--live` | 3 suites |
@@ -426,6 +426,10 @@ column with its rows intact and a backup made first; a second open does
 nothing; a migration that fails is rolled back and leaves the version
 where it was; and three processes migrating one file at once all end at
 the latest version.
+
+`tests.jobs_view_test` — the real page, headless: **Generate plan** hands
+planning to a background worker instead of running it in the page, says
+so, does not offer to plan twice, and opens the plan when the run ends.
 
 `tests.run_view_test` — the real page, headless, on a plan whose tasks all
 failed in an earlier run and which runs again: the task done in this run

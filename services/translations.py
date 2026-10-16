@@ -685,6 +685,18 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "Sprawdzone ponownie, bez modelu",
         "en": "Checked again, without the model",
     },
+    "job.planning": {
+        "pl": "🧠 Planer pracuje w tle (od {since}). Możesz klikać dalej albo zamknąć kartę; plan pojawi się sam.",
+        "en": "🧠 The planner is working in the background (since {since}). Click on, or close the tab; the plan shows up by itself.",
+    },
+    "job.revision": {
+        "pl": "🔁 Rewizja trwa w tle (od {since}). Możesz klikać dalej albo zamknąć kartę; nowa wersja pojawi się sama.",
+        "en": "🔁 The revision is running in the background (since {since}). Click on, or close the tab; the new version shows up by itself.",
+    },
+    "job.ended": {
+        "pl": "Praca w tle zakończona: {status}. {message}",
+        "en": "Background work ended: {status}. {message}",
+    },
     "plan.close": {
         "pl": "🗑 Zamknij plan",
         "en": "🗑 Close plan",

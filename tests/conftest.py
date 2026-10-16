@@ -44,7 +44,7 @@ LEVELS = {
     },
     "ui": {
         "auth_test", "reject_plan_test", "repository_form_test",
-        "requirement_form_test", "run_view_test", "settings_test", "standalone_task_test",
+        "jobs_view_test", "requirement_form_test", "run_view_test", "settings_test", "standalone_task_test",
     },
     "live": {"architect_test", "ollama_test", "workflow_test"},
 }

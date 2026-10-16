@@ -8,7 +8,7 @@ from models.repository import Repository
 from models.requirement import now
 from models.task_execution import ExecutionStatus, TaskExecution
 from models.task_status import TaskStatus
-from services import plan_branch, plan_runner, usage_ledger
+from services import plan_branch, plan_runner, task_versions, usage_ledger
 from services.git_service import GitError, GitService
 from services.task_rollback import Rollback, roll_back_all
 from ui import shared
@@ -285,96 +285,21 @@ def require_branch(task) -> None:
 def replace_task(task, newer):
     """Saves a newer version of a task in place of the old one."""
 
-    newer.branch = task.branch
+    newer, plan = task_versions.replace_task(plan_store, repository, task, newer)
 
-    newer.issue = task.issue
-
-    newer.plan_id = task.plan_id
-
-    repository.save(newer)
-
-    task.status = TaskStatus.REVISED
-
-    repository.update_status(task.id, TaskStatus.REVISED)
-
-    plan, _ = plan_context(task)
-
-    if plan is not None:
-
-        for execution in plan.executions:
-
-            if execution.task_record_id != task.id:
-                continue
-
-            plan.record(
-                TaskExecution(
-                    task_id=execution.task_id,
-                    status=ExecutionStatus.COMPLETED,
-                    started_at=execution.started_at,
-                    completed_at=now(),
-                    task_record_id=newer.id,
-                )
-            )
-
-            plan_store.update_progress(plan)
-
-            if (
-                st.session_state.get("plan") is not None
-                and st.session_state.plan.id == plan.id
-            ):
-                st.session_state.plan = plan
-
-            break
+    if (
+        plan is not None
+        and st.session_state.get("plan") is not None
+        and st.session_state.plan.id == plan.id
+    ):
+        st.session_state.plan = plan
 
     return newer
 
-
 def plan_context(task):
-    """The plan a task belongs to, and every task on its branch.
+    """The plan a task belongs to, and every task on its branch."""
 
-    Found through the branch: the plan's branch name is
-    derived from the plan, so a task records nothing more
-    than the branch it ran on. (None, []) for a task that
-    ran outside a plan.
-
-    Plans made from the same issue share a branch, so the
-    plan that ran this task wins, and otherwise the newest.
-    """
-
-    if not task.branch:
-        return None, []
-
-    on_branch = sorted(
-        (
-            item
-            for item in plan_store.get_all()
-            if plan_branch.of(item) == task.branch
-        ),
-        key=lambda item: item.created_at,
-        reverse=True,
-    )
-
-    plan = next(
-        (
-            item
-            for item in on_branch
-            if any(
-                execution.task_record_id == task.id
-                for execution in item.executions
-            )
-        ),
-        on_branch[0] if on_branch else None,
-    )
-
-    if plan is None:
-        return None, []
-
-    return plan, [
-        other
-        for other in repository.get_all()
-        if other.branch == task.branch
-    ]
-
+    return task_versions.plan_of(plan_store, repository, task)
 
 def revise_task(task, feedback: str):
     """Sends a task back with a human's notes, saved.

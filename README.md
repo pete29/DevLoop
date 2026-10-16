@@ -168,7 +168,10 @@ parent with its progress (`#3 Password policy toolkit · 1/4`).
 ### 3. Plan it
 
 The Planner turns a requirement into tasks with priorities and
-dependencies. It **sees the code**: the repository's files with what each
+dependencies, in the background worker: **Generate plan** hands it over and
+the requirement shows its progress and log until the plan opens by itself.
+Clicks, reloads and a closed tab do not stop it. A revision (below) runs the
+same way. It **sees the code**: the repository's files with what each
 exports, and in full the files whose symbols the requirement names. Every
 task says which source files it **creates** and which it **modifies**, and
 the plan shows them.
@@ -466,7 +469,7 @@ CI. Run it before and after changing a prompt, a model or an effort. The
 baseline: 6/6 passed, $0.2454; the package case asked for `@types/node`, and
 the plan case planned 3 tasks with no plan problems.
 
-There are 48 suite files and 2 end-to-end tests. 45 suites run offline, against fake transports and
+There are 49 suite files and 2 end-to-end tests. 46 suites run offline, against fake transports and
 throwaway repositories; `compile_test`, `install_test` and
 `test_execution_test` need Node on `PATH`. Three call a real model and are
 skipped in routine runs: `architect_test`, `workflow_test`,

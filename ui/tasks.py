@@ -17,6 +17,7 @@ from services.git_service import GitError, GitService
 from services.task_rollback import roll_back
 from ui.actions import accept_record, install_and_recheck, plan_context, reopen_in_plan, revise_task
 from ui import shared
+from ui.jobs import job_active, job_panel, start_job
 from ui.shared import file_content, repository, repository_label, resolve_repository, show_files, show_message, t
 
 
@@ -63,6 +64,8 @@ def task_view() -> None:
     packages_panel(task)
 
     revision_panel(task)
+
+    job_panel("revision", task.id, open_revised)
 
     decision_buttons(task)
 
@@ -1101,7 +1104,7 @@ def revision_panel(task) -> None:
     if not st.button(
         t("revise.send"),
         key=f"revise-{task.id}",
-        disabled=(not chosen and not notes.strip()) or shared.month_blocked,
+        disabled=(not chosen and not notes.strip()) or shared.month_blocked or job_active("revision", task.id),
     ):
         return
 
@@ -1112,25 +1115,14 @@ def revision_panel(task) -> None:
         ]
     )
 
-    try:
+    start_job("revision", task.id, task.repository_path, notes=feedback)
 
-        with st.spinner(t("revise.running")):
-            revised = revise_task(task, feedback)
 
-    except Exception as error:
+def open_revised(run) -> None:
+    """The new version a revision made, shown in the window."""
 
-        st.session_state.git_message = (
-            "warning",
-            t("revise.failed", reason=error),
-        )
-
-        st.rerun()
-
-    st.session_state.task = revised
-
-    st.session_state.git_message = ("success", t("revise.done"))
-
-    st.rerun()
+    if run.produced:
+        st.session_state.task = repository.get_by_id(run.produced[0])
 
 
 def decision_buttons(task) -> None:

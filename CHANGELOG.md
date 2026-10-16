@@ -27,6 +27,10 @@ There are no release branches; one is cut from a tag
   requirements, and everything where there is no compiler. Its false
   alarms, where tsc passed the code, were most of the datepicker fixes.
   (#62)
+- Planning a requirement and revising a task run in the background
+  worker, like a plan's tasks: progress and log on the page, untouched by
+  clicks, reloads or a closed tab, the result opened when it ends. Two runs
+  that write files never share a folder. (#57)
 
 ## 0.10.0 (alpha) — 2026-10-16
 

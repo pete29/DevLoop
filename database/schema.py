@@ -145,11 +145,28 @@ def indexes(connection: sqlite3.Connection) -> None:
     connection.execute("CREATE INDEX IF NOT EXISTS runs_by_plan ON plan_runs (plan_id)")
 
 
+# What a background run does, beyond running a plan's tasks.
+JOB_COLUMNS = [
+    ("kind", "TEXT NOT NULL DEFAULT 'tasks'"),
+    ("subject", "TEXT NOT NULL DEFAULT ''"),
+    ("notes", "TEXT NOT NULL DEFAULT ''"),
+]
+
+
+def jobs(connection: sqlite3.Connection) -> None:
+    """3: a run can plan a requirement or revise a task, not only run tasks."""
+
+    add_missing_columns(connection, "plan_runs", JOB_COLUMNS)
+
+    connection.execute("CREATE INDEX IF NOT EXISTS runs_by_subject ON plan_runs (subject)")
+
+
 # Append only. The position is the version: the first entry
 # takes a database to version 1.
 MIGRATIONS = [
     ("baseline", baseline),
     ("indexes", indexes),
+    ("jobs", jobs),
 ]
 
 LATEST = len(MIGRATIONS)

@@ -66,8 +66,12 @@ try:
     )
 
     check(
-        "every column of each",
-        all(columns(fresh, table) == [name for name, _ in cols] for table, cols in schema.BASELINE.items()),
+        "every column of each, later migrations' after the first",
+        all(
+            columns(fresh, table)[: len(cols)] == [name for name, _ in cols]
+            for table, cols in schema.BASELINE.items()
+        )
+        and columns(fresh, "plan_runs")[-3:] == [name for name, _ in schema.JOB_COLUMNS],
         True,
     )
 

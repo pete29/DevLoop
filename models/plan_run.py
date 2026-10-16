@@ -78,6 +78,18 @@ class PlanRun:
 
     finished_at: str = ""
 
+    # What the run does: a plan's tasks ("tasks"), planning a
+    # requirement ("planning"), or revising a task with a
+    # human's notes ("revision"). The last two used to run
+    # inside the page, where any click threw the call away.
+    kind: str = "tasks"
+
+    # The requirement planned, or the task record revised.
+    subject: str = ""
+
+    # A revision's notes.
+    notes: str = ""
+
     @property
     def log_name(self) -> str:
 
