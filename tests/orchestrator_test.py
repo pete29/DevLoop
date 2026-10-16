@@ -739,6 +739,17 @@ try:
 
     check("a step says it was checked again", again.steps[-1].name, "step.check_again")
 
+    from database.task_repository import TaskRepository
+
+    # A throwaway database: this suite never touches the real one.
+    store = TaskRepository(os.path.join(root, "check-again.db"))
+
+    store.save(stuck)
+
+    store.replace(again)
+
+    check("and the stored task is replaced, not refused as a duplicate", store.get_by_id(again.id).recommendation, ReviewDecision.APPROVE)
+
     print()
     print("=" * 80)
     print("A DOM SUITE THAT NEEDS JSDOM STOPS FOR THE INSTALL")

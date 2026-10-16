@@ -1161,7 +1161,7 @@ def check_again_button(task) -> None:
     with st.spinner(t("task.checking_again")):
         checked = shared.orchestrator.check_again(task)
 
-    repository.save(checked)
+    repository.replace(checked)
 
     st.session_state.task = checked
 

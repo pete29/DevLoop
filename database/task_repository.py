@@ -89,9 +89,19 @@ class TaskRepository:
         schema.migrate(db_name)
 
 
+    def replace(self, task: Task) -> None:
+        """Writes a task that is already stored, over its old row.
+
+        save() inserts, and a second insert of the same id is
+        refused -- which is what "Check again" ran into.
+        """
+
+        self.save(task, replace=True)
+
     def save(
         self,
         task: Task,
+        replace: bool = False,
     ) -> None:
 
         review_history_json = json.dumps(
@@ -178,7 +188,7 @@ class TaskRepository:
 
         cursor.execute(
             f"""
-            INSERT INTO tasks (
+            INSERT {"OR REPLACE " if replace else ""}INTO tasks (
                 {COLUMN_LIST}
             )
             VALUES (
