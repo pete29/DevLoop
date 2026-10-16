@@ -597,6 +597,37 @@ try:
         ReviewDecision.APPROVE,
     )
 
+    # A file this version wrote, removed since -- as rejecting
+    # a later task can. The revision goes on without it.
+    removed = os.path.join(root, "src", "b.ts")
+
+    with open(removed, encoding="utf-8") as handle:
+        kept_content = handle.read()
+
+    os.remove(removed)
+
+    lean = Developer([], [[A]])
+
+    orchestrator.developer = lean
+
+    again = orchestrator.revise(revised, "Tidy up.")
+
+    check(
+        "a file gone from disk is left out, not a crash",
+        ("Files under review: src/a.ts" in lean.briefs[0], "src/b.ts" in lean.briefs[0]),
+        (True, False),
+    )
+
+    check(
+        "and the steps say so",
+        [step.detail for step in again.steps if step.name == "step.revision_gone"],
+        ["src/b.ts"],
+    )
+
+    # Put back for what follows.
+    with open(removed, "w", encoding="utf-8") as handle:
+        handle.write(kept_content)
+
     check(
         "the revised file is what is on disk",
         open(os.path.join(root, "src", "b.ts"), encoding="utf-8").read(),

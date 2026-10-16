@@ -1100,6 +1100,10 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "Nie zainstalowano: {reason}",
         "en": "Not installed: {reason}",
     },
+    "step.revision_gone": {
+        "pl": "Pominięte, bo już ich nie ma na dysku",
+        "en": "Left out, no longer on disk",
+    },
     "step.revision": {
         "pl": "Developer poprawił kod według uwag człowieka",
         "en": "Developer revised the code from a human's notes",

@@ -284,15 +284,23 @@ class WorkflowOrchestrator:
 
         sources: list[GeneratedFile] = []
 
+        gone: list[str] = []
+
         for item in task.generated_files:
 
             if item.file_type != FileType.SOURCE:
                 continue
 
-            with open(
-                FileWriter.resolve(root, item.path),
-                encoding="utf-8",
-            ) as handle:
+            path = FileWriter.resolve(root, item.path)
+
+            # Removed since -- rejecting a later task can take
+            # a file this version also touched. One missing
+            # file stopped the whole revision.
+            if not os.path.isfile(path):
+                gone.append(item.path)
+                continue
+
+            with open(path, encoding="utf-8") as handle:
                 sources.append(
                     GeneratedFile(
                         path=item.path,
@@ -305,6 +313,9 @@ class WorkflowOrchestrator:
             raise RuntimeError(
                 "The task's source files are no longer on disk."
             )
+
+        if gone:
+            steps.record("step.revision_gone", ", ".join(gone), ok=False)
 
         # The previous attempt's files are this run's: the
         # ones it created can still be dropped and removed,

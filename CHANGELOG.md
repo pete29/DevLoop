@@ -46,6 +46,8 @@ There are no release branches; one is cut from a tag
   the third task's two tests. (#48)
 - A background run stops at a task whose own tests fail, not only at one
   that does not compile. (#49)
+- A revision goes on without a file that has gone from disk since (a
+  later task's rejection can remove one), instead of failing at once. (#50)
 
 ### Tests
 - pytest runs everything: the suites as one item each in their own
