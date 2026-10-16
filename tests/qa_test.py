@@ -395,6 +395,40 @@ check(
     True,
 )
 
+print()
+print("=" * 80)
+print("A SUITE FOR DOM CODE ASKS FOR JSDOM")
+print("=" * 80)
+
+from agents.qa_agent import uses_dom  # noqa: E402
+
+DOM_SOURCE = (
+    "export function render(container: HTMLElement): void {\n"
+    "  const table = container.ownerDocument.createElement('table');\n"
+    "  container.appendChild(table);\n"
+    "}\n"
+)
+
+check("code that builds elements uses the DOM", uses_dom(DOM_SOURCE), True)
+
+check(
+    "date code, and a comment about Node, does not",
+    uses_dom("// Node's own modules\nexport function addDays(d: string): string { return d; }\n"),
+    False,
+)
+
+llm = FakeLLM()
+
+suites = qa(llm).execute([GeneratedFile("src/dom-render.ts", FileType.SOURCE, DOM_SOURCE)])
+
+check("the prompt says so", "@vitest-environment jsdom" in llm.prompts[0], True)
+
+check(
+    "and the suite starts with it, even when the model left it out",
+    suites[0].content.splitlines()[0],
+    "// @vitest-environment jsdom",
+)
+
 Settings.GENERATE_FILE_BY_FILE = True
 
 print()

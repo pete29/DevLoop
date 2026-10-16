@@ -231,7 +231,8 @@ Each task goes through the pipeline above:
   and nobody is paid to fix it. So do the tests: a task is judged only on
   tests that start failing with it. A
   missing npm package stops the task there and is offered for installation
-  (below).
+  (below) -- also one a suite needs: QA starts the tests of DOM code with
+  `// @vitest-environment jsdom`, and without jsdom the task asks for it.
 - The **Architect** reviews design only (coupling, abstractions, SOLID),
   up to `MAX_REVIEW_LOOPS` times, in at most three findings of two sentences,
   answered as JSON in a schema (score, recommendation, findings with severity

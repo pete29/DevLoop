@@ -132,6 +132,21 @@ try:
         package_installer.npm_cli = original_cli
         package_installer.shutil.which = original_which
 
+    print()
+    print("=" * 80)
+    print("A DOM SUITE NEEDS ITS ENVIRONMENT")
+    print("=" * 80)
+
+    suite = "// @vitest-environment jsdom\nimport { describe } from 'vitest';\n"
+
+    check("the directive names a package", "jsdom" in packages.imported([suite]), True)
+
+    check("which is missing where it is not installed", "jsdom" in packages.missing([suite], root), True)
+
+    check("happy-dom too", "happy-dom" in packages.imported(["// @vitest-environment happy-dom\n"]), True)
+
+    check("node needs nothing", packages.imported(["// @vitest-environment node\n"]), set())
+
 finally:
     shutil.rmtree(root, ignore_errors=True)
 

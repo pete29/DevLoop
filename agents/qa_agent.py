@@ -1,4 +1,5 @@
 import posixpath
+import re
 
 from config.settings import Settings
 from models.file_type import FileType
@@ -29,6 +30,36 @@ NOT_WORTH_TESTING = (
 
 # How much of the imported files a suite's prompt may carry.
 MAX_IMPORTED_CHARS = 12_000
+
+# Code that touches the DOM. Vitest runs in Node, where none
+# of these exist: the suite has to ask for jsdom.
+USES_DOM = re.compile(
+    r"\bdocument\.|\bwindow\.|\bHTML\w*Element\b|\b(?:Keyboard|Mouse|Focus|Pointer)Event\b"
+)
+
+DOM_DIRECTIVE = "// @vitest-environment jsdom"
+
+
+DOM_RULE = f"""- the file under test uses the DOM, and Vitest runs in
+  Node: the suite's very first line is
+  {DOM_DIRECTIVE}
+  and it uses the real document, never a fake one
+"""
+
+
+def uses_dom(content: str) -> bool:
+    """Whether code reaches for the DOM's globals."""
+
+    return bool(USES_DOM.search(content))
+
+
+def with_dom(suite: str) -> str:
+    """The suite, asking for jsdom on its first line if it did not."""
+
+    if "@vitest-environment" in suite:
+        return suite
+
+    return f"{DOM_DIRECTIVE}\n{suite}"
 
 
 class QAAgent:
@@ -269,7 +300,7 @@ Rules:
     import {{ ... }} from '{specifier}';
 
 - at most 3 tests
-- use describe, it and expect
+{DOM_RULE if uses_dom(source.content) else ""}- use describe, it and expect
 - this is Vitest, not Jest. For a mock write
   vi.fn(), and for a mocked type use
   ReturnType<typeof vi.fn>. The name `jest` does
@@ -293,7 +324,9 @@ fence, no explanation.
 
             return ""
 
-        return strip_leading_prose(strip_code_fences(answer))
+        suite = strip_leading_prose(strip_code_fences(answer))
+
+        return with_dom(suite) if suite and uses_dom(source.content) else suite
 
     # ------------------------------------------------
     # one call for everything

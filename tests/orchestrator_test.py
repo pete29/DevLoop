@@ -706,6 +706,31 @@ try:
 
     print()
     print("=" * 80)
+    print("A DOM SUITE THAT NEEDS JSDOM STOPS FOR THE INSTALL")
+    print("=" * 80)
+
+    class DomQA(QA):
+        def execute(self, files, only=None, repository_path=""):
+            CALLS.append("qa")
+            return [
+                GeneratedFile(
+                    path="tests/a.test.ts",
+                    file_type=FileType.TEST,
+                    content="// @vitest-environment jsdom" + chr(10) + "describe('a', () => {});",
+                )
+            ]
+
+    compiles()
+    tests_report(TestStatus.FAILED)
+
+    task = run(Developer([A], []), Architect(), DomQA(), root)
+
+    check("the task asks for jsdom", task.packages, ["jsdom"])
+
+    check("and nobody is paid to fix what an install fixes", "improve" in CALLS, False)
+
+    print()
+    print("=" * 80)
     print("AN ERROR LEFT BY AN EARLIER TASK IS NOT THIS ONE'S")
     print("=" * 80)
 

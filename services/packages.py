@@ -35,6 +35,13 @@ NODE_BUILTINS = frozenset(
 
 NODE_TYPES = "@types/node"
 
+# A Vitest suite that needs a DOM says so on its first line:
+# "// @vitest-environment jsdom". The environment is a
+# package like any import, and as missing without it.
+ENVIRONMENT = re.compile(r"@vitest-environment\s+([a-z][a-z-]*)")
+
+ENVIRONMENT_PACKAGES = {"jsdom": "jsdom", "happy-dom": "happy-dom"}
+
 # npm's rules for a package name, and nothing else: no
 # version, tag, URL, path or git reference can pass, so a
 # model cannot name something that is not a registry package.
@@ -75,6 +82,9 @@ def imported(contents: list[str]) -> set[str]:
             name = package_of(specifier)
             if name:
                 found.add(name)
+        for environment in ENVIRONMENT.findall(content):
+            if environment in ENVIRONMENT_PACKAGES:
+                found.add(ENVIRONMENT_PACKAGES[environment])
 
     return found
 

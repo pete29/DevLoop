@@ -54,6 +54,10 @@ There are no release branches; one is cut from a tag
 - A plan's pull request says `Closes #<issue>` once every task is
   committed (`Part of #<issue>` before), so merging it closes the issue
   and the parent's progress counts it. (#53)
+- Tests of DOM code get a DOM: QA starts their suite with
+  `// @vitest-environment jsdom`, and a task whose tests then need jsdom
+  stops and offers the install, as for any package, instead of paying
+  for fixes. (#55)
 
 ### Added
 - Review several at once: under a plan's tasks, every task waiting for a

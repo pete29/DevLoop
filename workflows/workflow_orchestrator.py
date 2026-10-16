@@ -573,6 +573,32 @@ class WorkflowOrchestrator:
                 ok=not test_result.blocks_delivery,
             )
 
+        # A suite can need a package the code does not -- a
+        # DOM test needs jsdom -- and no fix makes it exist.
+        # Stopped here, as at the gates, and offered.
+        if test_result.blocks_delivery:
+
+            needed = packages.missing(
+                [item.content for item in test_files],
+                repository_path,
+            )
+
+            if needed:
+                return self.needs_packages(
+                    task_description,
+                    repository_id,
+                    repository_path,
+                    source_files + test_files,
+                    steps,
+                    on_disk,
+                    spent,
+                    created,
+                    gates,
+                    rounds,
+                    needed,
+                    review_history,
+                )
+
         attempts = 0
 
         while (
