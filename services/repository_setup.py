@@ -133,6 +133,48 @@ class Created:
 
     clone_url: str = ""
 
+    # Why the everyday token cannot work on it, or "".
+    access: str = ""
+
+
+def everyday_access(html_url: str, token: str | None = None, admin: str | None = None) -> str:
+    """Why the everyday token cannot reach a new repository, or "".
+
+    The admin token creates it; the everyday one, scoped to
+    chosen repositories, pushes and opens pull requests. A
+    new repository is outside that scope until someone adds
+    it, and on csv-kit that surfaced only at the first push,
+    after a paid run.
+    """
+
+    token = read_token() if token is None else token
+
+    admin = admin_token() if admin is None else admin
+
+    # One token for both: it just created the repository.
+    if not html_url or not token or token == admin:
+        return ""
+
+    try:
+        service = GitHubService.from_remote(html_url, token=token)
+
+        data = service._request("GET", f"/repos/{service.owner}/{service.repository}")
+
+    except GitHubError as error:
+        return (
+            f"GITHUB_PAT cannot see {html_url} ({error}). Add the repository "
+            "to the token's repository access on GitHub (Settings → Developer "
+            "settings → Fine-grained tokens), with Contents and Pull requests: "
+            "read and write, before the first run."
+        )
+
+    permissions = data.get("permissions")
+
+    if isinstance(permissions, dict) and permissions.get("push") is False:
+        return f"GITHUB_PAT can read {html_url} but not push to it."
+
+    return ""
+
 
 def check_new(parent: str, name: str) -> str:
     """Why a new repository cannot be made here, or ""."""
@@ -216,5 +258,7 @@ def create(
             f"origin/{BASE_BRANCH}",
             strict=True,
         )
+
+        created.access = everyday_access(created.html_url)
 
     return created

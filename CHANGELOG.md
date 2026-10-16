@@ -40,6 +40,9 @@ There are no release branches; one is cut from a tag
   tests: earlier tests are kept, and the cap of 3 is for new tests. (#71)
 
 ### Changed
+- **New repository** asks GitHub, with the everyday token, whether it can
+  reach the repository just created, and warns at once if not, instead of
+  at the first push. (#73)
 - The requirement and plan views name feature branches with commits that
   are not on main, before planning or running: a story built without an
   earlier one's work conflicts with it at merge. `git branch` is allowed

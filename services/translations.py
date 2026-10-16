@@ -725,6 +725,10 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "Te branche mają commity, których nie ma na main: {branches}. Praca stąd powstanie bez nich, a przy merge'u może być konflikt. Najlepiej najpierw je zmergować.",
         "en": "These branches have commits that are not on main: {branches}. Work started here is built without them, and may conflict at merge. Merge them first if you can.",
     },
+    "repo.new_no_access": {
+        "pl": "Uwaga, codzienny token nie ma do niego dostępu: {reason}",
+        "en": "Note, the everyday token cannot reach it: {reason}",
+    },
     "plan.close": {
         "pl": "🗑 Zamknij plan",
         "en": "🗑 Close plan",

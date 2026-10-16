@@ -135,7 +135,9 @@ side is then `init`, `remote add origin`, `fetch` and a checkout of `main`
 (a clone made of allowed steps — `clone` itself is refused). If GitHub
 refuses, nothing is left behind locally. Creating a repository needs a
 token with `Administration: write`: `GITHUB_ADMIN_PAT` is used when set, so
-the everyday `GITHUB_PAT` keeps its narrow scope.
+the everyday `GITHUB_PAT` keeps its narrow scope. That scope does not include the new
+repository until you add it on GitHub; DevLoop asks right after creating it
+and says so if the everyday token cannot reach it.
 
 ### 2. Write a requirement, or import one
 

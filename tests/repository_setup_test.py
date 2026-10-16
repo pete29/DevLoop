@@ -240,6 +240,35 @@ try:
 
     github.GitHubService._request = original
 
+    print()
+    print("=" * 80)
+    print("THE EVERYDAY TOKEN IS ASKED ABOUT THE NEW REPOSITORY")
+    print("=" * 80)
+
+    url = "https://github.com/me/on-github"
+
+    check("one token for both: nothing to ask", setup.everyday_access(url, token="same", admin="same"), "")
+
+    github.GitHubService._request = lambda self, *a, **k: refused_by_github(*a, **k)
+
+    outside = setup.everyday_access(url, token="everyday", admin="admin")
+
+    check(
+        "a repository outside the token's scope is said at once, not at the first push (csv-kit)",
+        "GITHUB_PAT cannot see" in outside and "repository access" in outside,
+        True,
+    )
+
+    github.GitHubService._request = lambda self, *a, **k: {"permissions": {"push": False}}
+
+    check("read-only access is said too", "not push" in setup.everyday_access(url, token="everyday", admin="admin"), True)
+
+    github.GitHubService._request = lambda self, *a, **k: {"permissions": {"push": True}}
+
+    check("full access says nothing", setup.everyday_access(url, token="everyday", admin="admin"), "")
+
+    github.GitHubService._request = original
+
     check(
         "and nothing is left behind locally",
         os.path.exists(os.path.join(parent, "refused")),

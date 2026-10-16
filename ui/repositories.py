@@ -239,9 +239,10 @@ def make_repository(name: str, parent: str, description: str, on_github: bool, p
     st.session_state.repo_new_reset = True
 
     st.session_state.git_message = (
-        "success",
+        "warning" if made.access else "success",
         t("repo.new_created", name=name, path=made.path)
-        + (t("repo.new_created_github", url=made.html_url) if made.html_url else ""),
+        + (t("repo.new_created_github", url=made.html_url) if made.html_url else "")
+        + (" " + t("repo.new_no_access", reason=made.access) if made.access else ""),
     )
 
     st.rerun()
