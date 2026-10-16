@@ -156,6 +156,10 @@ def t(key: str, **values: object) -> str:
     The language lives in session state rather than in a
     module-level variable, so two browsers pointed at the
     same server do not change each other's interface.
+
+    Every message ends up in an element that renders
+    Markdown, where text between two "$" is set as maths:
+    "$0.39–$0.81" came out as a formula. Escaped here, once.
     """
 
     return translate(
@@ -165,7 +169,7 @@ def t(key: str, **values: object) -> str:
             DEFAULT_LANGUAGE,
         ),
         **values,
-    )
+    ).replace("$", "\\$")
 
 
 def repository_label(task_like) -> str:

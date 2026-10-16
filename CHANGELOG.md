@@ -31,6 +31,9 @@ There are no release branches; one is cut from a tag
 - A plan run again after every task was rejected starts from the current
   base: its branch, with no commits of its own, is moved up to it instead
   of being checked out on the base it was first cut from. (#44)
+- Dollar amounts no longer render as a maths formula: two `$` in one
+  message (the run estimate, the month against its limit) were read as
+  LaTeX. (#45)
 
 ### Tests
 - pytest runs everything: the suites as one item each in their own
