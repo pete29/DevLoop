@@ -18,7 +18,7 @@ python tests/coverage.py       # under coverage: a summary and coverage-html/
 |---|---|---|
 | `unit` | functions and classes on their own | 11 suites |
 | `integration` | real git, SQLite, files, processes or the TypeScript compiler | 27 suites |
-| `ui` | the real page, rendered headlessly with Streamlit's AppTest | 6 suites |
+| `ui` | the real page, rendered headlessly with Streamlit's AppTest | 7 suites |
 | `e2e` | a whole path through DevLoop | 2 tests |
 | `browser` | the real page in Chromium (also `e2e`) | 1 test |
 | `live` | the real model; skipped unless `--live` | 3 suites |
@@ -426,6 +426,11 @@ column with its rows intact and a backup made first; a second open does
 nothing; a migration that fails is rolled back and leaves the version
 where it was; and three processes migrating one file at once all end at
 the latest version.
+
+`tests.run_view_test` — the real page, headless, on a plan whose tasks all
+failed in an earlier run and which runs again: the task done in this run
+reads COMPLETED, the one under way RUNNING, the one still to come QUEUED,
+with no old failure shown.
 
 `tests.parallel_test` — a task's calls answer in the order asked even when
 they finish out of order; the first runs alone before any other starts;

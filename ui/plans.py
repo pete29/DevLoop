@@ -756,6 +756,17 @@ def run_panel(plan_id: str) -> None:
 
     st.session_state.watching_run = run.id
 
+    # A task finished or another started: the whole page is
+    # redrawn, so the task cards show it, not only this panel.
+    progress = (run.current_task, len(run.produced))
+
+    seen = st.session_state.get(f"run-progress-{run.id}")
+
+    st.session_state[f"run-progress-{run.id}"] = progress
+
+    if seen is not None and seen != progress:
+        st.rerun()
+
     plan = plan_store.get_by_id(plan_id)
 
     item = plan.task(run.current_task) if plan and run.current_task else None
@@ -970,24 +981,62 @@ def plan_tasks(plan, active_run, environment_ok, over_budget, target_path) -> No
         task_card(plan, active_run, environment_ok, over_budget, target_path, item, marks)
 
 
+def queued_in_run(plan, item, record, active_run) -> bool:
+    """Whether a running plan has yet to reach this task.
+
+    Its last result is from before the run started -- a
+    failure, a rejection -- and the run will do it again.
+    Shown as that old failure, a plan running perfectly well
+    looked as though nothing was happening.
+    """
+
+    if active_run is None or active_run.current_task == item.id:
+        return False
+
+    if active_run.task_id and active_run.task_id != item.id:
+        return False
+
+    if plan.status_of(item) == ExecutionStatus.COMPLETED and record and record.started_at >= active_run.started_at:
+        return False
+
+    return record is None or record.started_at < active_run.started_at
+
+
 def task_card(plan, active_run, environment_ok, over_budget, target_path, item, marks) -> None:
     """One planned task: its state, its record, and how to run it."""
 
     blocked = plan.blocked_by(item)
 
-    status = plan.status_of(item)
-
     record = plan.execution(item.id)
 
+    # The run writes a task's result when it ends, so while
+    # it runs the stored status is still the last run's.
+    if active_run is not None and active_run.current_task == item.id:
+        status = ExecutionStatus.RUNNING
+
+    else:
+        status = plan.status_of(item)
+
+    queued = queued_in_run(plan, item, record, active_run)
+
+    label = t("run.queued_label") if queued else status.value
+
     with st.expander(
-        f"{marks[status]} {item.id}. {item.title} "
-        f"[{item.priority.value}] · {status.value}",
-        expanded=status
+        f"{'🕒' if queued else marks[status]} {item.id}. {item.title} "
+        f"[{item.priority.value}] · {label}",
+        expanded=not queued
+        and status
         in (
             ExecutionStatus.READY,
             ExecutionStatus.FAILED,
+            ExecutionStatus.RUNNING,
         ),
     ):
+
+        if queued:
+            task_card_details(item, blocked)
+            st.info(t("run.task_queued"))
+            return
 
         task_card_details(item, blocked)
 

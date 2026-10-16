@@ -37,6 +37,9 @@ There are no release branches; one is cut from a tag
 - Step 0 checks that git knows who commits; without `user.name` and
   `user.email` it asks for them for that repository, instead of every
   commit failing. (#46)
+- A running plan shows which task runs (RUNNING) and which wait (QUEUED)
+  instead of their results from an earlier run, and the page redraws as
+  each task finishes. (#47)
 
 ### Tests
 - pytest runs everything: the suites as one item each in their own

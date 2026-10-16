@@ -452,7 +452,7 @@ CI. Run it before and after changing a prompt, a model or an effort. The
 baseline: 6/6 passed, $0.2454; the package case asked for `@types/node`, and
 the plan case planned 3 tasks with no plan problems.
 
-There are 47 suite files and 2 end-to-end tests. 44 suites run offline, against fake transports and
+There are 48 suite files and 2 end-to-end tests. 45 suites run offline, against fake transports and
 throwaway repositories; `compile_test`, `install_test` and
 `test_execution_test` need Node on `PATH`. Three call a real model and are
 skipped in routine runs: `architect_test`, `workflow_test`,

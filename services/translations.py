@@ -629,6 +629,14 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "Commity w tym repozytorium będą podpisane jako {name}.",
         "en": "Commits in this repository will be signed {name}.",
     },
+    "run.queued_label": {
+        "pl": "W KOLEJCE",
+        "en": "QUEUED",
+    },
+    "run.task_queued": {
+        "pl": "🕒 Czeka w kolejce tego przebiegu; jego poprzedni wynik nie ma już znaczenia.",
+        "en": "🕒 Waiting its turn in this run; its earlier result no longer counts.",
+    },
     "plan.close": {
         "pl": "🗑 Zamknij plan",
         "en": "🗑 Close plan",
