@@ -451,12 +451,14 @@ CI runs the offline suites on every pull request and on `main`
 ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)): Windows,
 Python 3.13, Node 24, no secrets.
 
-**The eval** measures the factory itself: six cases from
+**The eval** measures the factory itself: ten cases from
 `evals/cases.json`, each on a fresh copy of `evals/fixture` (a small
 TypeScript project with code to build on) - four single tasks, one task that
 needs an npm package (installed as the button would, then checked again),
-and one requirement planned by the Planner with every planned task run in
-order. Per case: compiles, tests pass, the Architect's score and verdict,
+one requirement planned by the Planner with every planned task run in
+order, and four from what broke on datepicker -- an import by the compiled
+name (`./x.js`), types through a barrel of `export type { }` lines, DOM
+code whose tests need jsdom, a task writing an HTML page. Per case: compiles, tests pass, the Architect's score and verdict,
 review rounds, files, cost and time.
 
 ```bash
@@ -464,8 +466,8 @@ review rounds, files, cost and time.
 .venv/Scripts/python evals/compare.py evals/reports/2026-10-15-baseline-v2.json evals/reports/<new>.json
 ```
 
-It calls the real model (about $0.25 for the six cases) and never runs in
-CI. Run it before and after changing a prompt, a model or an effort. The
+It calls the real model (about $0.25 for the first six cases, around $0.45
+for all ten) and never runs in CI. Run it before and after changing a prompt, a model or an effort. The
 baseline: 6/6 passed, $0.2454; the package case asked for `@types/node`, and
 the plan case planned 3 tasks with no plan problems.
 

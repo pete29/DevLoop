@@ -546,13 +546,18 @@ with a password validator and six rules, so every case builds on existing
 code. A case is a task; a task with `install_packages`, which, when it stops
 for a missing package, has it installed on the copy and its files checked
 again, as the button does; or a `plan`, where the Planner plans a
-requirement and every planned task runs in order. It writes
+requirement and every planned task runs in order. A case's `setup` writes
+files into its copy of the fixture first, for a project state the fixture
+lacks (a barrel file). Four cases replay what broke on datepicker:
+`js-extension-import`, `barrel-types`, `dom-render` (installs jsdom),
+`html-page`. It writes
 `evals/reports/<date>-<label>.json`: per case,
 compile and test results, the Architect's score and verdict, review rounds,
 blockers and warnings, files, cost, output tokens and time. A case passes
 when it compiles, its tests pass and it is approved. `evals/compare.py`
 puts two reports side by side. `tests.eval_test` checks the verdict, the
-table and the comparison offline.
+table, the comparison and the setup offline, and that the datepicker cases
+are there.
 
 It costs money, so it is never part of CI. Run it around any change to a
 prompt, a model or an effort; the baseline is

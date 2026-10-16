@@ -144,6 +144,32 @@ def run_plan(case: dict, orchestrator: WorkflowOrchestrator, work: str) -> dict:
 KINDS = {"task": run_task, "plan": run_plan}
 
 
+def apply_setup(case: dict, work: str) -> list[str]:
+    """Writes a case's own files into its copy of the fixture.
+
+    For a case that needs the project in a state the fixture
+    does not have -- a barrel file, say. Returns the paths.
+    """
+
+    written = []
+
+    for relative, content in (case.get("setup") or {}).items():
+
+        target = os.path.join(work, *relative.split("/"))
+
+        if os.path.commonpath([os.path.abspath(target), os.path.abspath(work)]) != os.path.abspath(work):
+            raise ValueError(f"{relative} is outside the fixture")
+
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+
+        with open(target, "w", encoding="utf-8") as handle:
+            handle.write(content)
+
+        written.append(relative)
+
+    return written
+
+
 def run_case(case: dict, orchestrator: WorkflowOrchestrator) -> dict:
 
     folder = tempfile.mkdtemp(prefix=f"eval-{case['id']}-")
@@ -151,6 +177,8 @@ def run_case(case: dict, orchestrator: WorkflowOrchestrator) -> dict:
     work = os.path.join(folder, "repo")
 
     shutil.copytree(FIXTURE, work)
+
+    apply_setup(case, work)
 
     spent = usage_ledger.mark()
 

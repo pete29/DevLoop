@@ -100,5 +100,47 @@ if failures:
     print(f"FAILED: {len(failures)}")
     raise SystemExit(1)
 
+print("=" * 80)
+print("A CASE'S OWN FILES, AND THE DATEPICKER CASES")
+print("=" * 80)
+
+import json as _json  # noqa: E402
+import os as _os  # noqa: E402
+import shutil as _shutil  # noqa: E402
+import tempfile as _tempfile  # noqa: E402
+
+from evals.run_eval import apply_setup  # noqa: E402
+
+work = _tempfile.mkdtemp()
+
+try:
+    written = apply_setup({"setup": {"src/index.ts": "export type { A } from './a.js';"}}, work)
+
+    with open(_os.path.join(work, "src", "index.ts"), encoding="utf-8") as handle:
+        check("a setup file is written into the copy", (written, handle.read()), (["src/index.ts"], "export type { A } from './a.js';"))
+
+    refused = False
+    try:
+        apply_setup({"setup": {"../outside.ts": "x"}}, work)
+    except ValueError:
+        refused = True
+    check("and never outside it", refused, True)
+
+finally:
+    _shutil.rmtree(work, ignore_errors=True)
+
+ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+
+with open(_os.path.join(ROOT, "evals", "cases.json"), encoding="utf-8") as handle:
+    ids = [case["id"] for case in _json.load(handle)]
+
+check(
+    "what broke on datepicker is in the eval",
+    all(case in ids for case in ("js-extension-import", "barrel-types", "dom-render", "html-page")),
+    True,
+)
+
+print()
+print("=" * 80)
 print("ALL EVAL CHECKS PASSED")
 print("=" * 80)

@@ -31,5 +31,30 @@
     "what": "a requirement planned, then every planned task run in order",
     "kind": "plan",
     "requirement": "Password policies\n\n- a PasswordPolicy type: a name plus the list of PasswordRule instances it enforces\n- two predefined policies built from the existing rules: basic (min length 8) and strict (min length 12, uppercase, digit, special character)\n- a policyValidator(policy) function that returns a PasswordValidator for a policy\n\nDo not change PasswordRule, PasswordValidator or the existing rules."
+  },
+  {
+    "id": "js-extension-import",
+    "what": "an import by the compiled name, './password-rule.js' meaning password-rule.ts (datepicker, #44)",
+    "task": "Create the MaxLengthRule class\n\nIn src/max-length-rule.ts, implement the existing PasswordRule interface, imported in the ES module style by its compiled name: import type { PasswordRule } from \"./password-rule.js\". Reject a password longer than a maximum given to the constructor (default 64), and return null otherwise."
+  },
+  {
+    "id": "barrel-types",
+    "what": "code importing a type through a barrel of `export type { } from` lines (datepicker, #58)",
+    "setup": {
+      "src/index.ts": "export type { PasswordRule } from \"./password-rule.js\";\nexport type { ValidationResult } from \"./password-validator.js\";\nexport { PasswordValidator } from \"./password-validator.js\";\n"
+    },
+    "task": "Create the describeResult function\n\nIn src/describe-result.ts, describeResult(result: ValidationResult): string returns \"OK\" for a valid result and the errors joined with \"; \" otherwise. Import ValidationResult only from the package entry point, ./index.js."
+  },
+  {
+    "id": "dom-render",
+    "what": "DOM code whose tests need jsdom, installed as the button would (datepicker, #55)",
+    "kind": "task",
+    "install_packages": true,
+    "task": "Create the renderErrors function\n\nIn src/render-errors.ts, renderErrors(container: HTMLElement, errors: string[]): void replaces the container's content with a <ul> holding one <li> per error, using container.ownerDocument to create the elements; with no errors it leaves the container empty."
+  },
+  {
+    "id": "html-page",
+    "what": "a task that writes an HTML page beside its code; only the code gets a suite (datepicker, #59)",
+    "task": "Create a password demo page\n\nCreate demo/index.html, a page with a password field and an empty <ul id=\"errors\">, loading demo/main.ts as a module. demo/main.ts exports checkPassword(password: string): string[], which returns the errors of a PasswordValidator built from MinLengthRule(8) and UppercaseRule, and nothing else touches the DOM at import time."
   }
 ]

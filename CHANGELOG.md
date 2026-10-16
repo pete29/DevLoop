@@ -32,6 +32,11 @@ There are no release branches; one is cut from a tag
   clicks, reloads or a closed tab, the result opened when it ends. Two runs
   that write files never share a folder. (#57)
 
+### Tests
+- The eval covers what broke on datepicker: an import by the compiled
+  name, types through a barrel, DOM code that needs jsdom, a task writing
+  an HTML page; a case can set up files in its copy of the fixture. (#63)
+
 ## 0.10.0 (alpha) — 2026-10-16
 
 Proven on a real project: the datepicker epic (pete29/datepicker-ts #1),
