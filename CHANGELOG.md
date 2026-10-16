@@ -27,6 +27,12 @@ There are no release branches; one is cut from a tag
   work an earlier commit held failed with "nothing added to commit".
   (#65)
 
+### Changed
+- Push and the pull request belong to the plan: **Push the branch** and
+  **Open pull request** sit in the plan view, for every committed task at
+  once, instead of in a task's window. A request already merged is not
+  reused: the commits after it get a new one. (#66)
+
 ## 0.11.0 (alpha) — 2026-10-16
 
 The factory stops tripping over what the datepicker epic hit. The eval's

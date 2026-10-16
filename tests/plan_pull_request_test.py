@@ -362,6 +362,33 @@ check(
 
 print()
 print("=" * 80)
+print("A MERGED REQUEST IS NOT REUSED: THE REST GETS A NEW ONE")
+print("=" * 80)
+
+# csv-kit: PR #9 was merged with three of five tasks; the
+# last two need a request of their own.
+EXISTING[:] = [
+    {
+        "number": 9,
+        "state": "closed",
+        "merged_at": "2026-10-16T12:31:02Z",
+        "html_url": "https://github.com/o/r/pull/9",
+        "base": {"ref": "main"},
+    }
+]
+
+CALLS.clear()
+
+first.pull_request = PullRequestAgent.to_info(EXISTING[0], first.git_push.branch_name, "main")
+
+again = PullRequestAgent.execute(first, plan=plan, records=records)
+
+check("a new request is opened", [c[1].endswith("/pulls") for c in CALLS if c[0] == "POST"], [True])
+
+check("and the merged one is not rewritten", [c for c in CALLS if c[0] == "PATCH"], [])
+
+print()
+print("=" * 80)
 print("A REQUEST MAY ONLY HAVE ITS TITLE AND BODY CHANGED")
 print("=" * 80)
 

@@ -760,15 +760,16 @@ def remote_section(task) -> None:
 
     st.subheader(t("git.remote"))
 
+    # Pushing and the pull request are the plan's: the task
+    # open here is not always the plan's last.
     if task.git_push.pushed:
 
         push_details(task)
 
-        pull_request_section(task)
+        if task.pull_request.exists:
+            pull_request_details(task)
 
-    else:
-
-        push_form(task)
+    st.caption(t("task.publish_in_plan"))
 
 
 def push_details(task) -> None:

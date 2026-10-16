@@ -14,7 +14,7 @@ from services.git_service import GitError, GitService
 from services.github_service import GitHubError, parse_remote
 from services.package_installer import blocked, install
 from services.task_rollback import Rollback
-from ui.actions import accept_records, approvable, log_tail, plan_pull_request, plan_records, reject_records, revise_task, start_run, waiting_records
+from ui.actions import accept_records, approvable, latest_committed, log_tail, open_plan_pull_request, plan_pull_request, plan_records, push_plan, reject_records, revise_task, start_run, waiting_records
 from ui import shared
 from ui.shared import plan_store, repository, repository_path_now, run_store, t
 
@@ -52,6 +52,8 @@ def plan_view() -> None:
         environment_panel(target_path, environment, skip_key)
 
     branch_panel(plan, target_path)
+
+    publish_panel(plan)
 
     pull_request_panel(plan)
 
@@ -366,6 +368,51 @@ def branch_panel(plan, target_path: str) -> None:
 
     if earlier:
         st.info(t("branch.continues", count=len(earlier)))
+
+
+def publish_panel(plan) -> None:
+    """Push the plan's branch, and open its pull request: for the whole plan.
+
+    These lived in each task's window, after Accept -- but
+    the task one has open is not always the plan's last.
+    """
+
+    records = plan_records(plan)
+
+    holder = latest_committed(records)
+
+    if holder is None:
+        return
+
+    open_request = plan_pull_request(records)
+
+    has_open = open_request is not None and open_request.pull_request.state.value == "OPEN"
+
+    push, request = st.columns(2)
+
+    with push:
+        if st.button(
+            t("plan.push", count=sum(1 for record in records if record.git_operation.commit_hash)),
+            key=f"push-plan-{plan.id}",
+            disabled=holder.git_push.pushed,
+            use_container_width=True,
+        ):
+            st.session_state.git_message = push_plan(plan, records)
+            st.rerun()
+
+    with request:
+        if st.button(
+            t("plan.open_pr"),
+            key=f"open-pr-{plan.id}",
+            disabled=has_open or not holder.git_push.pushed,
+            help=t("plan.open_pr_help"),
+            use_container_width=True,
+        ):
+            st.session_state.git_message = open_plan_pull_request(plan, records)
+            st.rerun()
+
+    if holder.git_push.pushed and not has_open:
+        st.caption(t("plan.pr_none_yet"))
 
 
 def pull_request_panel(plan) -> None:

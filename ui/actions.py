@@ -3,6 +3,8 @@
 import streamlit as st
 
 from agents.git_agent import GitAgent
+from agents.issue_agent import IssueAgent
+from agents.pull_request_agent import PullRequestAgent
 from agents.planner_agent import PlannerAgent
 from models.repository import Repository
 from models.requirement import now
@@ -115,6 +117,77 @@ def reject_records(records) -> tuple[int, Rollback]:
         repository.update_status(record.id, TaskStatus.REJECTED)
 
     return len(records), undone
+
+
+def latest_committed(records):
+    """The newest committed record on a plan's branch, or None.
+
+    Pushing it pushes the branch, every commit before it
+    included; the plan's pull request is opened through it.
+    """
+
+    committed = [record for record in records if record.git_operation.commit_hash]
+
+    return max(committed, key=lambda record: record.created_at) if committed else None
+
+
+def push_plan(plan, records) -> tuple[str, str]:
+    """Pushes the plan's branch; every committed record learns it."""
+
+    holder = latest_committed(records)
+
+    if holder is None:
+        return "warning", t("plan.nothing_committed")
+
+    result = GitAgent.push(holder)
+
+    if not result.pushed:
+        return "warning", f"Push failed: {result.error}"
+
+    for record in records:
+        if record.git_operation.commit_hash:
+            repository.update_git_push(record.id, result)
+
+    holder.git_push = result
+
+    # The open request describes every task on the branch;
+    # this push may have added some.
+    synced = PullRequestAgent.sync(holder, plan, records)
+
+    if synced is not None and synced.exists:
+        for record in records:
+            repository.update_pull_request(record.id, synced)
+
+        return "success", t("pr.synced", branch=result.remote_branch, label=synced.label)
+
+    return "success", f"Pushed {result.remote_branch}"
+
+
+def open_plan_pull_request(plan, records) -> tuple[str, str]:
+    """Opens the plan's pull request; every record on the branch learns it."""
+
+    holder = latest_committed(records)
+
+    if holder is None:
+        return "warning", t("plan.nothing_committed")
+
+    info = PullRequestAgent.execute(holder, plan=plan, records=records)
+
+    if not info.exists:
+        return "warning", f"Pull request failed: {info.error}"
+
+    for record in records:
+        repository.update_pull_request(record.id, info)
+
+    if not holder.issue.exists:
+        return "success", f"Opened {info.label}: {info.url}"
+
+    reported, detail = IssueAgent.report(holder, holder.git_push.remote_url)
+
+    if reported:
+        return "success", f"Opened {info.label} and commented on {holder.issue.label}"
+
+    return "warning", f"Opened {info.label}, but the issue was not updated: {detail}"
 
 
 def plan_pull_request(records):

@@ -310,10 +310,13 @@ tests, diff and git. Three answers:
 
 ### 7. Push, pull request, delivery
 
-**⬆️ Push** sends the plan's branch to `origin`. The first push lets you
-open **one pull request for the whole plan**: the requirement, a task
+Both are in the **plan view**, not in a task's window: **⬆️ Push the
+branch** sends the plan's branch, every committed task in it, to `origin`;
+**🔀 Open pull request** then opens **one pull request for the whole
+plan**: the requirement, a task
 checklist with states, scores, compile and test results, files, findings
-and cost. Every later push rewrites that description.
+and cost. Every later push rewrites that description. A request already
+merged is never reused: commits made after it get a new one.
 
 **CI on the pull request.** **🧪 Check the PR's CI** reads the GitHub Actions jobs
 of the request's latest commit (✅ / ❌ / ⏳). For a failed GitHub Actions

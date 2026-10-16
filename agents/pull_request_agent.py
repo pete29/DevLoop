@@ -285,7 +285,10 @@ class PullRequestAgent:
                 "The branch has not been pushed yet.",
             )
 
-        if task.pull_request.exists:
+        # One merged or closed is history: the commits after
+        # it need a request of their own (csv-kit: PR #9 was
+        # merged with three of five tasks).
+        if task.pull_request.exists and task.pull_request.state == PullRequestState.OPEN:
             return (
                 False,
                 (
@@ -414,7 +417,7 @@ class PullRequestAgent:
 
             existing = service.find_pull_request(branch)
 
-            if existing:
+            if existing and str(existing.get("state") or "").lower() == "open":
 
                 print(
                     "PULL REQUEST AGENT: one already "

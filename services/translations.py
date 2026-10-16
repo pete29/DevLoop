@@ -697,6 +697,30 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "Praca w tle zakończona: {status}. {message}",
         "en": "Background work ended: {status}. {message}",
     },
+    "plan.push": {
+        "pl": "⬆️ Wypchnij branch ({count} commitów)",
+        "en": "⬆️ Push the branch ({count} commits)",
+    },
+    "plan.open_pr": {
+        "pl": "🔀 Otwórz pull request",
+        "en": "🔀 Open pull request",
+    },
+    "plan.open_pr_help": {
+        "pl": "Dla całego planu: opis wymienia każde zadanie, a gdy wszystkie są zacommitowane, kończy się „Closes #N”. Zmergowany wcześniej PR nie jest używany ponownie.",
+        "en": "For the whole plan: the description lists every task and, once all are committed, ends with \"Closes #N\". A request merged earlier is not reused.",
+    },
+    "plan.pr_none_yet": {
+        "pl": "Branch jest na GitHubie, otwartego PR-a jeszcze nie ma.",
+        "en": "The branch is on GitHub; there is no open pull request yet.",
+    },
+    "plan.nothing_committed": {
+        "pl": "W tym planie nic jeszcze nie jest zacommitowane.",
+        "en": "Nothing in this plan is committed yet.",
+    },
+    "task.publish_in_plan": {
+        "pl": "Push i pull request są w planie, dla wszystkich jego zadań naraz.",
+        "en": "Push and the pull request are in the plan, for all its tasks at once.",
+    },
     "plan.close": {
         "pl": "🗑 Zamknij plan",
         "en": "🗑 Close plan",

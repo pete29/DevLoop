@@ -241,21 +241,27 @@ def test_an_issue_becomes_a_merged_pull_request(project, monkeypatch):
 
         assert len(git(root, "log", "--format=%h", f"main..{branch}").split()) == 2
 
-        # ------------------------------------------------ pushed, and a pull request opened
+        # ------------------------------------------------ the plan pushes, and opens its pull request
 
-        labelled(at, translate("git.push", "en")).click().run()
+        # From the plan, not from a task's window: the task
+        # one has open is not always the plan's last.
+        at.session_state.task = None
+
+        at.session_state.plan = PlanRepository().get_by_id(plan.id)
+
+        at.run()
+
+        button(at, f"push-plan-{plan.id}").click().run()
 
         no_errors(at)
 
         assert git(bare, "rev-parse", branch) == git(root, "rev-parse", branch)
 
-        at.session_state.task = TaskRepository().get_by_id(records[-1].id)
-
-        at.run()
-
-        labelled(at, translate("pr.create", "en")).click().run()
+        button(at, f"open-pr-{plan.id}").click().run()
 
         no_errors(at)
+
+        assert button(at, f"open-pr-{plan.id}").disabled, "a second request is offered while one is open"
 
         assert len(github.pulls) == 1
 
