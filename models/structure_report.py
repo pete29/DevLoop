@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 
 @dataclass
@@ -25,6 +25,28 @@ class StructureReport:
     uncovered_requirements: list[str] = field(
         default_factory=list
     )
+
+    # Set when the compiler ran and judged imports and
+    # exports instead: those findings were set aside.
+    deferred: int = 0
+
+    def left_to_compiler(self) -> "StructureReport":
+        """Only what the compiler cannot see: cycles, requirements.
+
+        A missing file, an import of a name a module does not
+        export, a class nobody declares -- tsc reports each
+        exactly. This pass reads TypeScript with regular
+        expressions, and on datepicker it called good code
+        broken (a "./types.js" import, "export type { }"
+        re-exports) while tsc said PASSED, and blocked it.
+        """
+
+        return replace(
+            self,
+            missing_files=[],
+            broken_imports=[],
+            deferred=len(self.missing_files) + len(self.broken_imports),
+        )
 
     @property
     def blockers(self) -> list[str]:

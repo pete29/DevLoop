@@ -18,8 +18,8 @@ In practice:
 
 | Decided in code | Left to the model |
 |---|---|
-| Does this import resolve? | Is this abstraction right? |
-| Is this symbol exported? | Is the coupling too tight? |
+| Does this import resolve? (`tsc`, or the structural pass without one) | Is this abstraction right? |
+| Is this symbol exported? (likewise) | Is the coupling too tight? |
 | Is there a dependency cycle? | Is the naming clear? |
 | Does a blocker exist, so what is the recommendation? | What counts as a blocker? |
 | In what order do planned tasks run? | How should the epic be split? |

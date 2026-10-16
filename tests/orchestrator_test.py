@@ -706,6 +706,35 @@ try:
 
     print()
     print("=" * 80)
+    print("THE COMPILER, WHEN THERE IS ONE, JUDGES IMPORTS")
+    print("=" * 80)
+
+    # An import this pass cannot resolve -- as "./types.js" was,
+    # and "export type { }" -- that tsc compiles without a word.
+    ODD = source("src/odd.ts", 'import { a } from "./not-on-disk.js";' + chr(10) + "export const odd = a;")
+
+    compiles()
+    tests_report()
+
+    judged = run(Developer([ODD], [[ODD]]), Architect(), QA(), root)
+
+    check("tsc passed it: no fix round for the regex's doubt", "improve" in CALLS, False)
+
+    check("it is reviewed and approvable", judged.recommendation, ReviewDecision.APPROVE)
+
+    def no_compiler(repository_path):
+        CALLS.append("tsc")
+        return CompileResult(status=CompileStatus.UNAVAILABLE, reason="no tsconfig")
+
+    type_checker.check = no_compiler
+    tests_report()
+
+    unjudged = run(Developer([ODD], [[ODD], [ODD], [ODD]]), Architect(), QA(), root)
+
+    check("without a compiler the structural pass still blocks it", "improve" in CALLS, True)
+
+    print()
+    print("=" * 80)
     print("CHECKING AGAIN COSTS NOTHING AND FOLLOWS THE FACTS")
     print("=" * 80)
 

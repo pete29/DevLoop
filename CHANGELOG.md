@@ -21,7 +21,12 @@ There are no release branches; one is cut from a tag
 
 ## Unreleased
 
-Nothing yet.
+### Changed
+- The compiler, when it runs, alone judges imports, exports and missing
+  files; DevLoop's own structural reading keeps only cycles and the task's
+  requirements, and everything where there is no compiler. Its false
+  alarms, where tsc passed the code, were most of the datepicker fixes.
+  (#62)
 
 ## 0.10.0 (alpha) — 2026-10-16
 

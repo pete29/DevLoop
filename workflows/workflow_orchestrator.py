@@ -7,7 +7,7 @@ from agents.qa_agent import QAAgent
 from agents.test_execution_agent import TestExecutionAgent
 from config.settings import Settings
 from models.architecture_review import ArchitectureReview
-from models.compile_result import CompileResult
+from models.compile_result import CompileResult, CompileStatus
 from models.file_type import FileType
 from models.file_generation_result import (
     FileGenerationResult,
@@ -851,16 +851,20 @@ class WorkflowOrchestrator:
     ) -> Gates:
         """The free checks, against what is on disk now."""
 
-        return Gates(
-            report=StructureValidator.validate(
-                source_files,
-                task_description,
-                survey(repository_path),
-            ),
-            compile_result=type_checker.check(
-                repository_path
-            ).since(baseline),
+        report = StructureValidator.validate(
+            source_files,
+            task_description,
+            survey(repository_path),
         )
+
+        compile_result = type_checker.check(repository_path).since(baseline)
+
+        # The compiler ran: it judges what it checks, exactly.
+        # Without one, the structural pass is all there is.
+        if compile_result.status in (CompileStatus.PASSED, CompileStatus.FAILED):
+            report = report.left_to_compiler()
+
+        return Gates(report=report, compile_result=compile_result)
 
     @staticmethod
     def run_tests(

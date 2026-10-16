@@ -226,7 +226,10 @@ Each task goes through the pipeline above:
   A failure only in test files is not sent to it at all: QA rewrites
   those suites.
 - The **free checks** — structural validator and `tsc` — run before the
-  Architect sees anything, with their own budget (`MAX_GATE_FIXES`). `tsc`
+  Architect sees anything, with their own budget (`MAX_GATE_FIXES`). When
+  the compiler runs, it alone judges imports, exports and missing files;
+  the structural pass keeps cycles and the task's bullet requirements, and
+  everything only where there is no compiler. `tsc`
   runs once before the task too: an error already there is not the task's,
   and nobody is paid to fix it. So do the tests: a task is judged only on
   tests that start failing with it. A
