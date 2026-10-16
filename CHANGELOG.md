@@ -27,6 +27,11 @@ There are no release branches; one is cut from a tag
   so the others read the prompt cache it writes. Same cost, a task about
   a third faster. (#39)
 
+### Fixed
+- A plan run again after every task was rejected starts from the current
+  base: its branch, with no commits of its own, is moved up to it instead
+  of being checked out on the base it was first cut from. (#44)
+
 ### Tests
 - pytest runs everything: the suites as one item each in their own
   process, marked `unit`, `integration`, `ui` or `live`; `pytest -n auto`

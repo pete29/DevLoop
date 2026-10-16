@@ -491,6 +491,25 @@ class GitService:
 
         return True
 
+    def restart_branch(self, name: str, start_point: str) -> None:
+        """Moves a branch with no commits of its own to `start_point`.
+
+        `checkout -B`, which would discard commits, so only
+        when the branch's tip is already inside the start
+        point: then nothing on it is lost, and it moves
+        forward rather than being rewritten.
+        """
+
+        if not is_valid_branch(name) or not is_valid_branch(start_point):
+            raise GitError(f"Invalid branch: {name!r} or {start_point!r}")
+
+        if not self.is_ancestor(name, start_point):
+            raise GitError(
+                f"{name} has commits of its own; it is not moved."
+            )
+
+        self._run("checkout", "-B", name, start_point)
+
     def is_ancestor(self, older: str, newer: str) -> bool:
         """Whether `newer` already contains `older`."""
 

@@ -268,6 +268,51 @@ try:
 
     print()
     print("=" * 80)
+    print("A BRANCH WITH NOTHING OF ITS OWN MOVES UP TO THE BASE")
+    print("=" * 80)
+
+    moved_root = repository()
+
+    folders.append(moved_root)
+
+    stale = "feature/issue-2-calendar-date-arithmetic"
+
+    # Cut on an earlier run whose tasks were all rejected.
+    git(moved_root, "branch", stale)
+
+    # Since then, the scaffolding was committed on main.
+    write(moved_root, "package.json", "{}")
+    git(moved_root, "add", "--", "package.json")
+    git(moved_root, "commit", "-m", "chore: project scaffolding")
+
+    entered = plan_branch.enter(moved_root, stale)
+
+    check(
+        "it is moved to main, so the run has the scaffolding",
+        (git(moved_root, "rev-parse", stale).strip() == git(moved_root, "rev-parse", "main").strip(), os.path.exists(os.path.join(moved_root, "package.json"))),
+        (True, True),
+    )
+
+    check("and the step says why", "moved up to main" in entered.note, True)
+
+    # A branch with work of its own is never moved.
+    write(moved_root, "src/a.ts", "export const a = 1;")
+    git(moved_root, "add", "--", "src/a.ts")
+    git(moved_root, "commit", "-m", "feat: a")
+
+    own = git(moved_root, "rev-parse", stale).strip()
+
+    git(moved_root, "checkout", "main")
+
+    write(moved_root, "README.md", "# moved on\n")
+    git(moved_root, "commit", "-am", "docs: main moves on")
+
+    plan_branch.enter(moved_root, stale)
+
+    check("a branch with commits of its own stays where it is", git(moved_root, "rev-parse", stale).strip(), own)
+
+    print()
+    print("=" * 80)
     print("A BLOCKED SWITCH STOPS THE TASK BEFORE IT RUNS")
     print("=" * 80)
 

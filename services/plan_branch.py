@@ -96,16 +96,41 @@ def enter(repository_path: str, branch: str) -> Entered:
 
     service.require_repository()
 
-    if service.current_branch() == branch:
-        return Entered(branch)
-
     if service.branch_exists(branch):
-        service.checkout_new_branch(branch, strict=True)
-
-        return Entered(branch, "existing branch")
+        return enter_existing(service, branch)
 
     start, note = service.start_point()
 
     service.checkout_new_branch(branch, start, strict=True)
 
     return Entered(branch, note)
+
+
+def enter_existing(service: GitService, branch: str) -> Entered:
+    """The plan's branch again: as it is, or moved up to the base.
+
+    A branch whose every task was rejected has no commits
+    of its own, but keeps the base it was cut from. Checked
+    out as it was, the plan would run again on that old base
+    -- on datepicker-ts, without the scaffolding committed to
+    main since. Moved to the base instead, it loses nothing.
+    A branch with commits of its own is left as it is.
+    """
+
+    start, _ = service.start_point()
+
+    if (
+        start
+        and service.is_ancestor(branch, start)
+        and not service.is_ancestor(start, branch)
+    ):
+        service.restart_branch(branch, start)
+
+        return Entered(branch, f"no commits of its own; moved up to {start}")
+
+    if service.current_branch() == branch:
+        return Entered(branch)
+
+    service.checkout_new_branch(branch, strict=True)
+
+    return Entered(branch, "existing branch")
