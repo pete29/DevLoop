@@ -237,6 +237,15 @@ def check_open_request(plan, holder, records, state=None, clock=time.monotonic):
     return refresh_pull_request(holder, records)
 
 
+def unmerged_warning(repository_path: str, own: str = "") -> None:
+    """Says which earlier work is not on main yet, if any."""
+
+    waiting = plan_branch.unmerged(repository_path, own)
+
+    if waiting:
+        st.warning(t("plan.unmerged", branches=", ".join(waiting)))
+
+
 def plan_pull_request(records):
     """The plan's pull request as last read, or None.
 

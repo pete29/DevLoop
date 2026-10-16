@@ -358,7 +358,7 @@ installs, commits or pushes on its own.
 **Files** are written only inside the selected repository. Paths with `..`,
 absolute paths and drive letters are rejected, not cleaned up.
 
-**git** is limited to an allow list: `add`, `branch`, `checkout`, `commit`,
+**git** is limited to an allow list: `add`, `branch --list`, `checkout`, `commit`,
 `diff`, `fetch` (only `fetch --quiet <remote>`, which touches nothing but
 `origin/*`), `init` (only `--quiet --initial-branch=<name>`, in a folder
 without a repository), `ls-files`, `merge-base --is-ancestor`, `push`,

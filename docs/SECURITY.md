@@ -87,6 +87,8 @@ level:
   nothing is discarded.
 - `merge-base` may only be `--is-ancestor`, a read-only question about
   which of two commits contains the other.
+- `branch` may only be `--list`: it names branches, never creates, renames
+  or deletes one.
 - `push` may not pass `--force`, `-f`, `--force-with-lease`, `--delete`,
   `-d`, `--mirror`, `--all`, `--tags` or `--prune`. The refspec is fully
   qualified, so a push can only create or fast-forward one branch.

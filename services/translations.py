@@ -721,6 +721,10 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "Push i pull request są w planie, dla wszystkich jego zadań naraz.",
         "en": "Push and the pull request are in the plan, for all its tasks at once.",
     },
+    "plan.unmerged": {
+        "pl": "Te branche mają commity, których nie ma na main: {branches}. Praca stąd powstanie bez nich, a przy merge'u może być konflikt. Najlepiej najpierw je zmergować.",
+        "en": "These branches have commits that are not on main: {branches}. Work started here is built without them, and may conflict at merge. Merge them first if you can.",
+    },
     "plan.close": {
         "pl": "🗑 Zamknij plan",
         "en": "🗑 Close plan",

@@ -40,6 +40,10 @@ There are no release branches; one is cut from a tag
   tests: earlier tests are kept, and the cap of 3 is for new tests. (#71)
 
 ### Changed
+- The requirement and plan views name feature branches with commits that
+  are not on main, before planning or running: a story built without an
+  earlier one's work conflicts with it at merge. `git branch` is allowed
+  only to list. (#72)
 - An open pull request is asked about when its plan is shown, at most
   once a minute: a merge on GitHub shows without pressing the refresh
   button. (#67)

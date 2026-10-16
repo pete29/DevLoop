@@ -2,7 +2,7 @@ import re
 import unicodedata
 from dataclasses import dataclass
 
-from services.git_service import GitService
+from services.git_service import GitError, GitService
 
 PREFIX = "feature/plan-"
 
@@ -72,6 +72,42 @@ class Entered:
     # cut from a stale base looks exactly like a fresh one
     # unless something says which it was.
     note: str = ""
+
+
+def unmerged(repository_path: str, own: str = "") -> list[str]:
+    """Other feature branches with commits the base does not have.
+
+    The base is origin's main as last fetched, else the
+    local one; no fetch here, it is asked on every render.
+    A story planned while an earlier one's commits are
+    still off main is built without them, and the two
+    conflict at merge (csv-kit #3: its last commit stayed
+    on its branch while #4 and #5 changed src/index.ts).
+    """
+
+    service = GitService(repository_path)
+
+    try:
+        if not repository_path or not service.is_repository():
+            return []
+
+        base = service.base_branch()
+
+        if not base:
+            return []
+
+        tracking = f"origin/{base}"
+
+        target = tracking if service.ref_exists(f"refs/remotes/{tracking}") else base
+
+        return [
+            branch
+            for branch in service.feature_branches()
+            if branch != own and not service.is_ancestor(branch, target)
+        ]
+
+    except GitError:
+        return []
 
 
 def enter(repository_path: str, branch: str) -> Entered:

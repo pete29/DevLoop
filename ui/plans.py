@@ -14,7 +14,7 @@ from services.git_service import GitError, GitService
 from services.github_service import GitHubError, parse_remote
 from services.package_installer import blocked, install
 from services.task_rollback import Rollback
-from ui.actions import accept_records, approvable, check_open_request, latest_committed, log_tail, open_plan_pull_request, plan_pull_request, plan_records, push_plan, refresh_pull_request, reject_records, revise_task, start_run, waiting_records
+from ui.actions import accept_records, approvable, check_open_request, latest_committed, log_tail, open_plan_pull_request, plan_pull_request, plan_records, push_plan, refresh_pull_request, reject_records, revise_task, start_run, unmerged_warning, waiting_records
 from ui import shared
 from ui.shared import plan_store, repository, repository_path_now, run_store, t
 
@@ -1367,6 +1367,9 @@ def rejected_message(count: int, undone: Rollback) -> str:
 
 def run_all_button(plan, active_run, environment_ok, over_budget, target_path, ready) -> None:
     """Run the whole plan in the background."""
+
+    if active_run is None and plan.remaining:
+        unmerged_warning(target_path, plan_branch.of(plan))
 
     if active_run is None and st.button(
         t("plan.run_all", count=len(plan.remaining)),

@@ -22,7 +22,7 @@ from models.git_operation import GitOperation
 from models.task import Task
 from models.task_status import TaskStatus
 from services import plan_branch
-from services.git_service import GitError, is_valid_branch
+from services.git_service import GitError, GitService, is_valid_branch
 from services.task_rollback import roll_back
 from workflows.review_decision import ReviewDecision
 
@@ -310,6 +310,33 @@ try:
     plan_branch.enter(moved_root, stale)
 
     check("a branch with commits of its own stays where it is", git(moved_root, "rev-parse", stale).strip(), own)
+
+    print()
+    print("=" * 80)
+    print("EARLIER WORK NOT ON MAIN IS NAMED")
+    print("=" * 80)
+
+    git(moved_root, "branch", "feature/issue-9-nothing-yet", "main")
+
+    check(
+        "a branch with commits main lacks is named; one with none is not (csv-kit #3)",
+        plan_branch.unmerged(moved_root),
+        [stale],
+    )
+
+    check("the plan's own branch is not a warning about itself", plan_branch.unmerged(moved_root, own=stale), [])
+
+    git(moved_root, "checkout", "main")
+    git(moved_root, "merge", "--no-edit", stale)
+
+    check("once merged, nothing is named", plan_branch.unmerged(moved_root), [])
+
+    check("a folder that is not a repository names nothing", plan_branch.unmerged(tempfile.gettempdir()), [])
+
+    refused(
+        "git branch only lists: deleting is refused",
+        lambda: GitService(moved_root)._run("branch", "-D", stale),
+    )
 
     print()
     print("=" * 80)

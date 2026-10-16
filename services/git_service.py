@@ -48,6 +48,8 @@ ALLOWED_SUBCOMMANDS = {
     # into a repository without one: see add_origin.
     "remote": frozenset({"get-url", "add"}),
     "merge-base": frozenset({"--is-ancestor"}),
+    # Listing only: never create, rename or delete one.
+    "branch": frozenset({"--list"}),
 }
 
 # Fetch in one shape only: `fetch --quiet <remote>`. With no
@@ -390,6 +392,18 @@ class GitService:
             return False
 
         return True
+
+    def feature_branches(self) -> list[str]:
+        """The local feature/* branches, plans' among them."""
+
+        listed = self._run(
+            "branch",
+            "--list",
+            "--format=%(refname:short)",
+            "feature/*",
+        )
+
+        return [line.strip() for line in listed.splitlines() if line.strip()]
 
     def identity(self) -> tuple[str, str]:
         """Who git will say made a commit: name and email, or ""."""

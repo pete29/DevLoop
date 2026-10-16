@@ -153,7 +153,7 @@ branch **`main`**. The old history did not come along: it all landed as one comm
 | UI | `app.py` (the page, ~50 lines), `ui/*.py` (its parts; views are short functions calling named sections, modules ordered top-down), `services/translations.py` | Every visible string goes through `t()`, in Polish and English. `translation_test` enforces it. The task view is `task_view()` shown via `st.dialog(width="large")`. |
 
 **Git safety model (current):**
-- **Allowed:** `add`, `branch`, `checkout`, `commit`, `diff`, `fetch` (one shape), `init`
+- **Allowed:** `add`, `branch --list`, `checkout`, `commit`, `diff`, `fetch` (one shape), `init`
   (one shape, new folders only), `ls-files`, `merge-base --is-ancestor`, `push` (no force,
   delete, mirror or tags; never to `main`/`master`/`develop`/`release`/`trunk`),
   `remote get-url`, `remote add origin <url>` (only without an origin), `rev-parse`, `status`,

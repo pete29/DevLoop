@@ -8,7 +8,7 @@ from agents.story_splitter import Story, StorySplitter, child_body, children_com
 from models.pull_request_info import PullRequestState
 from models.requirement import RequirementSource, now
 from services import plan_branch, usage_ledger
-from ui.actions import continue_plan, plan_pull_request, plan_records, remote_of
+from ui.actions import continue_plan, plan_pull_request, plan_records, remote_of, unmerged_warning
 from ui import shared
 from ui.jobs import job_active, job_panel, start_job
 from ui.shared import plan_store, repository_path_now, requirement_store, run_store, t
@@ -259,6 +259,8 @@ def requirement_plans(requirement) -> None:
 
 def requirement_buttons(requirement, new_title, new_content) -> None:
     """Save, plan, delete."""
+
+    unmerged_warning(repository_path_now())
 
     save_col, plan_col, delete_col = st.columns(3)
 
