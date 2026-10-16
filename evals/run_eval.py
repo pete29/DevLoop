@@ -205,20 +205,52 @@ def run_case(case: dict, orchestrator: WorkflowOrchestrator) -> dict:
     }
 
 
+def parse_arguments(arguments: list[str]) -> dict:
+    """label, --only=a,b (those cases alone), --budget=0.40 (dollars)."""
+
+    options = {"label": "run", "only": set(), "budget": 0.0}
+
+    for argument in arguments:
+
+        if argument.startswith("--only="):
+            options["only"] = {name for name in argument[7:].split(",") if name}
+
+        elif argument.startswith("--budget="):
+            options["budget"] = float(argument[9:])
+
+        else:
+            options["label"] = argument
+
+    return options
+
+
 def main() -> None:
 
-    label = sys.argv[1] if len(sys.argv) > 1 else "run"
+    options = parse_arguments(sys.argv[1:])
+
+    label = options["label"]
 
     prepare_fixture()
 
     with open(CASES, encoding="utf-8") as handle:
         cases = json.load(handle)
 
+    if options["only"]:
+        cases = [case for case in cases if case["id"] in options["only"]]
+
     orchestrator = WorkflowOrchestrator()
 
     results = []
 
     for case in cases:
+
+        spent = sum(r.get("cost", 0) for r in results)
+
+        # Before a case, never inside one: half a case
+        # measures nothing, and costs no less.
+        if options["budget"] and spent >= options["budget"]:
+            print(f"budget reached (${spent:.4f} of ${options['budget']:.2f}); {case['id']} and after not run")
+            break
 
         print(f"\n=== {case['id']}: {case['what']}")
 

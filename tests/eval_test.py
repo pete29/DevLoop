@@ -142,5 +142,11 @@ check(
 
 print()
 print("=" * 80)
+from evals.run_eval import parse_arguments  # noqa: E402
+
+check("a label, cases to run and a budget", parse_arguments(["v2", "--only=a,b", "--budget=0.4"]), {"label": "v2", "only": {"a", "b"}, "budget": 0.4})
+
+check("by default every case, no budget", parse_arguments([]), {"label": "run", "only": set(), "budget": 0.0})
+
 print("ALL EVAL CHECKS PASSED")
 print("=" * 80)

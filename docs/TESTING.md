@@ -559,6 +559,9 @@ puts two reports side by side. `tests.eval_test` checks the verdict, the
 table, the comparison and the setup offline, and that the datepicker cases
 are there.
 
+`--only=<id>,<id>` runs those cases alone, and `--budget=<dollars>` stops
+before the next case once that much is spent (never inside one).
+
 It costs money, so it is never part of CI. Run it around any change to a
 prompt, a model or an effort; the baseline is
 `evals/reports/2026-10-15-baseline-v2.json` (6/6, $0.2454). One run is one
