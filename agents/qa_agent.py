@@ -8,7 +8,8 @@ from services.parallel import run_all
 from services.file_bundle import FileBundle
 from services.file_parser import FileParseError, FileParser
 from services.llm_factory import LLMFactory
-from services.repository_survey import is_test_path
+from services.repository_survey import is_test_path, survey
+from services.structure_validator import StructureValidator
 
 # The same trap as in the developer: a small model answers
 # with the path it was shown, so the path it is shown is
@@ -26,6 +27,9 @@ NOT_WORTH_TESTING = (
     "index.ts",
 )
 
+# How much of the imported files a suite's prompt may carry.
+MAX_IMPORTED_CHARS = 12_000
+
 
 class QAAgent:
     def __init__(
@@ -37,6 +41,7 @@ class QAAgent:
         self,
         files: list[GeneratedFile],
         only: set[str] | None = None,
+        repository_path: str = "",
     ) -> list[GeneratedFile]:
         """Suites for the source files, or for `only` those.
 
@@ -47,6 +52,11 @@ class QAAgent:
         every suite again after a one-file fix paid for a
         dozen calls to reproduce what was already there.
         """
+
+        # Read by _imported: what this task wrote, and where.
+        self.repository_path = repository_path
+
+        self.files = files
 
         if Settings.GENERATE_FILE_BY_FILE:
 
@@ -178,6 +188,51 @@ class QAAgent:
 
         return tests
 
+    def _imported(self, source: GeneratedFile) -> str:
+        """The files the source imports, as they are, for the prompt.
+
+        Shown only the file under test, QA guessed what its
+        types are: datepicker's CalendarDate is a branded
+        string, and twice the suites built it as an object.
+        The developer is shown what it imports; so is QA now.
+        """
+
+        written = {item.path: item.content for item in getattr(self, "files", [])}
+
+        found = survey(getattr(self, "repository_path", ""))
+
+        known = set(found.files) | set(written)
+
+        blocks: list[str] = []
+
+        spent = 0
+
+        for target, _ in StructureValidator.imports(source.content):
+
+            path = StructureValidator.resolve(source.path, target, known)
+
+            if not path or path == source.path:
+                continue
+
+            content = written.get(path) or found.read(path)
+
+            if not content or spent + len(content) > MAX_IMPORTED_CHARS:
+                continue
+
+            spent += len(content)
+
+            blocks.append(f"// {path}\n{content.strip()}")
+
+        if not blocks:
+            return ""
+
+        return (
+            "\nIt imports these files. Build test data from their types "
+            "exactly as defined here -- do not guess a type's shape:\n\n"
+            + "\n\n".join(blocks)
+            + "\n"
+        )
+
     def _suite_for(
         self,
         source: GeneratedFile,
@@ -203,7 +258,7 @@ Write a Vitest suite for exactly one of them:
 That file:
 
 {source.content}
-
+{self._imported(source)}
 Rules:
 
 - the suite goes in {path}

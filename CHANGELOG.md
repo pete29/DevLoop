@@ -48,6 +48,9 @@ There are no release branches; one is cut from a tag
   that does not compile. (#49)
 - A revision goes on without a file that has gone from disk since (a
   later task's rejection can remove one), instead of failing at once. (#50)
+- QA is shown the repository files the file under test imports, so it
+  builds test data from the real types: twice on datepicker it guessed
+  `CalendarDate` (a branded string) was an object. (#51)
 
 ### Tests
 - pytest runs everything: the suites as one item each in their own

@@ -136,7 +136,7 @@ class QA:
     def __init__(self):
         self.only: list[object] = []
 
-    def execute(self, files, only=None):
+    def execute(self, files, only=None, repository_path=""):
         CALLS.append("qa")
         self.only.append(only)
         return [

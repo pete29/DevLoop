@@ -527,7 +527,7 @@ class WorkflowOrchestrator:
                 rounds,
             )
 
-        test_files = self.qa.execute(source_files)
+        test_files = self.qa.execute(source_files, repository_path=repository_path)
 
         steps.record(
             "step.qa",
@@ -627,6 +627,7 @@ class WorkflowOrchestrator:
             refreshed = self.qa.execute(
                 source_files,
                 only=stale,
+                repository_path=repository_path,
             )
 
             test_files = self.merge_suites(

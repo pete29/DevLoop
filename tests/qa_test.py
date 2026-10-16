@@ -7,6 +7,7 @@ network:
 """
 
 import json
+import os
 
 from config.settings import Settings
 from models.file_type import FileType
@@ -357,6 +358,41 @@ check(
     "a comment first is code",
     strip_leading_prose("// suite\ndescribe('x', () => {});"),
     "// suite\ndescribe('x', () => {});",
+)
+
+print()
+print("=" * 80)
+print("QA SEES THE TYPES THE FILE USES")
+print("=" * 80)
+
+import tempfile as _tempfile  # noqa: E402
+
+Settings.GENERATE_FILE_BY_FILE = True
+
+project = _tempfile.mkdtemp()
+
+os.makedirs(os.path.join(project, "src"))
+
+with open(os.path.join(project, "src", "types.ts"), "w", encoding="utf-8") as handle:
+    handle.write('export type CalendarDate = string & { readonly __brand: "CalendarDate" };\n')
+
+llm = FakeLLM()
+
+qa(llm).execute(
+    [
+        GeneratedFile(
+            "src/days.ts",
+            FileType.SOURCE,
+            'import type { CalendarDate } from "./types.js";\nexport function addDays(d: CalendarDate, n: number): CalendarDate { return d; }\n',
+        )
+    ],
+    repository_path=project,
+)
+
+check(
+    "the type it imports from the repository is in the prompt",
+    "export type CalendarDate = string" in llm.prompts[0],
+    True,
 )
 
 Settings.GENERATE_FILE_BY_FILE = True
