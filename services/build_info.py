@@ -50,6 +50,18 @@ def label(root: str = ROOT) -> str:
 
     text = f"v{VERSION}" + (f" {STAGE}" if STAGE else "")
 
-    found = commit(root)
+    found = commit(root) or built_commit()
 
     return f"{text} · {found}" if found else text
+
+
+def built_commit() -> str:
+    """The commit packaging/build_exe.py wrote into the exe, or ""."""
+
+    try:
+        from config.build_commit import COMMIT
+
+    except ImportError:
+        return ""
+
+    return COMMIT

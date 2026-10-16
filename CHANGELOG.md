@@ -30,6 +30,9 @@ There are no release branches; one is cut from a tag
 - A first-run page: git, Node.js 18+ and the Anthropic key are checked on
   start, and while one is missing the page says so, with the key's form and
   download links, instead of a run failing on it. (#77)
+- `python packaging/build_exe.py` builds `dist/DevLoop/DevLoop.exe`
+  (PyInstaller, one folder): DevLoop without a Python setup. The version line
+  shows the commit it was built from. (#78)
 
 ### Fixed
 - What is staged is read from `git diff --cached`: another task's unstaged

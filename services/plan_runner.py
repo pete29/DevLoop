@@ -382,7 +382,7 @@ def work(
     plans: PlanRepository,
     tasks: TaskRepository,
     orchestrator,
-) -> PlanRun:
+) -> PlanRun | None:
     """The worker: task after task until none is ready.
 
     Stops on the first failure, as run-all did, and checks
@@ -391,6 +391,12 @@ def work(
     """
 
     run = runs.get_by_id(run_id)
+
+    # A worker started for a run another database holds, or
+    # one deleted since: nothing to do, and nothing to crash on.
+    if run is None:
+        print(f"RUN {run_id}: no such run", flush=True)
+        return None
 
     runs.mark_started(run.id, os.getpid())
 

@@ -85,7 +85,14 @@ def edge() -> str:
 
 
 def open_page(url: str) -> None:
-    """The page in a window of its own where Edge exists, else a browser tab."""
+    """The page in a window of its own where Edge exists, else a browser tab.
+
+    DEVLOOP_NO_BROWSER=1 serves without opening anything: for
+    a smoke test of the exe, or a page opened by hand.
+    """
+
+    if (os.getenv("DEVLOOP_NO_BROWSER") or "").strip() == "1":
+        return
 
     browser = edge()
 
@@ -112,6 +119,8 @@ def streamlit_arguments(port: int) -> list[str]:
         "--server.headless=true",
         "--browser.gatherUsageStats=false",
         "--global.developmentMode=false",
+        # No "Deploy" button: this page is not for the cloud.
+        "--client.toolbarMode=minimal",
         # Source files never change inside the exe.
         "--server.fileWatcherType=none",
     ]

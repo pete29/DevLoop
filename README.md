@@ -99,6 +99,17 @@ or, with the virtual environment active, `streamlit run app.py`. In VS Code,
 `streamlit` module from `.venv` with Node on `PATH`. The app opens at
 `http://localhost:8501`.
 
+**From the exe.** `python packaging/build_exe.py` (with
+`requirements-dev.txt` installed) builds `dist/DevLoop/`: `DevLoop.exe` and
+the files beside it; zip the folder to hand it on. Nothing else is needed on
+the computer but git and Node.js. `DevLoop.exe` serves the page on
+`127.0.0.1` only, opens it in a window of its own (Edge app mode, or a
+browser tab), and keeps a console window open as its log: closing it stops
+DevLoop. Starting it again while it runs opens the running one. Its data --
+the database, `.env` and run logs -- lives in `%LOCALAPPDATA%\DevLoop`
+(`DEVLOOP_HOME` to move it). On a first start, a page checks git, Node.js
+18+ and the Anthropic key, and takes the keys right there.
+
 **A password.** Streamlit listens on every network interface, so anyone on
 the same network can open the page. To ask for a password first:
 

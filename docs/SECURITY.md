@@ -236,7 +236,8 @@ in front of it:
 
 It is a single shared password, not accounts, and the page is served over
 plain HTTP: on a network you do not trust, keep the app on `localhost`
-(`streamlit run app.py --server.address localhost`).
+(`streamlit run app.py --server.address localhost`). `DevLoop.exe`
+(`launcher.py`) always binds to `127.0.0.1`.
 
 ---
 

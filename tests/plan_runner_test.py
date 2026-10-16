@@ -282,6 +282,12 @@ try:
         (RunStatus.STOPPED, True),
     )
 
+    check(
+        "a worker for a run that does not exist ends quietly (DevLoop.exe --worker)",
+        plan_runner.work("no-such-run", runs, plans, tasks, Pipeline()),
+        None,
+    )
+
     print()
     print("=" * 80)
     print("PLANNING A REQUIREMENT RUNS IN THE WORKER")

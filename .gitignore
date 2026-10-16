@@ -35,6 +35,11 @@ Thumbs.db
 # Editor (local launch config)
 .vscode/
 
+# The exe's build (packaging/build_exe.py)
+build/
+dist/
+config/build_commit.py
+
 # Background run consoles
 storage/runs/
 .coverage-data/
