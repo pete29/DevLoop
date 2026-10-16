@@ -21,6 +21,8 @@ There are no release branches; one is cut from a tag
 
 ## Unreleased
 
+## 0.12.0 (alpha) — 2026-10-16
+
 ### Added
 - `launcher.py`, the exe's entry point: the page on 127.0.0.1 only, in a
   window of its own (Edge app mode) or a browser tab; a second start opens
