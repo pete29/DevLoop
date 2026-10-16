@@ -21,6 +21,14 @@ There are no release branches; one is cut from a tag
 
 ## Unreleased
 
+Nothing yet.
+
+## 0.10.0 (alpha) — 2026-10-16
+
+Proven on a real project: the datepicker epic (pete29/datepicker-ts #1),
+seven stories from issue to merged pull request on the real model, about
+$4 in all, with the factory fixed wherever it fell short on the way.
+
 ### Faster
 - A task's model calls run side by side: the Developer's files and QA's
   suites, up to `PARALLEL_CALLS` (4) at once. The first call runs alone
