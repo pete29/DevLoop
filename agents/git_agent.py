@@ -253,10 +253,22 @@ class GitAgent:
             )
         ]
 
-        service.add(
-            [item.path for item in task.generated_files]
-            + scaffolding
-        )
+        paths = [item.path for item in task.generated_files]
+
+        # A file the task wrote and someone removed since -- a
+        # stray suite deleted by hand -- cannot be staged; git
+        # refuses the whole add. A removed file git knows is
+        # still staged: its deletion is part of the change.
+        known = service.tracked(paths)
+
+        staged = [
+            path
+            for path in paths
+            if os.path.isfile(os.path.join(task.repository_path, path))
+            or path in known
+        ]
+
+        service.add(staged + scaffolding)
 
         message = commit_message(task)
 

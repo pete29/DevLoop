@@ -72,6 +72,9 @@ There are no release branches; one is cut from a tag
 - 🔄 Check again (free) in a task's window: the compiler and the tests once
   more on the files as they are, no model called, the recommendation
   following the facts. (#60)
+- A file removed by hand since a task wrote it no longer stops its commit:
+  Check again drops it from the task, and the commit stages only files
+  that exist or that git knows. (#60)
 
 ### Tests
 - pytest runs everything: the suites as one item each in their own

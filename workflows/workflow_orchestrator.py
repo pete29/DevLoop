@@ -388,17 +388,32 @@ class WorkflowOrchestrator:
 
         on_disk = []
 
+        kept = []
+
         for item in task.generated_files:
 
             path = FileWriter.resolve(root, item.path)
 
             if os.path.isfile(path):
+                kept.append(item)
                 with open(path, encoding="utf-8") as handle:
                     on_disk.append(handle.read())
+
+        # A file removed since is no longer the task's: left
+        # in, approving would try to commit a file that is not
+        # there.
+        gone = [item.path for item in task.generated_files if item not in kept]
+
+        task.generated_files = kept
+
+        task.created_files = [path for path in task.created_files if path not in gone]
 
         task.packages = [] if passed else packages.missing(on_disk, root)
 
         steps = StepRecorder()
+
+        if gone:
+            steps.record("step.revision_gone", ", ".join(gone), ok=False)
 
         steps.record(
             "step.check_again",

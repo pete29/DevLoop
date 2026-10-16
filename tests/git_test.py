@@ -778,6 +778,35 @@ check(
 
 print()
 print("=" * 80)
+print("A FILE REMOVED SINCE DOES NOT STOP THE COMMIT")
+print("=" * 80)
+
+vanished_repo = new_repository()
+
+vanished = approved_task(vanished_repo)
+
+# A stray suite the task wrote, deleted by hand before approving.
+vanished.generated_files.append(GeneratedFile("tests/index.html.test.ts", FileType.TEST))
+
+made = GitAgent.execute(vanished)
+
+check("the commit is made", len(made.commit_hash), 40)
+
+check(
+    "with the files that are there",
+    sorted(
+        subprocess.run(
+            ["git", "-C", vanished_repo, "show", "--name-only", "--format=", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=False,
+        ).stdout.split()
+    ),
+    ["src/notification.service.ts", "tests/notification.service.test.ts"],
+)
+
+print()
+print("=" * 80)
 
 if failures:
     print(f"FAILED: {len(failures)}")
