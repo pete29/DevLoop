@@ -473,6 +473,15 @@ check(
 
 llm = FakeLLM()
 
+qa(llm).execute(
+    [GeneratedFile("src/format.ts", FileType.SOURCE, "export const f = (d: Date) => d.toISOString();\n")],
+    notes="The test must use Date.UTC(1999, 11, 31), not Date.UTC(5, ...).",
+)
+
+check("a human's revision notes reach QA's prompt", "Date.UTC(1999, 11, 31)" in llm.prompts[0], True)
+
+llm = FakeLLM()
+
 suites = qa(llm).execute([GeneratedFile("src/dom-render.ts", FileType.SOURCE, DOM_SOURCE)])
 
 check("the prompt says so", "@vitest-environment jsdom" in llm.prompts[0], True)

@@ -64,6 +64,14 @@ def with_feedback(description: str, feedback: str) -> str:
     )
 
 
+def human_notes(description: str) -> str:
+    """The notes with_feedback put in a description, or ''."""
+
+    _, found, notes = description.partition(HUMAN_NOTES)
+
+    return notes.strip() if found else ""
+
+
 def revision_brief(
     feedback: str,
     files: list[GeneratedFile],
@@ -601,7 +609,11 @@ class WorkflowOrchestrator:
                 rounds,
             )
 
-        test_files = self.qa.execute(source_files, repository_path=repository_path)
+        test_files = self.qa.execute(
+            source_files,
+            repository_path=repository_path,
+            notes=human_notes(task_description),
+        )
 
         steps.record(
             "step.qa",
@@ -728,6 +740,7 @@ class WorkflowOrchestrator:
                 source_files,
                 only=stale,
                 repository_path=repository_path,
+                notes=human_notes(task_description),
             )
 
             test_files = self.merge_suites(

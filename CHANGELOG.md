@@ -34,6 +34,8 @@ There are no release branches; one is cut from a tag
   paying for the next task, which fails on the same missing package. A
   result whose tests all pass but where Vitest reported errors says so,
   not "breaks tests (45/45 passed)". (#69)
+- A revision's notes reach QA as well as the developer: a wrong test can
+  be corrected by a revision instead of by hand. (#70)
 
 ### Changed
 - Push and the pull request belong to the plan: **Push the branch** and

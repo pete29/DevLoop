@@ -78,19 +78,42 @@ def with_dom(suite: str) -> str:
     return f"{DOM_DIRECTIVE}\n{suite}"
 
 
+def notes_rule(notes: str) -> str:
+    """A human's revision notes, as a rule the suite obeys."""
+
+    if not notes.strip():
+        return ""
+
+    return f"""- a human reviewed this task and wrote the notes
+  below. Where they say what a test should check or
+  expect, they are right and your own reading is not:
+
+{notes.strip()}
+
+"""
+
+
 class QAAgent:
     def __init__(
         self,
     ) -> None:
         self.llm = LLMFactory.create("qa")
 
+        self.notes = ""
+
     def execute(
         self,
         files: list[GeneratedFile],
         only: set[str] | None = None,
         repository_path: str = "",
+        notes: str = "",
     ) -> list[GeneratedFile]:
         """Suites for the source files, or for `only` those.
+
+        `notes` are a human's revision notes. They reached
+        only the developer, so a wrong test could not be
+        corrected through a revision (csv-kit #5: a test
+        expected Date.UTC(5, ...) to be the year 5).
 
         `only` names the source paths that need a suite
         again -- after a fix, the files that changed. The
@@ -102,6 +125,8 @@ class QAAgent:
 
         # Read by _imported: what this task wrote, and where.
         self.repository_path = repository_path
+
+        self.notes = notes
 
         self.files = files
 
@@ -351,7 +376,7 @@ Rules:
     import {{ ... }} from '{specifier}';
 
 - at most 3 tests
-{DOM_RULE if uses_dom(source.content) else ""}- use describe, it and expect
+{DOM_RULE if uses_dom(source.content) else ""}{notes_rule(self.notes)}- use describe, it and expect
 - this is Vitest, not Jest. For a mock write
   vi.fn(), and for a mocked type use
   ReturnType<typeof vi.fn>. The name `jest` does
@@ -406,7 +431,7 @@ Rules:
 - one test file per source file worth testing
 - a test file for src/x/y.ts goes in tests/y.test.ts
 - at most 3 tests per file
-- use describe, it and expect
+{notes_rule(self.notes)}- use describe, it and expect
 - this is Vitest, not Jest: mocks are vi.fn()
 - import from the matching source file
 

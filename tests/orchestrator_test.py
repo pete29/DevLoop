@@ -135,10 +135,12 @@ class Architect:
 class QA:
     def __init__(self):
         self.only: list[object] = []
+        self.notes: list[str] = []
 
-    def execute(self, files, only=None, repository_path=""):
+    def execute(self, files, only=None, repository_path="", notes=""):
         CALLS.append("qa")
         self.only.append(only)
+        self.notes.append(notes)
         return [
             GeneratedFile(
                 path=f"tests/{item.path[4:-3]}.test.ts",
@@ -565,6 +567,12 @@ try:
     )
 
     check(
+        "QA reads the notes too: a wrong test is corrected by them (csv-kit #5)",
+        "Use a Unicode class." in orchestrator.qa.notes[0],
+        True,
+    )
+
+    check(
         "and name the files when the notes name none",
         "Files under review: src/a.ts, src/b.ts" in brief,
         True,
@@ -785,7 +793,7 @@ try:
     print("=" * 80)
 
     class DomQA(QA):
-        def execute(self, files, only=None, repository_path=""):
+        def execute(self, files, only=None, repository_path="", notes=""):
             CALLS.append("qa")
             return [
                 GeneratedFile(
