@@ -781,6 +781,10 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "QA rozstrzyga: zły test czy zły kod",
         "en": "QA decides: the test or the code",
     },
+    "plan.approved_uncommitted": {
+        "pl": "Zaakceptowane, ale bez commita: {names}. Commit się nie udał; zaznacz je i zaakceptuj ponownie, zanim wypchniesz branch.",
+        "en": "Approved, but not committed: {names}. The commit failed; check them and accept again before pushing the branch.",
+    },
     "plan.close": {
         "pl": "🗑 Zamknij plan",
         "en": "🗑 Close plan",

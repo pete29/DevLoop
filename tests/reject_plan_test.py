@@ -229,7 +229,9 @@ try:
             repository_id=repository.id,
             repository_path=root,
             description=f"task {item_id}",
-            status=TaskStatus.WAITING_FOR_APPROVAL,
+            # The second was approved once and its commit failed:
+            # it has to come back to be accepted again (#83).
+            status=TaskStatus.WAITING_FOR_APPROVAL if item_id == 1 else TaskStatus.APPROVED,
             branch=branch,
             recommendation=ReviewDecision.APPROVE,
             generated_files=[GeneratedFile(path, FileType.SOURCE, "")],
@@ -260,8 +262,12 @@ try:
 
     at.run()
 
+    from ui.actions import approved_uncommitted  # noqa: E402
+
+    check("an approved task without its commit is named as such", [r.description for r in approved_uncommitted(good)], ["task 2"])
+
     check(
-        "tasks the facts approve are checked already",
+        "tasks the facts approve are checked already, an approved one whose commit failed too",
         [at.checkbox(key=f"review-pick-{r.id}").value for r in good],
         [True, True],
     )

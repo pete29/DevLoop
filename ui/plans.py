@@ -14,7 +14,7 @@ from services.git_service import GitError, GitService
 from services.github_service import GitHubError, parse_remote
 from services.package_installer import blocked, install
 from services.task_rollback import Rollback
-from ui.actions import accept_records, approvable, check_open_request, latest_committed, log_tail, open_plan_pull_request, plan_pull_request, plan_records, push_plan, refresh_pull_request, reject_records, revise_task, start_run, unmerged_warning, waiting_records
+from ui.actions import accept_records, approvable, approved_uncommitted, check_open_request, latest_committed, log_tail, open_plan_pull_request, plan_pull_request, plan_records, push_plan, refresh_pull_request, reject_records, revise_task, start_run, unmerged_warning, waiting_records
 from ui import shared
 from ui.shared import plan_store, repository, repository_path_now, run_store, t
 
@@ -383,6 +383,18 @@ def publish_panel(plan) -> None:
 
     if holder is None:
         return
+
+    # Pushed and requested without them, they are simply not
+    # in the change, and nothing says so (#83).
+    stuck = approved_uncommitted(records)
+
+    if stuck:
+        st.warning(
+            t(
+                "plan.approved_uncommitted",
+                names=", ".join(record.description.strip().splitlines()[0] for record in stuck),
+            )
+        )
 
     open_request = plan_pull_request(records)
 

@@ -28,6 +28,10 @@ There are no release branches; one is cut from a tag
   the fallback without WebView2. (#80)
 
 ### Fixed
+- An approved task whose commit failed comes back to the review panel, so
+  **Accept checked** retries it, and the plan warns about it before a push:
+  csv-kit #6's last task went unnoticed and its pull request was merged
+  without it. (#83)
 - `DevLoop.exe` no longer shows an empty window when WebView2 fails to start:
   the runtime is looked for on disk first, a window that has not loaded the
   page in 15 s gives way to an Edge app window, and that window, with a

@@ -36,12 +36,29 @@ def plan_records(plan) -> list:
 
 
 def waiting_records(plan) -> list:
-    """The plan's records still waiting for a decision."""
+    """The plan's records still waiting for a decision, or for their commit.
+
+    An approved record whose commit failed counts too: it was
+    no longer waiting, so Accept checked never retried it, and
+    the plan's pull request went out without it (csv-kit #6's
+    last task, #83).
+    """
 
     return [
         record
         for record in plan_records(plan)
-        if record.status == TaskStatus.WAITING_FOR_APPROVAL
+        if record.status in (TaskStatus.WAITING_FOR_APPROVAL, TaskStatus.APPROVED)
+        and not record.git_operation.committed
+    ]
+
+
+def approved_uncommitted(records) -> list:
+    """Records a human approved whose commit did not happen."""
+
+    return [
+        record
+        for record in records
+        if record.status == TaskStatus.APPROVED
         and not record.git_operation.committed
     ]
 
