@@ -10,6 +10,8 @@ from services.parallel import run_all
 from services.file_bundle import FileBundle
 from services.file_parser import FileParseError, FileParser
 from services.llm_factory import LLMFactory
+from services.prompt_cache import ask
+from services.repo_tools import for_repository
 from services.repository_survey import is_test_path, survey
 from services.structure_validator import StructureValidator
 
@@ -420,7 +422,7 @@ fence, no explanation.
 """
 
         try:
-            answer = self.llm.generate_text(prompt)
+            answer = ask(self.llm, [], prompt, tools=for_repository(root))
 
         except Exception as error:  # noqa: BLE001
 

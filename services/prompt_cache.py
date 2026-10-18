@@ -15,7 +15,7 @@ file the Developer writes for it).
 """
 
 
-def ask(llm, cached: list[str], prompt: str) -> str:
+def ask(llm, cached: list[str], prompt: str, tools=None) -> str:
     """Calls the model with `cached` as a reusable prefix.
 
     A provider that cannot cache -- a local model, a test's
@@ -24,6 +24,13 @@ def ask(llm, cached: list[str], prompt: str) -> str:
     """
 
     blocks = [block for block in cached if block.strip()]
+
+    # Repository tools where the model can call them (#52);
+    # a provider that cannot gets the prompt as it was.
+    with_tools = getattr(llm, "generate_with_tools", None)
+
+    if tools is not None and with_tools is not None:
+        return with_tools(blocks, prompt + tools.rule(), tools)
 
     generate = getattr(llm, "generate_cached", None)
 

@@ -88,6 +88,20 @@ class ClaudeService:
 
         return self._call(self._blocks(cached, prompt))
 
+    def generate_with_tools(
+        self,
+        cached: list[str],
+        prompt: str,
+        tools,
+    ) -> str:
+        """The same call, the model free to read repository files first.
+
+        `tools` is a RepoTools: its calls are answered here,
+        within its budget, until the model writes its answer.
+        """
+
+        return self._call(self._blocks(cached, prompt), tools=tools)
+
     def generate_json(
         self,
         cached: list[str],
@@ -125,43 +139,45 @@ class ClaudeService:
             for block in blocks
         ] + [{"type": "text", "text": prompt}]
 
-    def _call(self, content, output_format: dict | None = None) -> str:
+    def _call(self, content, output_format: dict | None = None, tools=None) -> str:
 
         output_config = {"effort": self.effort}
 
         if output_format is not None:
             output_config["format"] = output_format
 
-        # Streamed, because one file of real code can run
-        # long enough to hit the HTTP timeout of a single
-        # non-streaming request.
-        with self.client.beta.messages.stream(
-            model=self.model,
-            max_tokens=Settings.CLAUDE_MAX_TOKENS,
-            output_config=output_config,
-            betas=[FALLBACK_BETA],
-            fallbacks="default",
-            messages=[{"role": "user", "content": content}],
-        ) as stream:
-            message = stream.get_final_message()
+        messages = [{"role": "user", "content": content}]
 
-        # Before any check below: a refused or truncated
-        # call was still billed.
-        usage_ledger.record(
-            usage_ledger.Usage(
-                role=self.role,
-                model=message.model,
-                input_tokens=message.usage.input_tokens,
-                output_tokens=message.usage.output_tokens,
-                cache_read_tokens=(
-                    message.usage.cache_read_input_tokens or 0
-                ),
-                cache_write_tokens=(
-                    message.usage.cache_creation_input_tokens
-                    or 0
-                ),
-            )
-        )
+        extra = {}
+
+        if tools is not None:
+            extra["tools"] = [
+                {**definition, "strict": True, "eager_input_streaming": True}
+                for definition in tools.definitions()
+            ]
+
+        rounds = 0
+
+        while True:
+
+            message = self._stream(messages, output_config, extra)
+
+            if message.stop_reason != "tool_use" or tools is None:
+                break
+
+            # Past its budget a call is answered "no more",
+            # and the model writes; one that keeps asking
+            # anyway is stopped here, not paid for forever.
+            rounds += 1
+
+            if rounds > tools.budget + 1:
+                raise RuntimeError(
+                    f"Claude model '{self.model}' kept asking for files"
+                )
+
+            messages.append({"role": "assistant", "content": message.content})
+
+            messages.append({"role": "user", "content": self._tool_results(message, tools)})
 
         text = "".join(
             block.text
@@ -197,6 +213,71 @@ class ClaudeService:
             )
 
         return text
+
+    def _stream(self, messages: list, output_config: dict, extra: dict):
+        """One request, streamed, its usage recorded."""
+
+        # Streamed, because one file of real code can run
+        # long enough to hit the HTTP timeout of a single
+        # non-streaming request.
+        with self.client.beta.messages.stream(
+            model=self.model,
+            max_tokens=Settings.CLAUDE_MAX_TOKENS,
+            output_config=output_config,
+            betas=[FALLBACK_BETA],
+            fallbacks="default",
+            messages=messages,
+            **extra,
+        ) as stream:
+            message = stream.get_final_message()
+
+        # Before any check: a refused or truncated call was
+        # still billed.
+        usage_ledger.record(
+            usage_ledger.Usage(
+                role=self.role,
+                model=message.model,
+                input_tokens=message.usage.input_tokens,
+                output_tokens=message.usage.output_tokens,
+                cache_read_tokens=(
+                    message.usage.cache_read_input_tokens or 0
+                ),
+                cache_write_tokens=(
+                    message.usage.cache_creation_input_tokens
+                    or 0
+                ),
+            )
+        )
+
+        return message
+
+    @staticmethod
+    def _tool_results(message, tools) -> list[dict]:
+        """An answer for every tool call in the message, in order."""
+
+        results = []
+
+        for block in message.content:
+
+            if block.type != "tool_use":
+                continue
+
+            # Streamed input is parsed leniently by the SDK: a
+            # cut-off one arrives as something else than a dict.
+            arguments = block.input if isinstance(block.input, dict) else {}
+
+            text, failed = tools.run(block.name, arguments)
+
+            print(f"TOOLS: {block.name}({next(iter(arguments.values()), '')}) -> {'error' if failed else f'{len(text)} chars'}")
+
+            result = {"type": "tool_result", "tool_use_id": block.id, "content": text}
+
+            if failed:
+                result["is_error"] = True
+
+            results.append(result)
+
+        return results
 
     def generate_code(
         self,

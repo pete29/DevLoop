@@ -24,6 +24,13 @@ There are no release branches; one is cut from a tag
 
 ## Unreleased
 
+### Added
+- The developer and QA can read repository files the prompt did not show,
+  with `read_file` and `list_files` (read only, inside the repository, never
+  `node_modules`, `.git` or `.env`, four calls per file). Off by default,
+  `DEVLOOP_REPO_TOOLS=1` turns it on: on four eval cases it passed the same
+  4/4 for 10% more. (#52)
+
 ### Smoke test
 - Smoke test (v0.13.0+, `evals/smoke.py`): passed — 2/2 planned tasks compiled, passed their tests and were approved (scores 84, 92); run DONE: Every task has run; $0.1606.
 

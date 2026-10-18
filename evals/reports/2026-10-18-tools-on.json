@@ -1,0 +1,110 @@
+{
+  "label": "tools-on",
+  "at": "2026-10-18T10:31:41+00:00",
+  "models": {
+    "planner": "claude-opus-5-5",
+    "architect": "claude-opus-5-5",
+    "developer": "claude-sonnet-5-5",
+    "qa": "claude-sonnet-5-5"
+  },
+  "efforts": {
+    "planner": "high",
+    "architect": "high",
+    "developer": "high",
+    "qa": "medium"
+  },
+  "results": [
+    {
+      "id": "lowercase-rule",
+      "kind": "task",
+      "packages_asked": [],
+      "compile": "PASSED",
+      "tests": "PASSED",
+      "tests_passed": 21,
+      "tests_total": 21,
+      "score": 95,
+      "recommendation": "APPROVE",
+      "review_rounds": 1,
+      "blockers": 0,
+      "warnings": 0,
+      "files": [
+        "src/lowercase-rule.ts",
+        "tests/lowercase-rule.test.ts"
+      ],
+      "cost": 0.027,
+      "output_tokens": 1114,
+      "seconds": 23.7,
+      "passed": true
+    },
+    {
+      "id": "password-strength",
+      "kind": "task",
+      "packages_asked": [],
+      "compile": "PASSED",
+      "tests": "PASSED",
+      "tests_passed": 21,
+      "tests_total": 21,
+      "score": 95,
+      "recommendation": "APPROVE",
+      "review_rounds": 1,
+      "blockers": 0,
+      "warnings": 0,
+      "files": [
+        "src/password-strength.ts",
+        "tests/password-strength.test.ts"
+      ],
+      "cost": 0.0234,
+      "output_tokens": 1021,
+      "seconds": 18.3,
+      "passed": true
+    },
+    {
+      "id": "blocklist-rule",
+      "kind": "task",
+      "packages_asked": [],
+      "compile": "PASSED",
+      "tests": "PASSED",
+      "tests_passed": 24,
+      "tests_total": 24,
+      "score": 93,
+      "recommendation": "APPROVE",
+      "review_rounds": 1,
+      "blockers": 0,
+      "warnings": 0,
+      "files": [
+        "src/blocklist-rule.ts",
+        "src/common-passwords.ts",
+        "tests/blocklist-rule.test.ts",
+        "tests/common-passwords.test.ts"
+      ],
+      "cost": 0.0533,
+      "output_tokens": 2799,
+      "seconds": 38.8,
+      "passed": true
+    },
+    {
+      "id": "barrel-types",
+      "kind": "task",
+      "packages_asked": [],
+      "compile": "PASSED",
+      "tests": "PASSED",
+      "tests_passed": 21,
+      "tests_total": 21,
+      "score": 97,
+      "recommendation": "APPROVE",
+      "review_rounds": 1,
+      "blockers": 0,
+      "warnings": 0,
+      "files": [
+        "src/describe-result.ts",
+        "tests/describe-result.test.ts"
+      ],
+      "cost": 0.0164,
+      "output_tokens": 474,
+      "seconds": 17.1,
+      "passed": true
+    }
+  ],
+  "total_cost": 0.1201,
+  "passed": 4
+}

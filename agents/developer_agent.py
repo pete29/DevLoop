@@ -12,6 +12,7 @@ from services.llm_factory import LLMFactory
 from services.packages import describe_installed
 from services.parallel import run_all
 from services.prompt_cache import ask
+from services.repo_tools import for_repository
 from services.repository_survey import (
     RepositorySurvey,
     is_test_path,
@@ -611,7 +612,7 @@ Its job: {purpose}
 """
 
         try:
-            answer = ask(self.llm, cached, prompt)
+            answer = ask(self.llm, cached, prompt, tools=for_repository(found.root))
 
         except Exception as error:  # noqa: BLE001
 

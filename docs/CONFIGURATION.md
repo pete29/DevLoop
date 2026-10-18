@@ -308,6 +308,15 @@ before its next task and the page disables everything that would spend:
 planning, running a task, revising one, the check after an install. The
 sidebar shows the month against the limit.
 
+**`REPO_TOOLS`**, **`REPO_TOOL_CALLS`** — whether the Developer and QA may
+read repository files the prompt did not show (`read_file`, `list_files`;
+read only, inside the repository, never `node_modules`, `.git` or `.env`),
+and how many calls per file (default 4). Off unless `DEVLOOP_REPO_TOOLS=1`
+in `.env`: measured on four eval cases on 2026-10-18, it passed the same
+4/4 for 10% more ($0.1201 against $0.1096). Turn it on for a project whose
+failures come from context the prompt lacks -- a neighbouring test's
+conventions, a helper further away.
+
 **`PARALLEL_CALLS`** — how many model calls of one task run at once (default
 4): the Developer's files and QA's suites. The first call always runs
 alone, because the others share its cached prompt prefix and calls sent

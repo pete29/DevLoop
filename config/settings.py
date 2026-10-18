@@ -99,6 +99,16 @@ class Settings:
     # WORKFLOW
     # =====================
 
+    # The developer and QA may read repository files the
+    # prompt did not show (services/repo_tools.py, #52), this
+    # many calls per file. Off unless DEVLOOP_REPO_TOOLS=1:
+    # on four eval cases (2026-10-18) it passed the same 4/4
+    # for 10% more ($0.1201 against $0.1096) -- worth turning
+    # on when a project's missing context is what fails it.
+    REPO_TOOLS = (os.getenv("DEVLOOP_REPO_TOOLS") or "0").strip() == "1"
+
+    REPO_TOOL_CALLS = 4
+
     ENABLE_ARCHITECT = True
 
     ENABLE_QA = True
