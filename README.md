@@ -102,10 +102,11 @@ or, with the virtual environment active, `streamlit run app.py`. In VS Code,
 **From the exe.** `python packaging/build_exe.py` (with
 `requirements-dev.txt` installed) builds `dist/DevLoop/`: `DevLoop.exe` and
 the files beside it; zip the folder to hand it on. Nothing else is needed on
-the computer but git and Node.js. `DevLoop.exe` serves the page on
-`127.0.0.1` only, opens it in a window of its own (Edge app mode, or a
-browser tab), and keeps a console window open as its log: closing it stops
-DevLoop. Starting it again while it runs opens the running one. Its data --
+the computer but git and Node.js. `DevLoop.exe` is an application window
+of its own (WebView2, built into Windows), with the page served behind it on
+`127.0.0.1` only; closing the window stops DevLoop. Without WebView2 it opens
+an Edge app window instead. Starting it again while it runs opens a window on
+the running one. The server's log is `launcher.log` in the data folder. Its data --
 the database, `.env` and run logs -- lives in `%LOCALAPPDATA%\DevLoop`
 (`DEVLOOP_HOME` to move it). On a first start, a page checks git, Node.js
 18+ and the Anthropic key, and takes the keys right there.

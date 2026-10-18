@@ -114,17 +114,54 @@ started: list[str] = []
 
 plan_runner.main = lambda run_id: started.append(run_id)
 
-served: list[bool] = []
+served: list[int] = []
 
-launcher.serve = lambda: served.append(True)
+launcher.serve = lambda port=0: served.append(port)
+
+windows: list[bool] = []
+
+launcher.application = lambda: windows.append(True)
+
+os.environ.pop("DEVLOOP_NO_BROWSER", None)
 
 launcher.main(["DevLoop.exe", "--worker", "run-1"])
 
-check("--worker runs that run, and no page", (started, served), (["run-1"], []))
+check("--worker runs that run, and nothing else", (started, served, windows), (["run-1"], [], []))
+
+launcher.main(["DevLoop.exe", "--serve", "8600"])
+
+check("--serve runs the page server on the port the window chose", served, [8600])
 
 launcher.main(["DevLoop.exe"])
 
-check("without it, the page", served, [True])
+check("with no arguments, the application window", windows, [True])
+
+os.environ["DEVLOOP_NO_BROWSER"] = "1"
+
+launcher.main(["DevLoop.exe"])
+
+check("DEVLOOP_NO_BROWSER=1 serves in the foreground instead, for a smoke test", (served, windows), ([8600, 0], [True]))
+
+os.environ.pop("DEVLOOP_NO_BROWSER", None)
+
+print()
+print("=" * 80)
+print("THE WINDOW STARTS ITS SERVER AS ITSELF")
+print("=" * 80)
+
+check(
+    "from source, launcher.py again",
+    launcher.self_command("--serve", "8600")[1:],
+    [os.path.abspath(launcher.__file__), "--serve", "8600"],
+)
+
+sys.frozen = True
+
+check("in the exe, the exe again", launcher.self_command("--serve", "8600"), [sys.executable, "--serve", "8600"])
+
+del sys.frozen
+
+check("a page that never answers is given up on", launcher.wait_for(1, seconds=0.5), False)
 
 print()
 print("=" * 80)

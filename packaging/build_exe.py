@@ -51,9 +51,9 @@ def arguments() -> list[str]:
         os.path.join(ROOT, "launcher.py"),
         "--name=DevLoop",
         "--onedir",
-        # The window that stays open is DevLoop's log, and
-        # closing it stops DevLoop.
-        "--console",
+        # DevLoop's own window (launcher.py), no console:
+        # the server's log goes to launcher.log.
+        "--windowed",
         "--noconfirm",
         "--clean",
         f"--distpath={os.path.join(ROOT, 'dist')}",
@@ -63,6 +63,7 @@ def arguments() -> list[str]:
         "--collect-all=streamlit",
         "--copy-metadata=streamlit",
         "--collect-submodules=anthropic",
+        "--collect-all=webview",
     ]
 
     for package in PACKAGES:

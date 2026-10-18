@@ -21,6 +21,12 @@ There are no release branches; one is cut from a tag
 
 ## Unreleased
 
+### Changed
+- `DevLoop.exe` is an application window of its own (WebView2), not a page
+  in Edge: the page server runs behind it (`--serve`) and stops when the
+  window closes; no console window, the log is `launcher.log`. Edge stays as
+  the fallback without WebView2. (#80)
+
 ### Fixed
 - A failing test on code that compiles is judged first: QA works the case
   out by hand and says whether the test or the code is wrong. A wrong

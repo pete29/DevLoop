@@ -7,3 +7,4 @@ pytest-xdist
 coverage
 playwright
 pyinstaller
+pywebview

@@ -1,21 +1,29 @@
-"""DevLoop's entry point in the exe: the page on this computer only.
+"""DevLoop's entry point in the exe: an application window of its own.
 
-    DevLoop.exe                 starts the page and opens it
+    DevLoop.exe                 the window, and the page server behind it
+    DevLoop.exe --serve <port>  the page server alone (started by the window)
     DevLoop.exe --worker <id>   one background run (started by the page)
 
-The page listens on 127.0.0.1 alone, never on the network: it
-holds the API keys and can write to any folder. A second start
-while one is running opens the running one rather than a
-second server on the same database. The console window that
-stays open is DevLoop's log; closing it stops DevLoop.
+The window is WebView2, the engine built into Windows: no
+browser around it, and closing it stops DevLoop. Without
+WebView2 the page opens in an Edge app window instead, and
+DevLoop runs until its log window is closed. The page listens
+on 127.0.0.1 alone, never on the network: it holds the API
+keys and can write to any folder. A second start while one is
+running opens a window on it rather than a second server on
+the same database. The server's log is launcher.log in the
+data folder.
 
-From source the same file works too: python launcher.py.
+DEVLOOP_NO_BROWSER=1 serves in the foreground and opens
+nothing, for a smoke test. From source the same file works
+too: python launcher.py.
 """
 
 import os
 import socket
 import subprocess
 import sys
+import time
 import webbrowser
 
 from config import paths
@@ -26,6 +34,13 @@ HOST = "127.0.0.1"
 PREFERRED_PORT = 8501
 
 PORT_FILE = "launcher.port"
+
+LOG_FILE = "launcher.log"
+
+TITLE = "DevLoop"
+
+# How long the window waits for the page server to answer.
+START_SECONDS = 120
 
 
 def port_file() -> str:
@@ -126,15 +141,78 @@ def streamlit_arguments(port: int) -> list[str]:
     ]
 
 
-def serve() -> None:
+def self_command(*arguments: str) -> list[str]:
+    """This program again, with arguments: the exe, or launcher.py from source."""
+
+    if paths.frozen():
+        return [sys.executable, *arguments]
+
+    return [sys.executable, os.path.abspath(__file__), *arguments]
+
+
+def start_server(port: int) -> subprocess.Popen:
+    """The page server, in a process of its own, logging to the data folder."""
+
+    flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+
+    log = open(os.path.join(paths.home(), LOG_FILE), "a", encoding="utf-8")
+
+    return subprocess.Popen(
+        self_command("--serve", str(port)),
+        stdout=log,
+        stderr=subprocess.STDOUT,
+        stdin=subprocess.DEVNULL,
+        env={**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUNBUFFERED": "1"},
+        creationflags=flags,
+    )
+
+
+def wait_for(port: int, server: subprocess.Popen | None = None, seconds: float = START_SECONDS) -> bool:
+    """Whether the page answers before the time runs out or the server dies."""
+
+    deadline = time.monotonic() + seconds
+
+    while time.monotonic() < deadline:
+
+        if answering(port):
+            return True
+
+        if server is not None and server.poll() is not None:
+            return False
+
+        time.sleep(0.3)
+
+    return False
+
+
+def show_window(url: str) -> bool:
+    """The page in a native window until it is closed; False without WebView2."""
+
+    try:
+        import webview
+
+        webview.create_window(TITLE, url, width=1400, height=900, min_size=(900, 600))
+
+        webview.start()
+
+    except Exception as error:  # noqa: BLE001 -- any failure means: no window here
+        print(f"No native window ({error}); opening Edge instead.")
+        return False
+
+    return True
+
+
+def application() -> None:
+    """The window, and the page server behind it, which stops with it."""
 
     os.makedirs(paths.home(), exist_ok=True)
 
     running = running_port()
 
     if running:
-        print(f"DevLoop is already running: http://{HOST}:{running}")
-        open_page(f"http://{HOST}:{running}")
+        url = f"http://{HOST}:{running}"
+        if not show_window(url):
+            open_page(url)
         return
 
     port = free_port()
@@ -142,23 +220,70 @@ def serve() -> None:
     with open(port_file(), "w", encoding="utf-8") as handle:
         handle.write(str(port))
 
-    url = f"http://{HOST}:{port}"
+    server = start_server(port)
 
-    print(f"DevLoop {version()} — {url}")
-    print(f"Data: {paths.home()}")
-    print("Close this window to stop DevLoop.")
+    try:
+        if not wait_for(port, server):
+            notify_failure()
+            return
 
-    # Streamlit blocks; the page opens once it can answer.
-    import threading
+        url = f"http://{HOST}:{port}"
 
-    def open_when_ready() -> None:
-        for _ in range(120):
-            if answering(port):
-                open_page(url)
-                return
-            threading.Event().wait(0.5)
+        if show_window(url):
+            return
 
-    threading.Thread(target=open_when_ready, daemon=True).start()
+        open_page(url)
+
+        # No window to close: DevLoop runs as long as its server.
+        server.wait()
+
+    finally:
+        if server.poll() is None:
+            server.terminate()
+
+        try:
+            os.remove(port_file())
+        except OSError:
+            pass
+
+
+def notify_failure() -> None:
+    """Says the page did not start, where a windowed exe can still say it."""
+
+    message = f"DevLoop could not start. See {os.path.join(paths.home(), LOG_FILE)}."
+
+    print(message)
+
+    if os.name == "nt":
+        try:
+            import ctypes
+
+            ctypes.windll.user32.MessageBoxW(None, message, TITLE, 0x10)
+
+        except (OSError, AttributeError):
+            pass
+
+
+def serve(port: int = 0) -> None:
+    """The page server in this process, until it is stopped."""
+
+    os.makedirs(paths.home(), exist_ok=True)
+
+    if not port:
+        # In the foreground (DEVLOOP_NO_BROWSER=1): its own port file.
+        running = running_port()
+
+        if running:
+            print(f"DevLoop is already running: http://{HOST}:{running}")
+            return
+
+        port = free_port()
+
+        with open(port_file(), "w", encoding="utf-8") as handle:
+            handle.write(str(port))
+
+    print(f"DevLoop {version()} — http://{HOST}:{port}", flush=True)
+    print(f"Data: {paths.home()}", flush=True)
 
     # The page's own imports resolve against the code folder.
     os.chdir(paths.ROOT)
@@ -188,7 +313,15 @@ def main(argv: list[str]) -> None:
         plan_runner.main(argv[2])
         return
 
-    serve()
+    if len(argv) >= 3 and argv[1] == "--serve":
+        serve(int(argv[2]))
+        return
+
+    if (os.getenv("DEVLOOP_NO_BROWSER") or "").strip() == "1":
+        serve()
+        return
+
+    application()
 
 
 if __name__ == "__main__":
