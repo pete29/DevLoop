@@ -21,6 +21,8 @@ There are no release branches; one is cut from a tag
 
 ## Unreleased
 
+## 0.13.0 (alpha) — 2026-10-18
+
 ### Changed
 - `DevLoop.exe` is an application window of its own (WebView2), not a page
   in Edge: the page server runs behind it (`--serve`) and stops when the
