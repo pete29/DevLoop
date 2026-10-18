@@ -539,6 +539,17 @@ refusal leaves nothing behind. Every other shape of `init` and `remote add`
 is refused, and so are templates, teams and organisations for a new
 repository.
 
+## The release smoke test
+
+`python evals/smoke.py --record`, the first step of every release (see
+the top of `CHANGELOG.md`): one requirement of two tasks on the real model,
+the whole way a plan goes -- the Planner, then the worker's own loop
+(`plan_runner.work`) with every gate, the Architect, QA and the stop rules --
+on a git copy of `evals/fixture`, against a throwaway database, pushing
+nothing. It prints one line (tasks good, scores, how the run ended, cost)
+and `--record` writes it under *Unreleased*. About $0.16. What it writes is
+checked offline by `tests/smoke_record_test.py`.
+
 ## The eval
 
 `evals/run_eval.py` runs the cases in `evals/cases.json` through the real

@@ -9,17 +9,23 @@ page title with the commit it was built from.
 **How a release is made.** Work goes to `main` as usual and is listed
 under *Unreleased* below. When a batch is worth naming:
 
-1. bump `config/version.py` (PATCH for fixes, MINOR for features);
-2. rename *Unreleased* to the new version and date, and start a new,
+1. run the smoke test, `python evals/smoke.py --record`: one two-task
+   plan on the real model (about $0.16), its result written under
+   *Unreleased*; a FAILED line is looked into before releasing;
+2. bump `config/version.py` (PATCH for fixes, MINOR for features);
+3. rename *Unreleased* to the new version and date, and start a new,
    empty *Unreleased* above it;
-3. commit, tag the commit `vX.Y.Z` and push the tag;
-4. publish a GitHub Release from the tag, its notes copied from here.
+4. commit, tag the commit `vX.Y.Z` and push the tag;
+5. publish a GitHub Release from the tag, its notes copied from here.
 
 Tags `v*` are protected: a released version cannot be moved or deleted.
 There are no release branches; one is cut from a tag
 (`git branch release/0.9 v0.9.2`) only if an old line ever needs a fix.
 
 ## Unreleased
+
+### Smoke test
+- Smoke test (v0.13.0+, `evals/smoke.py`): passed — 2/2 planned tasks compiled, passed their tests and were approved (scores 84, 92); run DONE: Every task has run; $0.1606.
 
 ### Fixed
 - The full-path end-to-end test is measured by `tests/coverage.py` again:
