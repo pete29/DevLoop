@@ -435,6 +435,74 @@ fence, no explanation.
         return with_dom(suite) if suite and uses_dom(source.content) else suite
 
     # ------------------------------------------------
+    # when a suite fails: the test, or the code?
+    # ------------------------------------------------
+
+    def judge(
+        self,
+        task: str,
+        sources: list[GeneratedFile],
+        suites: list[GeneratedFile],
+        output: str,
+    ) -> tuple[str, str]:
+        """("TEST" or "CODE", why) for a failing run; ("", "") if unsure.
+
+        A failing test sent the developer to change the
+        code, also when the test's expectation was what was
+        wrong (csv-kit #7: an empty-value count worked out
+        wrongly by hand) -- paying to break correct code.
+        """
+
+        prompt = f"""
+You are a QA Engineer. A Vitest suite you wrote fails
+against the code below. Decide which one is wrong.
+
+The task:
+
+{task}
+
+The code:
+
+{FileBundle.render(sources)}
+
+The suites:
+
+{FileBundle.render(suites)}
+
+The test run:
+
+{output}
+
+Work the failing case out by hand, from the task and
+the input the test gives, value by value. Then answer
+with exactly one word on the first line -- TEST if the
+test's expectation is wrong and the code is right, CODE
+if the code is wrong -- and one sentence on the second
+line saying which value is wrong and what it should be.
+"""
+
+        try:
+            answer = self.llm.generate_text(prompt)
+
+        except Exception as error:  # noqa: BLE001 -- unsure is an answer
+
+            print(f"QA: judging failed ({error})")
+
+            return "", ""
+
+        lines = [line.strip() for line in strip_code_fences(answer).splitlines() if line.strip()]
+
+        if not lines:
+            return "", ""
+
+        verdict = lines[0].strip(" .:*").upper()
+
+        if verdict not in ("TEST", "CODE"):
+            return "", ""
+
+        return verdict, " ".join(lines[1:2])
+
+    # ------------------------------------------------
     # one call for everything
     # ------------------------------------------------
 

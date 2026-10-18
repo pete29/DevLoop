@@ -506,6 +506,38 @@ qa(llm).execute(
 
 check("a human's revision notes reach QA's prompt", "Date.UTC(1999, 11, 31)" in llm.prompts[0], True)
 
+class Answers:
+    def __init__(self, answer):
+        self.answer = answer
+        self.prompts: list[str] = []
+
+    def generate_text(self, prompt: str) -> str:
+        self.prompts.append(prompt)
+        if isinstance(self.answer, Exception):
+            raise self.answer
+        return self.answer
+
+
+SOURCES = [GeneratedFile("src/stats.ts", FileType.SOURCE, "export const count = 3;\n")]
+
+SUITES = [GeneratedFile("tests/stats.test.ts", FileType.TEST, "expect(count).toBe(2);\n")]
+
+judged = Answers("TEST\nColumn b is empty in all three rows, so 3, not 2.")
+
+check(
+    "QA names the test as wrong, and says which value (csv-kit #7)",
+    qa(judged).judge("Count empties.", SOURCES, SUITES, "FAIL tests/stats.test.ts"),
+    ("TEST", "Column b is empty in all three rows, so 3, not 2."),
+)
+
+check("the code, the suite and the run are in the prompt", all(part in judged.prompts[0] for part in ("count = 3", "toBe(2)", "FAIL tests/stats.test.ts")), True)
+
+check("CODE is read too", qa(Answers("**CODE.**\nIt skips the last row.")).judge("t", SOURCES, SUITES, "x")[0], "CODE")
+
+check("anything else is unsure", qa(Answers("Probably the test?")).judge("t", SOURCES, SUITES, "x"), ("", ""))
+
+check("a failed call is unsure, not a crash", qa(Answers(RuntimeError("overloaded"))).judge("t", SOURCES, SUITES, "x"), ("", ""))
+
 llm = FakeLLM()
 
 suites = qa(llm).execute([GeneratedFile("src/dom-render.ts", FileType.SOURCE, DOM_SOURCE)])

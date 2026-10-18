@@ -725,17 +725,54 @@ class WorkflowOrchestrator:
 
             before = source_files
 
-            source_files = self.developer.improve(
-                task_description,
-                source_files,
-                failure,
-                repository_path,
+            # A failing assertion on code that compiles: asked
+            # first whether the test or the code is wrong. A
+            # wrong expectation sent the developer to break
+            # correct code (csv-kit #7); then only the suite
+            # is written again, told what was wrong in it.
+            correction = ""
+
+            failing = (
+                self.stale_suites(source_files, source_files, test_result.output)
+                if not compile_result.blocks_delivery
+                and test_result.status == TestStatus.FAILED
+                else set()
             )
 
-            steps.record(
-                "step.improve",
-                describe_files(source_files),
+            verdict, reason = (
+                self.qa.judge(task_description, source_files, test_files, test_result.output)
+                if failing
+                else ("", "")
             )
+
+            if failing:
+                steps.record(
+                    "step.qa_judge",
+                    f"#{attempts} · {verdict or '?'}" + (f" · {reason}" if reason else ""),
+                    ok=verdict == "TEST",
+                )
+
+            if verdict == "TEST":
+
+                correction = (
+                    "The last run failed, and the code is right: the failing "
+                    f"expectation is the test's mistake. {reason}\n\n"
+                    f"{test_result.output}"
+                )
+
+            else:
+
+                source_files = self.developer.improve(
+                    task_description,
+                    source_files,
+                    failure,
+                    repository_path,
+                )
+
+                steps.record(
+                    "step.improve",
+                    describe_files(source_files),
+                )
 
             # No second architecture review: a fix for a
             # failing test does not change the design, and
@@ -753,7 +790,7 @@ class WorkflowOrchestrator:
                 source_files,
                 only=stale,
                 repository_path=repository_path,
-                notes=human_notes(task_description),
+                notes="\n\n".join(part for part in (human_notes(task_description), correction) if part),
             )
 
             test_files = self.merge_suites(

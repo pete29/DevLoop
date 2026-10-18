@@ -133,9 +133,14 @@ class Architect:
 
 
 class QA:
-    def __init__(self):
+    def __init__(self, verdict=("CODE", "")):
         self.only: list[object] = []
         self.notes: list[str] = []
+        self.verdict = verdict
+
+    def judge(self, task, sources, suites, output):
+        CALLS.append("judge")
+        return self.verdict
 
     def execute(self, files, only=None, repository_path="", notes=""):
         CALLS.append("qa")
@@ -179,7 +184,7 @@ def tests_report(*statuses):
     def fake(repository_path):
         CALLS.append("vitest")
         status = queue.pop(0) if queue else TestStatus.PASSED
-        return TestResult(status=status, output="1 failed")
+        return TestResult(status=status, output="FAIL tests/b.test.ts > b > adds\n1 failed")
 
     TestExecutionAgent.execute = staticmethod(fake)
 
@@ -427,6 +432,32 @@ try:
         ],
         ["// suite for export const b = 3;"],
     )
+
+    print()
+    print("=" * 80)
+    print("A WRONG TEST IS FIXED IN THE TEST, NOT IN THE CODE")
+    print("=" * 80)
+
+    compiles()
+    tests_report(TestStatus.FAILED, TestStatus.PASSED)
+
+    qa = QA(verdict=("TEST", "b should be 3, not 2."))
+
+    developer = Developer([A, B], [])
+
+    task = run(developer, Architect(), qa, root)
+
+    check("QA is asked which is wrong", "judge" in CALLS, True)
+
+    check("the developer is not sent to change correct code (csv-kit #7)", "improve" in CALLS, False)
+
+    check("only the failing suite is written again", qa.only[1], {"src/b.ts"})
+
+    check("told what was wrong in it", "b should be 3, not 2." in qa.notes[1], True)
+
+    check("and the task passes", task.test_result.status, TestStatus.PASSED)
+
+    check("a step records the verdict", "step.qa_judge" in step_names(task), True)
 
     print()
     print("=" * 80)

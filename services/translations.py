@@ -777,6 +777,10 @@ MESSAGES: dict[str, dict[str, str]] = {
         "pl": "Przejdź dalej mimo to",
         "en": "Continue anyway",
     },
+    "step.qa_judge": {
+        "pl": "QA rozstrzyga: zły test czy zły kod",
+        "en": "QA decides: the test or the code",
+    },
     "plan.close": {
         "pl": "🗑 Zamknij plan",
         "en": "🗑 Close plan",

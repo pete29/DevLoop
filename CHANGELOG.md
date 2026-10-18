@@ -21,6 +21,12 @@ There are no release branches; one is cut from a tag
 
 ## Unreleased
 
+### Fixed
+- A failing test on code that compiles is judged first: QA works the case
+  out by hand and says whether the test or the code is wrong. A wrong
+  expectation is fixed in the suite instead of sending the developer to
+  change correct code. (#81)
+
 ## 0.12.0 (alpha) — 2026-10-16
 
 ### Added

@@ -438,6 +438,12 @@ Requirement → Requirement → Planner → Developer → Architect ⇄ Validato
                                         Commit → Push → Pull Request
 ```
 
+A failing assertion on code that compiles goes to QA first: it works the
+case out by hand and answers TEST or CODE. TEST rewrites only the failing
+suite, told which value was wrong; CODE (or no clear answer) sends the
+developer back as before. A wrong expectation used to send the developer to
+change correct code.
+
 Nothing below the gate happens without an explicit click, and push and pull
 request are separate clicks again. See [SECURITY.md](SECURITY.md) for what
 the agents are allowed to do once past it.
