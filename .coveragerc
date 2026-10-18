@@ -8,7 +8,10 @@ source =
     services
     ui
     workflows
-    app.py
+# Not app.py: `source` takes module names, and coverage looked
+# for a module "app.py" by importing its parent, "app" -- the
+# whole page, run at start-up, half-importing numpy so that
+# every later import failed (#42).
 # Each suite runs in its own process, and some start more
 # (the background worker): every Python subprocess is
 # measured, each into its own data file, combined after.

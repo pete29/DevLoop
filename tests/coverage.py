@@ -7,20 +7,16 @@ Every Python process the tests start is measured -- each suite
 runs in its own, and some start a background worker -- and the
 data is combined before the report. CI prints the summary.
 
-The full-path end-to-end test is left out of this run: it
-renders the page inside pytest's own process, and under
-coverage that render fails to import numpy ("cannot load
-module more than once per process"). It still runs, unmeasured,
-in every plain `pytest`; see issue #42.
+The full-path end-to-end test is measured too. It was left
+out while .coveragerc named app.py as a source: coverage then
+imported the page at start-up and broke numpy for the rest of
+the process (#42).
 """
 
 import os
 import shutil
 import subprocess
 import sys
-
-# Deselected here only; see the docstring.
-UNMEASURED = "not full_path"
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -43,7 +39,6 @@ def main() -> int:
     tested = subprocess.call(
         [
             sys.executable, "-m", "coverage", "run", f"--rcfile={RCFILE}", "-m", "pytest",
-            "-k", UNMEASURED,
             *(sys.argv[1:] or ["-q"]),
         ],
         cwd=ROOT,

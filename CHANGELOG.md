@@ -21,6 +21,12 @@ There are no release branches; one is cut from a tag
 
 ## Unreleased
 
+### Fixed
+- The full-path end-to-end test is measured by `tests/coverage.py` again:
+  `app.py` named as a coverage source made coverage import the page at
+  start-up, which broke numpy for the process. `ui/tasks.py` reads 61%
+  instead of 12%, the total 86%. (#42)
+
 ## 0.13.0 (alpha) — 2026-10-18
 
 ### Changed

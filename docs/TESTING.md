@@ -36,9 +36,10 @@ import `test_execution_test.py`, and importing a suite runs it).
 every Python subprocess included (each suite's process, the background
 worker, the browser test's server), combines the data and prints the
 summary; `coverage-html/index.html` has it line by line. At the time of
-writing: 80% of 6,676 statements. The full-path e2e test is left out of
-the measured run (#42): under coverage its in-process render cannot import
-numpy, so `ui/tasks.py`, which it exercises, reads low.
+writing: 86% of 7,319 statements, the full-path e2e test included
+(`ui/tasks.py` 61%, up from 12% while it was left out). `app.py` is not a
+coverage source: named there, coverage imported the page at start-up, which
+broke numpy for the rest of the process (#42).
 
 ### The end-to-end tests
 
