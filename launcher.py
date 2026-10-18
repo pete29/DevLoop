@@ -42,6 +42,13 @@ TITLE = "DevLoop"
 # How long the window waits for the page server to answer.
 START_SECONDS = 120
 
+# How long a native window may take to show the page before
+# it is taken for broken and Edge is used instead.
+LOAD_SECONDS = 15
+
+# WebView2's Evergreen runtime, as Windows registers it.
+WEBVIEW2_CLIENT = r"Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"
+
 
 def port_file() -> str:
 
@@ -97,6 +104,90 @@ def edge() -> str:
             return candidate
 
     return ""
+
+
+def webview2_folders() -> list[str]:
+    """Where the WebView2 runtime keeps its versions, machine-wide and per user."""
+
+    found = []
+
+    for base in (os.getenv("ProgramFiles(x86)"), os.getenv("ProgramFiles"), os.getenv("LOCALAPPDATA")):
+        if base:
+            found.append(os.path.join(base, "Microsoft", "EdgeWebView", "Application"))
+
+    return found
+
+
+def webview2_versions() -> list[str]:
+    """The WebView2 versions Windows says are installed."""
+
+    if os.name != "nt":
+        return []
+
+    import winreg
+
+    versions = []
+
+    for root, key in (
+        (winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\\WOW6432Node\\" + WEBVIEW2_CLIENT),
+        (winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\\" + WEBVIEW2_CLIENT),
+        (winreg.HKEY_CURRENT_USER, "Software\\" + WEBVIEW2_CLIENT),
+    ):
+        try:
+            with winreg.OpenKey(root, key) as handle:
+                version = str(winreg.QueryValueEx(handle, "pv")[0] or "")
+
+        except OSError:
+            continue
+
+        if version and version != "0.0.0.0":
+            versions.append(version)
+
+    return versions
+
+
+def webview2_ready(versions: list[str] | None = None, folders: list[str] | None = None) -> bool:
+    """Whether a WebView2 runtime is registered and its files are there.
+
+    Registered is not enough: on the author's machine the
+    registry named 151.0.4129.78 while its folder was empty,
+    and the window stayed blank (#82).
+    """
+
+    versions = webview2_versions() if versions is None else versions
+
+    folders = webview2_folders() if folders is None else folders
+
+    return any(
+        os.path.isfile(os.path.join(folder, version, "msedgewebview2.exe"))
+        for version in versions
+        for folder in folders
+    )
+
+
+def open_app_window(url: str) -> subprocess.Popen | None:
+    """The page in an Edge app window that closes with DevLoop, or None.
+
+    A profile of its own in the data folder makes the window
+    its own Edge process: when it exits, the window was
+    closed, and DevLoop stops with it.
+    """
+
+    browser = edge()
+
+    if not browser:
+        return None
+
+    profile = os.path.join(paths.home(), "window-profile")
+
+    try:
+        return subprocess.Popen(
+            [browser, f"--app={url}", f"--user-data-dir={profile}", "--no-first-run", "--no-default-browser-check"],
+            close_fds=True,
+        )
+
+    except OSError:
+        return None
 
 
 def open_page(url: str) -> None:
@@ -186,20 +277,39 @@ def wait_for(port: int, server: subprocess.Popen | None = None, seconds: float =
 
 
 def show_window(url: str) -> bool:
-    """The page in a native window until it is closed; False without WebView2."""
+    """The page in a native window until it is closed; False if it cannot show it.
+
+    pywebview does not raise when WebView2 fails to start:
+    it shows an empty window (#82). So the runtime is looked
+    for first, and a window whose page has not loaded in
+    LOAD_SECONDS is closed and reported as a failure.
+    """
+
+    if not webview2_ready():
+        print("WebView2 is not installed (or its files are missing); opening Edge instead.")
+        return False
+
+    loaded = {"ok": False}
 
     try:
         import webview
 
-        webview.create_window(TITLE, url, width=1400, height=900, min_size=(900, 600))
+        window = webview.create_window(TITLE, url, width=1400, height=900, min_size=(900, 600))
 
-        webview.start()
+        def watch() -> None:
+            if window.events.loaded.wait(LOAD_SECONDS):
+                loaded["ok"] = True
+                return
+            print("The window did not load the page; opening Edge instead.")
+            window.destroy()
+
+        webview.start(watch)
 
     except Exception as error:  # noqa: BLE001 -- any failure means: no window here
         print(f"No native window ({error}); opening Edge instead.")
         return False
 
-    return True
+    return loaded["ok"]
 
 
 def application() -> None:
@@ -212,7 +322,7 @@ def application() -> None:
     if running:
         url = f"http://{HOST}:{running}"
         if not show_window(url):
-            open_page(url)
+            open_app_window(url) or open_page(url)
         return
 
     port = free_port()
@@ -232,9 +342,17 @@ def application() -> None:
         if show_window(url):
             return
 
+        window = open_app_window(url)
+
+        if window is not None:
+            # Its own Edge process: closing the window ends it.
+            window.wait()
+            return
+
         open_page(url)
 
-        # No window to close: DevLoop runs as long as its server.
+        # A browser tab is not ours to watch: DevLoop runs as
+        # long as its server.
         server.wait()
 
     finally:

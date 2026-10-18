@@ -28,6 +28,10 @@ There are no release branches; one is cut from a tag
   the fallback without WebView2. (#80)
 
 ### Fixed
+- `DevLoop.exe` no longer shows an empty window when WebView2 fails to start:
+  the runtime is looked for on disk first, a window that has not loaded the
+  page in 15 s gives way to an Edge app window, and that window, with a
+  profile of its own, stops DevLoop when closed. (#82)
 - A failing test on code that compiles is judged first: QA works the case
   out by hand and says whether the test or the code is wrong. A wrong
   expectation is fixed in the suite instead of sending the developer to

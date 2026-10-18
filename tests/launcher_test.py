@@ -165,6 +165,28 @@ check("a page that never answers is given up on", launcher.wait_for(1, seconds=0
 
 print()
 print("=" * 80)
+print("WEBVIEW2 MUST BE THERE, NOT ONLY REGISTERED")
+print("=" * 80)
+
+runtime = tempfile.mkdtemp()
+
+check(
+    "registered but its folder empty: not ready, so no blank window (#82)",
+    launcher.webview2_ready(["151.0.4129.78"], [runtime]),
+    False,
+)
+
+os.makedirs(os.path.join(runtime, "151.0.4129.78"))
+
+with open(os.path.join(runtime, "151.0.4129.78", "msedgewebview2.exe"), "w") as handle:
+    handle.write("")
+
+check("registered and on disk: ready", launcher.webview2_ready(["151.0.4129.78"], [runtime]), True)
+
+check("not registered at all: not ready", launcher.webview2_ready([], [runtime]), False)
+
+print()
+print("=" * 80)
 
 if failures:
     print(f"FAILED: {len(failures)}")
